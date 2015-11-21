@@ -1,4 +1,6 @@
 <html>
-<head></head>
+<head>
+  <title>this is title</title>
+</head>
 <body></body>
 </html>
