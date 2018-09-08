@@ -1,0 +1,61 @@
+﻿@model WarehouseApp.Models.ViewModels.DamageDismissViewModel
+@using (Html.BeginForm("RetunDismiss", "Damage", null, FormMethod.Post, new { @id = "DamageReturnForm" }))
+{
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="panel-title"><i class="fa fa-pencil"></i> Damage Return / Dismiss</h3>
+    </div>
+
+    <div class="modal-body">
+
+                @Html.ValidationSummary(true)
+                @Html.HiddenFor(model=>model.DamageId)
+                @Html.HiddenFor(model=>model.StockId)
+                @Html.Hidden("OldQuantity")
+
+                <div class="form-group">
+                    @Html.Label("Date")
+                    <div class="input-group " style="">
+                        @Html.TextBox("ActionDate", string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", @Value = @DateTime.Now.ToString("dd-MM-yyyy") })
+                        <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    @Html.Label("Product Name")
+                    @Html.TextBox("ProductName", null, new { @class = "form-control input-sm", @readonly = true })
+                </div>
+                <div class="form-group">
+
+                    @Html.Label("Total Quantity")
+                    @Html.TextBoxFor(model=>model.Quantity,  new { @class = "form-control input-sm" })
+                    @Html.ValidationMessageFor(model => model.Quantity)
+                </div>
+        <div class="form-group">
+
+            @Html.Label("Action Type")
+            <div class="radio radio-inline">
+                <label>@Html.RadioButtonFor(model=>model.ActionType, "return", new { @checked = true, @class = "", id = "return" }) Return</label>
+            </div>
+            <div class="radio radio-inline">
+                <label>@Html.RadioButtonFor(model=>model.ActionType, "dismiss", new { @class = "", id = "dismiss" }) Dismiss</label>
+            </div>
+
+        </div>
+        <div class="form-group">
+
+            @Html.Label("Warehouse (If return)")
+            @Html.DropDownListFor(model=>model.ZoneId,(SelectList)ViewBag.ZoneId,null,  new { @class = "form-control input-sm" })
+            @Html.ValidationMessageFor(model => model.ZoneId)
+        </div>
+            </div>
+   
+
+    <div class="modal-footer">
+        <input type="button" id="SubmitDamageReturnForm" class="btn btn-primary" value="Save" />
+        <button data-dismiss="modal" class="btn btn-default">Cancel</button>
+
+    </div>
+}
+@*@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}*@

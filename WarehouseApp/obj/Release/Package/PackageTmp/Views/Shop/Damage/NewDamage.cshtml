@@ -1,0 +1,165 @@
+﻿
+@model WarehouseApp.Models.ViewModels.DamageProductsViewModel
+@{
+    ViewBag.Title = "New Damage";
+}
+@section Styles{
+    @Styles.Render("~/Content/jquery-ui")
+}
+<div class="submit-progress hidden">
+    <i class="fa fa-2x fa-spinner fa-spin"></i>
+    <label>Please wait ...</label>
+</div>
+@using (Html.BeginForm("SaveDamage", "Damage", null, FormMethod.Post, new { @id = "newDamageForm" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="row">
+        <div class="col-md-12 col-xs-12">
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2><i class="fa fa-pencil"></i> New Damage</h2>
+                    <ul class="nav navbar-right panel_toolbox">
+
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="Settings"><i class="fa fa-wrench"></i></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href='@Url.Action("Index", "Stock")'>Stock</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                        </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+                    @Html.ValidationSummary(true)
+                    <div class="col-md-3 paddingReduce">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Item Search</h3>
+                            </div>
+                            <div class="panel-body">
+                                <div class="form-horizontal">
+                                    <div class="form-group">
+                                        @Html.TextBox("ProductBarCode", null, new { @class = "form-control", placeholder = "Scan Bar Code" })
+
+                                        @Html.TextBox("ProductName", null, new { @class = "form-control", placeholder = "Product Name" })
+
+                                        @Html.TextBox("ProductCode", null, new { @class = "form-control", placeholder = "Product Code" })
+
+                                    </div>
+                                    @*<input type="button" id="checkBarcode" value="check">*@
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-9 paddingReduce">
+                        <div class="panel panel-default">
+                            <table class="table table-striped table-condensed jambo_table bulk_action" id="damageProductTable">
+                                <thead style="background-color:#f5f5f5 ;color:black;">
+                                    <tr class="panel-heading">
+                                        <th>Item</th>
+                                        <th>Quantity</th>
+                                        <th>Note</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+
+                            </table>
+                        </div>
+                    </div>
+                    <div class="pull-right">
+                        <button type="button" class="btn btn-primary" title="Save Damage" id="saveDamage"><i class="fa fa-save"></i> Save Damage</button>
+                        <a href='@Url.Action("Index","Damage")' data-toggle="tooltip" title="" class="btn btn-danger" data-original-title="Cancel"><i class="fa fa-reply"></i> Cancel</a>
+
+                    </div>
+                </div>
+            </div>
+        </div>  </div>
+        }
+
+
+        @section Scripts {
+            @Scripts.Render("~/bundles/jquery-ui")
+            @Scripts.Render("~/bundles/jqueryval")
+            @Scripts.Render("~/bundles/ShopScript")
+           @Scripts.Render("~/bundles/barcode-scanner-detection")
+
+            <script>
+                $(document).ready(function () {
+
+                    $('#ProductName').focus(function () {
+                        var url = '@Url.Action("GetProuctByNameForDamage", "Product")';
+                        AutoCompleteProductName('#ProductName', url);
+                    });
+                    $('#ProductCode').focus(function () {
+                        var url = '@Url.Action("GetProuctbyCodeForDamage", "Product")';
+                        AutoCompleteProductName('#ProductCode', url);
+                    });
+
+                    $('#ProductBarCode').scannerDetection({
+                        timeBeforeScanTest: 200, // wait for the next character for upto 200ms
+                        startChar: [120], // Prefix character for the cabled scanner (OPL6845R)
+                        endChar: [13], // be sure the scan is complete if key 13 (enter) is detected
+                        avgTimeByChar: 40, // it's not a barcode if a character takes longer than 40ms
+                        onComplete: function (barcode, qty) {
+
+                            barcodeSearch(barcode);
+                            $(this).val('');
+                            //return false;
+                        } // main callback function
+                    });
+                    $('#checkBarcode').on('click', function () {
+                        var barCode = $('#ProductBarCode').val();
+                        //console.log(barCode);
+                        barcodeSearch(barCode);
+
+                    });
+                    //for print barcode ===============================================
+                    $('#saveDamage').on('click', function () {
+                        //$('#FormSubmitType').val(1);
+                        // saveSales(1);
+                        submitdamageForm();
+                    });
+
+                });
+                function barcodeSearch(barcode) {
+
+                    var url = '@Url.Action("GetProuctByBarcodeForDamage", "Product")';
+                    var paramData = { barCode: barcode };
+                    getDataShop(url, paramData, 'renderBarcodeSearchForDamage');
+                }
+                function submitdamageForm() {
+                    var count = 0;
+                    $('#damageProductTable tbody').find('tr').each(function () {
+                        var suffix = $(this).find(':input:first').attr('name').match(/\d+/);
+                        $.each($(this).find(':input'), function (i, val) {
+                            // Replaced Name
+                            var oldN = $(this).attr('name');
+                            var newN = oldN.replace('[' + suffix + ']', '[' + count + ']');
+                            $(this).attr('name', newN);
+
+                        });
+
+                        count++;
+                    });
+
+                    if (count == 0) {
+                        $.alert("Please enter required field value", '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+                    } else {
+
+                        DisplayProgressMessage('#saveDamage', 'Processing..');
+                        $('#newDamageForm').submit();
+
+                    }
+
+
+                }
+            </script>
+        }
+        @*//=======================================================================================//
+            //Author : Md. Mahid Choudhury
+            //Creation Date : January 2017
+            //=======================================================================================//*@

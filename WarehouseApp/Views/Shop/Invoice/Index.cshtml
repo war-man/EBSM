@@ -1,0 +1,197 @@
+﻿@using PagedList.Mvc
+@using WarehouseApp.Controllers
+
+@model WarehouseApp.Models.ViewModels.InvoiceSearchViewModel
+
+@{
+    ViewBag.Title = "Invoice List";
+}
+@Styles.Render("~/Content/PagedList")
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="x_panel">
+            <div class="x_title">
+                <i class="fa fa-list"></i> Invoice List
+                <ul class="nav navbar-right panel_toolbox">
+                    <li><a href='@Url.Action("NewSales", "Invoice")' data-id="0" class="" title="Add New"><i class="fa fa-plus-square fa-lg"></i> </a></li>
+
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" title="Settings" aria-expanded="false"><i class="fa fa-wrench"></i></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href='@Url.Action("Index","Product")'>Products</a></li>
+                            <li><a href='@Url.Action("Index","Batch")'>Barcodes</a></li>
+                            <li><a href='@Url.Action("Index","Stock")'>Stock</a></li>
+                            <li><a href='@Url.Action("Index","Customer")'>Customers</a></li>
+                            <li><a href='@Url.Action("Index","Bill")'>Bills</a></li>
+                            <li><a href='@Url.Action("Index","BankAccount")'>Accounts</a></li>
+                          
+                        </ul>
+                    </li>
+                    <li>
+                        <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+                    <div class="form-horizontal">
+                        <div class="form-group">
+                            @using (Html.BeginForm("Index", "Invoice", FormMethod.Post, new { @class = "", @id = "invoiceSearchForm" }))
+                            {
+                                <div class="col-lg-1 ">
+                                   
+                                        @Html.DropDownListFor(model => model.PageSize, new SelectList(new Dictionary<string, int> {  { "50", 50 }, { "100", 100 }, { "500", 500 } }, "Key", "Value", null), new { @class = "pageSizeDropdown", id = "pagesizelist" })
+
+                                  
+                                </div>
+                                <div class="col-lg-4 form-inline">
+                                    <div class="col-md-5 input-group " style="">
+                                        @Html.TextBoxFor(model => model.InvoiceDateFrom, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", })
+                                        <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                                    </div>
+                                    <i class="fa fa-minus fa-fw"></i>
+                                    <div class="col-md-5 input-group " style="">
+                                        @Html.TextBoxFor(model => model.InvoiceDateTo, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", })
+                                        <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                                    </div>
+
+                                </div>
+                                <div class="col-lg-2">
+                                    @Html.TextBox("InvoiceNo", null, new { @class = "form-control input-sm", @placeholder = "Invoice Number" })
+                                </div>
+
+                                <div class="col-lg-2">
+                                        @Html.DropDownList("CustomerId", null, "Select Customer..", new { @class = "form-control input-sm", })
+
+                                    </div>
+
+                                <div class="col-lg-2">
+                                    @Html.DropDownList("TransactionMode", new SelectList(BankAccountController.TransactionModes(), "Value", "Text"), new { @class = "form-control input-sm" })
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <span class="glyphicon glyphicon-search"></span>
+                                    </button>
+
+
+                                </div>
+                            }
+                        </div>
+
+                    </div>
+
+                    <table class="table table-striped table-condensed table-responsive jambo_table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Invoices.First().InvoiceDate)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Invoices.First().InvoiceNumber)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Invoices.First().TotalQuantity)
+                                </th>
+                                <th>
+                                    @Html.DisplayName("Net Total")
+                                </th>
+
+                                <th>
+                                    @Html.DisplayName("Discount")
+                                </th>
+                                <th>
+                                    @Html.DisplayName("Total")
+                                </th>
+
+
+                                <th>
+                                    @Html.DisplayName("Customer")
+                                </th>
+                                <th>
+                                    @Html.DisplayName("Branch")
+                                </th>
+                                <th>Action</th>
+                            </tr>
+                        </thead><tbody>
+    @foreach (var item in Model.Invoices)
+    {
+        //var account = BankAccountController.AllAccountByMode(item.TransactionMode).FirstOrDefault(a => a.Id == item.TransactionModeId);
+        var discount = BankAccountController.DiscountCalculator(item.DiscountAmount, item.DiscountType, item.TotalPrice);
+
+        <tr>
+            <td class="col-md-1">
+                @Html.DisplayFor(modelItem => item.InvoiceDate)
+            </td>
+            <td class="col-md-2">
+                @Html.DisplayFor(modelItem => item.InvoiceNumber)
+            </td>
+            <td class="col-md-1">
+                @Html.DisplayFor(modelItem => item.TotalQuantity)
+            </td>
+            <td class="col-md-1">
+                @Html.DisplayFor(modelItem => item.TotalPrice)
+            </td>
+
+            <td class="col-md-2">
+                @discount.DiscountValueShow
+            </td>
+
+            <td class="col-md-1">
+                @{ var total = (item.TotalPrice - discount.DiscountValue) + item.TotalVat;}
+                @total
+            </td>
+
+            <td class="col-md-1">
+                @Html.DisplayFor(modelItem => item.Customer.FullName)
+            </td>
+            <td class="col-md-1">
+                @Html.DisplayFor(modelItem => item.CustomerBranch.ProjectName)
+            </td>
+            <td class="col-md-2">
+               
+                @Html.ActionLink(" ", "InvoiceDetails", "Invoice", new { id = item.InvoiceId }, new { @class = "btn btn-xxs btn-info fa fa-eye", @title = "Details" })
+           
+                @if (User.IsInRole("Global_SupAdmin") || User.IsInRole("Sales_Return"))
+                {
+              @Html.ActionLink(" ", "SalesReturn", "Invoice", new { invoiceId = item.InvoiceId }, new { @class = "btn btn-xxs btn-warning fa fa-reply", @title = "Sales Return" })
+                }
+                @if ((User.IsInRole("Global_SupAdmin") || User.IsInRole("Sales_Edit")) && !item.Returns.Any())
+                {
+                    @Html.ActionLink(" ", "EditSales", "Invoice", new { Id = item.InvoiceId }, new { @class = "btn btn-xxs btn-primary fa fa-pencil", @title = "Edit" })
+                }
+
+
+
+
+            </td>
+        </tr>
+    }
+</tbody>
+
+                    </table>
+                    Page @(Model.Invoices.PageCount < Model.Invoices.PageNumber ? 0 : Model.Invoices.PageNumber) of @Model.Invoices.PageCount
+                    @Html.PagedListPager(Model.Invoices, Page => Url.Action("Index", "Invoice", new RouteValueDictionary() { { "Page", Page }, { "PageSize", Model.PageSize }, { "InvoiceNo", Model.InvoiceNo }, { "InvoiceDateFrom", Model.InvoiceDateFrom }, { "InvoiceDateTo", Model.InvoiceDateTo }, { "TransactionMode", Model.TransactionMode }, { "CustomerId", Model.CustomerId } }))
+
+                </div>
+
+            </div></div></div>
+
+            @section Scripts {
+                <script>
+                    $(document).ready(function () {
+
+                        $('#pagesizelist').change(function () {
+                            $('#invoiceSearchForm').submit();
+                        });
+                    });
+                    function removeThis(obj, paramData) {
+                        var url = '@Url.Action("DeleteRecord", "purchase")';
+                        deleteRow(obj, url, paramData);
+                    }
+                </script>
+            }
+            @*//=======================================================================================//
+                //Author : Md. Mahid Choudhury
+                //Creation Date : January 2017
+                //=======================================================================================//*@

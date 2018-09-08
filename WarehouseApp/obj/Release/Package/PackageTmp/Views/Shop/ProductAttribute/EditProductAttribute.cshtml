@@ -1,0 +1,259 @@
+﻿@model WarehouseApp.Models.ViewModels.AttributeViewModel
+@{
+    ViewBag.Title = "Edit Product Attribute";
+}
+<style>
+    td {
+        padding: 5px;
+    }
+</style>
+@using (Html.BeginForm("EditProductAttribute", "ProductAttribute", null, FormMethod.Post, new { @id = "editProductAttributeForm" })) 
+{
+    @Html.AntiForgeryToken()
+    <div class="row">
+	<div class="col-md-10 col-xs-12">
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2><i class="fa fa-pencil"></i> Edit Product Attribute</h2>
+                    <ul class="nav navbar-right panel_toolbox">
+
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="Settings"><i class="fa fa-wrench"></i></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href='@Url.Action("AttributeSetList", "ProductAttribute")'>Attribute Sets</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                        </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+                    @Html.ValidationSummary(true)
+                   @Html.HiddenFor(model=>model.AttributeId)
+                    @Html.Hidden("InitialAttributeName", Model.AttributeName)
+
+                        <div class="col-xs-6 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.AttributeName, new { @class = "control-label" })
+                                @Html.TextBoxFor(model => model.AttributeName, new { @class = "form-control input-sm", placeholder = "Product Attibute Name" })
+                                @Html.ValidationMessageFor(model => model.AttributeName)
+                            </div>    
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.AttributeType, new { @class = "control-label" })
+                                @Html.DropDownListFor(model => model.AttributeType, new SelectList(new Dictionary<string, string> { @*{ "Checkbox", "Checkbox" },*@ @*{ "Date", "Date" },*@ { "Radio", "Radio" }, { "Selectbox", "Selectbox" }, { "Textbox", "Textbox" } }, "Key", "Value", null), "--Select--", new { @class = "form-control input-sm" })
+                                @Html.ValidationMessageFor(model => model.AttributeType)    
+                            </div>
+                            <div class="form-group hidden">
+                                @Html.LabelFor(model => model.IsRequired, new { @class = "control-label" })
+                                @Html.EditorFor(model => model.IsRequired, new { @class = "form-control input-sm" })
+                                @Html.ValidationMessageFor(model => model.IsRequired)
+                            </div> 
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.Status, new { @class = "control-label col-md-12" })
+                                <div class="col-md-10">
+                                    <div class="radio radio-inline">
+                                        <label>@Html.RadioButtonFor(model => model.Status, "1", new { @class = "status" }) Enabled</label>
+                                    </div>
+                                    <div class="radio radio-inline">
+                                        <label>@Html.RadioButtonFor(model => model.Status, "0", new { @class = "status" }) Disabled</label>
+                                    </div>
+
+                                    @Html.ValidationMessageFor(model => model.Status)
+                                </div>
+                            </div>
+                        </div> 
+                           
+                            @*<div class="form-group">
+                                @Html.LabelFor(model => model.Values, new { @class = "control-label" })
+                                @Html.TextBoxFor(model => model.Values, new { @class = "form-control input-sm", placeholder = "Product Attibute Values" })
+                                @Html.ValidationMessageFor(model => model.Values)
+                            </div> 
+
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.DefaultValue, new { @class = "control-label" })
+                                @Html.TextBoxFor(model => model.DefaultValue, new { @class = "form-control input-sm", placeholder = "Product Attibute Default Value" })
+                                @Html.ValidationMessageFor(model => model.DefaultValue)
+                            </div>*@ 
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div id="attValuesArea" class="hidden">
+                            <div class="row"><a href="#" id="addNew" class="btn btn-sm btn-primary pull-right"><i class="fa fa-plus"></i> Add New Value</a></div>
+
+                            <table id="dataTable" border="0" cellpadding="0" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Value</th>
+                                        <th>Default</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.Values != null && Model.Values.Count > 0)
+                                    {
+                                        int j = 0;
+                                        foreach (var i in Model.Values)
+                                        {
+                                            <tr style="border:0px solid black" class="attValues">
+                                                <td>@Html.TextBoxFor(a => a.Values[j].Value, new { @class = "form-control input-sm attValue" })</td>
+                                                <td><label>@Html.CheckBoxFor(a => a.Values[j].IsDefault, new { @class = "isDefault" }) Default</label></td>
+                                                @*<td><label><input type="checkbox" name="Values[@j].IsDefault" class="isDefault" value="true" /> Default</label></td>*@
+                                                <td>
+                                                    @if (j > 0)
+                                                    {
+                                                        <span class="btn btn-xs btn-danger removeRow">Remove</span>
+                                                        @*<a href="#" class="remove">Remove</a>*@
+                                                    }
+                                                </td>
+                                            </tr>
+                                                    j++;
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+
+
+
+
+                                <div class="form-group">
+                                    <div class="col-md-offset-2 col-md-10">
+                                        <input type="button" value="Save" id="editProductAttributeFormSubmit" class="btn btn-info" />
+                                        @*&nbsp;&nbsp;<input type="reset" value="Reset" class="btn btn-warning" />*@
+                                       
+                                        &nbsp;&nbsp;@Html.ActionLink("Cancel", "ListArrtibuteType", "ProductAttribute", null, new { @class = "btn btn-default" })
+                                    </div>
+
+                                </div>
+                            
+
+                 
+                </div>
+            </div>
+        </div>
+    </div>
+    
+}
+
+
+
+
+@* Here I will add Jquery Code for validation / dynamically add new rows / Remove rows etc *@
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        $(document).ready(function() {
+            AttributeValueAreaHideShow($('#AttributeType').val());
+
+            //1. Add new row
+            $("#addNew").click(function(e) {
+                e.preventDefault();
+                var $tableBody = $("#dataTable tbody");
+                var $trLast = $tableBody.find("tr:last");
+                var $trNew = $trLast.clone();
+
+                var suffix = $trNew.find(':input:first').attr('name').match(/\d+/);
+                $trNew.find("td:last").html('<span class="btn btn-xs btn-danger removeRow">Remove</span>');
+                $.each($trNew.find(':input'), function(i, val) {
+
+                    // Replaced Name
+                    var oldN = $(this).attr('name');
+                    var newN = oldN.replace('[' + suffix + ']', '[' + (parseInt(suffix) + 1) + ']');
+                    // console.log(suffix, oldN, newN);
+                    $(this).attr('name', newN);
+                    //Replaced value
+                    var type = $(this).attr('type');
+                    if (type.toLowerCase() == "text") {
+                        $(this).attr('value', '');
+                    }
+
+                    // If you have another Type then replace with default value
+                    if (type.toLowerCase() == "checkbox") {
+
+                        $(this).attr('value', true);
+                    }
+                    //$(this).removeClass("input-validation-error");
+
+                });
+                $trLast.after($trNew);
+
+                //Re-assign Validation
+                //var form = $("form")
+                //    .removeData("validator")
+                //    .removeData("unobtrusiveValidation");
+                //$.validator.unobtrusive.parse(form);
+
+                //2. Remove
+                $('.removeRow').click(function(er) {
+                    er.preventDefault();
+
+                    $(this).parent().parent().remove();
+                });
+
+                $('input.isDefault').on('change', function(ed) {
+                    ed.preventDefault();
+                    $('input.isDefault').not(this).prop('checked', false);
+                });
+
+            });
+
+            //==============================================
+            $('.removeRow').click(function (er) {
+                er.preventDefault();
+
+                $(this).parent().parent().remove();
+            });
+            $('input.isDefault').on('change', function(ed) {
+                ed.preventDefault();
+                $('input.isDefault').not(this).prop('checked', false);
+            });
+
+            $('#AttributeType').change(function() {
+                var attributeType = $(this).val();
+                AttributeValueAreaHideShow(attributeType);
+            });
+
+            $('#editProductAttributeFormSubmit').click(function() {
+                var count = 0;
+                $('#dataTable tbody').find('tr').each(function() {
+                    var suffix = $(this).find(':input:first').attr('name').match(/\d+/);
+                    $.each($(this).find(':input'), function (i, val) {
+                        // Replaced Name
+                        var oldN = $(this).attr('name');
+                        var newN=oldN.replace('[' + suffix + ']', '[' + count + ']');
+                        $(this).attr('name', newN);
+                       
+                    });
+                   
+                    count++;
+                });
+
+                $('#editProductAttributeForm').submit();
+            });
+
+
+        });
+
+        function AttributeValueAreaHideShow(attributeType) {
+            if (attributeType == "Radio") {
+                $("#attValuesArea").removeClass('hidden');
+
+            } else if (attributeType == "Selectbox") {
+                $("#attValuesArea").removeClass('hidden');
+
+            } else {
+                $("#attValuesArea").addClass('hidden');
+
+
+            }
+        }
+    </script>
+}
+
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

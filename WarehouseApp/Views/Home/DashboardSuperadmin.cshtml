@@ -1,0 +1,346 @@
+﻿@using WarehouseApp.Controllers
+
+@{
+    ViewBag.Title = "Home Page";
+}
+@Styles.Render("~/Content/morris")
+<style>
+    .table-responsive {
+        height: 300px;
+    }
+
+
+</style>
+<div class="row">
+    <div class="col-md-12 page-header">
+        <span class="text-dashboard-heading"> <i class="glyphicon glyphicon-dashboard"></i> Welcome to <strong>@SettingsController.CompanyInfo().CompanyName</strong></span>
+        <span class="pull-right"> @DateTime.Now.ToString("dd-MMM-yyyy, dddd")</span>
+
+    </div>
+   
+    <div class="col-lg-3 col-md-6">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="col-xs-3">
+                        <i class="fa fa-codepen fa-5x"></i>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                        <span class="huge countAqrm">@ViewBag.TodayAquariumTickets.Count</span>
+                        <div>Aquarium</div>
+                    </div>
+                </div>
+            </div>
+            
+            <a href='@Url.Action("ReportByDate", "AquariumReport", new { date = DateTime.Now.ToString("dd-MMM-yyyy") })'>
+                <div class="panel-footer">
+                    <span class="pull-left">View Details</span>
+                    <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
+                    <div class="clearfix"></div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="panel panel-green">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="col-xs-3">
+                        <i class="fa fa-gamepad fa-5x"></i>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                        <span class="huge countGame">@ViewBag.TodayGameTickets.Count</span>
+                        <div>Gaming Zone</div>
+                    </div>
+                </div>
+            </div>
+            <a href='@Url.Action("ReportByDate", "GammingReport", new { date = DateTime.Now.ToString("dd-MMM-yyyy") })'>
+                <div class="panel-footer">
+                    <span class="pull-left">View Details</span>
+                    <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
+                    <div class="clearfix"></div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="panel panel-yellow">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="col-xs-3">
+                        <i class="fa fa-life-ring  fa-5x"></i>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                        <span class="huge countMirror">@ViewBag.TodayMirrorTickets.Count</span>
+                        <div>Mirror Tunnel</div>
+                    </div>
+                </div>
+            </div>
+            <a href='@Url.Action("ReportByDate", "MirrorTunnelReport", new { date = DateTime.Now.ToString("dd-MMM-yyyy") })'>
+                <div class="panel-footer">
+                    <span class="pull-left">View Details</span>
+                    <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
+                    <div class="clearfix"></div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="panel panel-red">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="col-xs-3">
+                        <i class="fa fa-tripadvisor fa-5x"></i>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                        <span class="huge count3D">@ViewBag.TodayZone3DTickets.Count</span>
+                        <div>3D Zone</div>
+                    </div>
+                </div>
+            </div>
+            <a href='@Url.Action("ReportByDate", "Zone3DReport", new { date = DateTime.Now.ToString("dd-MMM-yyyy") })'>
+                <div class="panel-footer">
+                    <span class="pull-left">View Details</span>
+                    <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
+                    <div class="clearfix"></div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12 panel btn-group btn-group-justified">
+        <a href='@Url.Action("NewTicket", "AquariumTicket")' class="btn btn-primary col-sm-3">
+            <i class="glyphicon glyphicon-plus"></i><br>
+            Aquarium Ticket
+        </a>
+        <a href='@Url.Action("NewTicket", "GamingTicket")' class="btn btn-primary col-sm-3">
+            <i class="glyphicon glyphicon-plus"></i><br>
+            Game Ticket
+        </a>
+        <a href='@Url.Action("NewTicket", "Zone3DTicket")' class="btn btn-primary col-sm-3">
+            <i class="glyphicon glyphicon-plus"></i><br>
+            3D Zone Ticket
+        </a>
+        <a href='@Url.Action("NewTicket", "MirrorTunnelTicket")' class="btn btn-primary col-sm-3">
+            <i class="glyphicon glyphicon-plus"></i><br>
+            Mirror Ticket
+        </a>
+
+        <a href='@Url.Action("Price", "Configuration")' class="btn btn-primary col-sm-3">
+            <i class="glyphicon glyphicon-cog"></i><br>
+            Prices
+        </a>
+        <a href='@Url.Action("Vats", "Configuration")' class="btn btn-primary col-sm-3">
+            <i class="glyphicon glyphicon-cloud"></i><br>
+            VAT
+        </a>
+        <a href="#" class="btn btn-primary col-sm-3">
+            <i class="glyphicon glyphicon-question-sign"></i><br>
+            Help
+        </a>
+    </div>
+</div>
+<!-- /.row -->
+<div class="row">
+    
+    <div class="col-lg-8">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <i class="fa fa-line-chart fa-fw"></i> Day Analytics
+            </div>
+            <!-- /.panel-heading -->
+            <div class="panel-body">
+                <div id="morris-line-chart"></div>
+            </div>
+            <!-- /.panel-body -->
+        </div>
+        <!-- /.panel -->
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <i class="fa fa-bar-chart-o fa-fw"></i> Month and Year Analytics
+                <div class="pull-right">
+            <div class="btn-group">
+                <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                    <span class="fa fa-calendar fa-fw"></span> Option <span class="caret"></span>
+</button>
+                <ul class="dropdown-menu pull-right" role="menu">
+                    <li>
+                        <a href="javascript:void(0);" data-id="month" id="monthFilter" onclick="barChart('monthFilter',1)">Month</a>
+                    </li>
+                    <li>
+                        <a href="javascript:void(0);" data-id="year" id="yearFilter" onclick="barChart('yearFilter',1)">Year</a>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+            </div>
+            <!-- /.panel-heading -->
+            <div class="panel-body">
+                <div class="row">
+                    <!-- /.col-lg-4 (nested) -->
+                    <div class="col-md-12">
+                        <div id="morris-bar-chart"></div>
+                    </div>
+                    <!-- /.col-lg-8 (nested) -->
+                </div>
+                <!-- /.row -->
+            </div>
+        </div>
+        <!-- /.panel-body -->
+        <!-- /.panel-heading -->
+
+
+        <!-- /.panel -->
+        <!-- /.panel -->
+        <!-- /.panel -->
+    </div>
+        <!-- /.col-lg-8 -->
+        <div class="col-lg-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <i class="fa fa-bell fa-fw"></i> Notifications Panel
+                </div>
+                <!-- /.panel-heading -->
+                <div class="panel-body">
+                    <div class="list-group">
+                  
+                        <a href='@Url.Action("Index","Notice")' class="list-group-item">
+                            <i class="fa fa-file-text fa-fw"></i> @ViewBag.NewNoticesCount New Notice
+                            <span class="pull-right text-muted small">
+                                <em>@ViewBag.NewNoticesTimeAgo</em>
+                            </span>
+                        </a>
+                       
+                        <a href="#" class="list-group-item">
+                            <i class="fa fa-tasks fa-fw"></i> New Task
+                            <span class="pull-right text-muted small">
+                                <em>43 minutes ago</em>
+                            </span>
+                        </a>
+
+                       
+                        <a href="#" class="list-group-item">
+                            <i class="fa fa-shopping-cart fa-fw"></i> New Order Placed
+                            <span class="pull-right text-muted small">
+                                <em>9:49 AM</em>
+                            </span>
+                        </a>
+                        <a href="#" class="list-group-item">
+                            <i class="fa fa-money fa-fw"></i> Payment Received
+                            <span class="pull-right text-muted small">
+                                <em>Yesterday</em>
+                            </span>
+                        </a>
+                    </div>
+                    <!-- /.list-group -->
+                    <a href="#" class="btn btn-default btn-block">View All Alerts</a>
+                </div>
+                <!-- /.panel-body -->
+            </div>
+            <!-- /.panel -->
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <i class="fa fa-pie-chart fa-fw"></i> Games Analytics
+                    <div class="pull-right">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                                <span class="fa fa-calendar fa-fw"></span> Option <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu pull-right" role="menu">
+                                <li>
+                                    <a href="javascript:void(0);" data-id="today" id="todayFilter" onclick="donut('today')"> Today</a>
+                                </li>
+                                <li>
+                                    <a href="javascript:void(0);" data-id="month" id="currentMonthFilter" onclick="donut('currentMonth')">Current Month</a>
+                                </li>
+                                <li>
+                                    <a href="javascript:void(0);" data-id="year" id="currentYearFilter" onclick="donut('currentYear')">Current Year</a>
+                                </li>
+
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div id="morris-donut-chart"></div>
+                 <span class="btn btn-default btn-block" id="filter-donut-chart"></span>
+                </div> 
+
+                <!-- /.panel-body -->
+            </div>
+            <!-- /.panel -->
+            <!-- /.panel .chat-panel -->
+        </div>
+        <!-- /.col-lg-4 -->
+    </div>
+@section Scripts {
+    @Scripts.Render("~/bundles/morris")
+
+    <script>
+        $(document).ready(function() {
+            //loading chart data=========================================================
+            var lineUrl='@Url.Action("FindAllTicketDaily", "Home")';
+            lineChart(lineUrl,1);
+            barChart("monthFilter", 1);
+            donut("currentMonth");
+
+            //======================================================================
+            $('#checkAjaxCall').click(function() {
+                var ajaxData = testAjax(1006);
+                console.log(ajaxData);
+                //getData(url, paramData, 'renderCustomerInfoLoad');
+            });
+            //Counting animation=============================================================
+            var countAqrmValue = parseInt($('.countAqrm').text());
+            var countGameValue = parseInt($('.countGame').text());
+            var countMirrorValue = parseInt($('.countMirror').text());
+            var count3DValue = parseInt($('.count3D').text());
+
+            $({ countAqrmValue: 0, countGameValue: 0, countMirrorValue: 0, count3DValue: 0 }).animate({ countAqrmValue: countAqrmValue, countGameValue: countGameValue, countMirrorValue: countMirrorValue, count3DValue: count3DValue }, {
+                duration: 1000,
+                easing: 'swing', // can be anything
+                step: function() { // called on every step
+                    // Update the element's text with rounded-up value:
+                    $('.countAqrm').text(commaSeparateNumber(Math.round(this.countAqrmValue)));
+                    $('.countGame').text(commaSeparateNumber(Math.round(this.countGameValue)));
+                    $('.countMirror').text(commaSeparateNumber(Math.round(this.countMirrorValue)));
+                    $('.count3D').text(commaSeparateNumber(Math.round(this.count3DValue)));
+                }
+            });
+
+        });
+
+        function testAjax(id) {
+            //return Promise.resolve($.ajax({
+            //    url: "getvalue.php"
+            //}));
+            var total = 0;
+            var paramData = { PriceConfigId: id };
+            var url = '@Url.Action("FindGame","Configuration")';
+            $.ajax({
+                type: "POST",
+                url: url,
+                async: false,
+                data: JSON.stringify(paramData),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (data) {
+                    total = data[0].Price;
+                    //callback(total);
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    $.alert(textStatus + "! please try again", '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+                }
+            });
+            return total;
+        }
+        
+       
+    </script>
+}
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : December 2016
+    //=======================================================================================//*@

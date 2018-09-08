@@ -1,0 +1,513 @@
+﻿
+@model WarehouseApp.Models.ViewModels.InvoiceViewModel
+
+@{
+    ViewBag.Title = "Edit Sales";
+    var today = DateTime.Now;
+    double? totalPrice = 0;
+}
+<div class="submit-progress hidden">
+    <i class="fa fa-2x fa-spinner fa-spin"></i>
+    <label>Please wait ...</label>
+</div>
+@using (Html.BeginForm("EditSales", "Invoice", null, FormMethod.Post, new { @id = "editInvoiceForm" }))
+{
+    @Html.AntiForgeryToken()
+
+    <div class="row centered-form">
+        <div class="col-xs-12 col-sm-10 col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"><i class="fa fa-pencil"></i> Edit Sales (@Model.InvoiceNumber)</h3>
+                </div>
+                <div class="panel-body">
+                    @Html.ValidationSummary(true)
+
+                    @Html.Hidden("SelectedProductId")
+                 
+                    @Html.Hidden("productVatPercent")
+                    
+                   
+                   
+                        <div class="row form-group">
+                            <div class="col-lg-2 paddingReduce">
+                                @Html.LabelFor(model => model.InvoiceDate, new { @class = "required-label control-label col-md-12" })
+                                <div class="col-md-12 paddingReduce input-group " style="padding-left:5px">
+                                    @Html.TextBox("InvoiceDate", string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", @Value = string.Format("{0:dd-MM-yyyy}", Model.InvoiceDate) })
+                                    <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6 paddingReduce">
+                                @Html.LabelFor(model => model.InvoiceProducts.First().Product, new { @class = "required-label control-label col-md-12" })
+                                <div class="col-md-12 paddingReduce">
+                                    @Html.TextBox("Product", null, new { @class = "form-control input-sm ", placeholder = "Product name type here" })
+                                    @Html.ValidationMessageFor(model => model.InvoiceProducts.First().Product)
+                                </div>
+                               
+                            </div>
+                            <div class="col-lg-2 paddingReduce hidden">
+                                @Html.Label("Stock", new { @class = "control-label col-md-12" })
+                                <div class="col-md-12 paddingReduce">
+                                    @Html.TextBox("Stock", null, new { @class = "form-control input-sm ", @readonly = true })
+                                </div>
+
+                            </div>
+                            
+                                
+                        </div><div class=" row form-group">
+                                  <div id="discountSpan" class="hidden col-lg-3 paddingReduce">
+
+                                      @Html.Label("Price Before Discount", new { @class = "control-label col-md-12" })
+                                      <div class="discountSpanInput col-md-12 form-control input-sm">
+                                          Before <span id="totalDisc"></span> Discount: <span id="beforeDisc"></span>
+                                      </div>
+                                  </div>
+                                  <div class="col-lg-2 paddingReduce">
+                                      @Html.LabelFor(model => model.InvoiceProducts.First().UnitPrice, new { @class = "required-label control-label col-md-12" })
+                                      <div class="col-md-12 paddingReduce">
+                                          @Html.TextBox("UnitPrice",null, new { @class = "form-control input-sm", placeholder = "Retail Price" })
+                                          @Html.ValidationMessageFor(model => model.InvoiceProducts.First().UnitPrice)
+                                      </div>
+                                  </div>
+                                  <div class="hidden">
+                                      <div class="col-lg-6 paddingReduce">
+                                          @Html.Label("Discount", new { @class = "control-label col-md-12" })
+                                          <div class="col-md-12 paddingReduce">
+                                              @Html.TextBoxFor(model => model.InvoiceProducts.First().DiscountAmount, new { @class = "form-control input-sm col-md-6", @Value = 0 })
+                                              @Html.ValidationMessageFor(model => model.InvoiceProducts.First().DiscountAmount)
+                                          </div>
+                                      </div>
+                                      <div class="col-lg-6 paddingReduce">
+                                          @Html.LabelFor(model => model.InvoiceProducts.First().DiscountType, new { @class = "control-label col-md-12" })
+                                          <div class="col-md-12 paddingReduce">
+                                              <div class="radio radio-inline">
+                                                  <label>@Html.RadioButtonFor(model => model.InvoiceProducts.First().DiscountType, "Flat", new { @checked = true }) Flat</label>
+                                              </div>
+                                              <div class="radio radio-inline">
+                                                  <label> @Html.RadioButtonFor(model => model.InvoiceProducts.First().DiscountType, "Percent") Percent</label>
+                                              </div>
+                                              @Html.ValidationMessageFor(model => model.InvoiceProducts.First().DiscountType)
+                                          </div>
+                                      </div>
+                                  </div>
+
+
+                                  <div class="hidden">
+                                      @Html.LabelFor(model => model.InvoiceProducts.First().TotalPrice, new { @class = "control-label col-md-12" })
+                                      <div class="col-md-12 paddingReduce">
+                                          @Html.TextBoxFor(model => model.InvoiceProducts.First().TotalPrice, new { @class = "form-control input-sm", placeholder = "Total Price", @readonly = true })
+                                          @Html.ValidationMessageFor(model => model.InvoiceProducts.First().TotalPrice)
+                                      </div>
+                                  </div>
+                                  <div class="hidden">
+
+                                      @Html.Label("Discounted Price", new { @class = "control-label col-md-12" })
+                                      <div class="col-md-12 paddingReduce">
+                                          @Html.TextBox("ProductDiscountedPrice", null, new { @class = "form-control input-sm ", @readonly = true, @placeholder = "Disconuted amount" })
+                                      </div>
+                                  </div>
+                                  <div class="col-lg-2 paddingReduce">
+                                      @Html.Label("Quantity", new { @class = "required-label control-label col-md-12" })
+                                      <div class="col-md-12 paddingReduce">
+                                          @Html.TextBox("Quantity", null, new { @class = "form-control input-sm", placeholder = "Quantity" })
+                                          @Html.ValidationMessageFor(model => model.InvoiceProducts.First().Quantity)
+                                      </div>
+
+                                  </div>
+                                  <div class="col-lg-3 paddingReduce">
+
+                                      @Html.Label("Total Price", new { @class = "required-label control-label col-md-12" })
+                                      <div class="col-md-12 paddingReduce">
+                                          @Html.Hidden("productVatAmount")
+                                          @Html.TextBox("FinalPrice", null, new { @class = "form-control input-sm ", @readonly = true, @placeholder = "Final Price" })
+                                      </div>
+                                  </div>
+
+                                  <div class="col-lg-1 paddingReduce">
+                                      <label>&nbsp;</label>
+                                      <div class="col-md-12 paddingReduce">
+                                          <input type="button" value="Add product" class="btn btn-info btn-sm" id="addProduct" />
+
+                                      </div>
+
+                                  </div>
+
+                              </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+        <table class="table table-striped table-bordered table-hover table-condensed" id="productTable">
+            <thead>
+                <tr>
+                    <th class="col-md-3">Product</th>
+                    <th class="col-md-2">Unit Price</th>
+                    <th class="col-md-1">Quantity</th>
+                    @*<th class="col-md-1">Discount</th>*@
+                    <th class="col-md-1">Net Total</th>
+                    <th class="col-md-1">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                                @if (Model.InvoiceProducts.Count > 0)
+                                {
+                                    
+                    foreach (var item in Model.InvoiceProducts)
+                    {
+                        <tr>
+                            
+                            <td class="hidden invoiceDate">@Model.InvoiceDate</td>
+                            <td class="hidden productId">@item.ProductId</td>
+                            <td class="col-md-3">@item.Product.ProductFullName</td>
+                           
+                            @{ string beforeDiscountUnitPrice = item.DiscountAmount > 0 ? "(Before " + BankAccountController.DiscountCalculator(item.DiscountAmount, item.DiscountType, item.Product.Dp).DiscountValueShow + " Discount:" + item.Product.Dp +" )": " ";}
+                            <td class="col-md-2">
+                                <span class="unitPrice">@item.UnitPrice</span> <span>@beforeDiscountUnitPrice</span>
+                               
+                            </td>
+                            <td class="col-md-1 pices">@item.Quantity</td>
+                            <td class="hidden"><span class=" col-md-1 totalprice">@item.TotalPrice</span></td>
+@{ double? totalDiscount = BankAccountController.DiscountCalculator(item.DiscountAmount, item.DiscountType, item.Product.Dp).DiscountValue * @item.Quantity;}
+
+                            <td class="hidden col-md-1"><span class="hidden productDiscountType">@item.DiscountType'</span><span class="hidden productDiscount">@item.DiscountAmount</span>@totalDiscount</td>
+                           @{
+                        double? totalProductPrice = (item.UnitPrice - BankAccountController.DiscountCalculator(item.DiscountAmount, item.DiscountType, item.Product.Dp).DiscountValue) * item.Quantity;
+                               double? productVatAmount = Math.Round(Convert.ToDouble(totalProductPrice) * (Convert.ToDouble(item.Vat) / 100), 2);
+                               string totalVatString = productVatAmount + " (" + Convert.ToDouble(item.Vat) + "%)";
+                               totalPrice += item.TotalPrice;
+                                }
+                             <td class="col-md-1"><span class="finalTotalPrice">@item.TotalPrice</span></td>
+                            <td class="hidden col-md-2"><span class="totalVat hidden">@productVatAmount</span>@totalVatString</td>
+
+                            <td class="col-md-1"><span class=" btn btn-xs btn-danger remove">Remove</span></td>
+                        </tr>
+                    }
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th class="col-md-3">Product</th>
+                    <th class="col-md-2">Unit Price</th>
+                    <th class="col-md-1">Quantity</th>
+                    @*<th class="col-md-1">Discount</th>*@
+                    <th class="col-md-1">Net Total</th>
+                    <th class="col-md-1">Action</th>
+                </tr>
+            </tfoot>
+        </table>
+
+        <table class="table table-striped table-bordered table-hover">
+            <tr>
+                <th colspan="3"></th>
+                <th ><span class="pull-right">Total :&nbsp;&nbsp;&nbsp;</span></th>
+               
+                <th><span class="" id="FinalTotal">@totalPrice</span><div class="hidden pull-right">Total VAT :&nbsp;&nbsp;&nbsp; <span id="totalVatCalc">0</span></div> </th>
+            </tr>
+            <tr>
+                <th class="col-md-1">
+                    @Html.LabelFor(model => model.TransactionMode, new{@class="required-label"})
+                </th>
+                <th class="col-md-3">
+                    @Html.DropDownList("TransactionMode", null, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.TransactionMode)
+                </th>
+                <th class="col-md-1">
+                    @Html.Label("Discount")
+                </th>
+                <th class="col-md-4">
+                    <div class="col-md-3 paddingReduce">
+                        @Html.TextBox("TotalDiscountAmount", null, new { @class = "form-control",  @Value = Model.DiscountAmount })
+                       
+                    </div>
+                    @{ bool t = Model.DiscountType == "Flat"?true:false;}
+                    <div class="col-md-5 paddingReduce">
+                        <div class="radio radio-inline" style="padding-left: 15px;">
+                            <label>@Html.RadioButton("TotalDiscountType", "Flat", Model.DiscountType == "Flat" ? new { @Checked = true, @class = "" } : null) Flat</label>
+                           
+                        </div>
+                        <div class="radio radio-inline" style="padding-left: 5px;">
+                            <label>@Html.RadioButton("TotalDiscountType", "Percent", Model.DiscountType == "Percent" ? new { @Checked = true, @class = "" } : null) Percent</label>
+                         
+                        </div>
+                    </div>
+                    <div class="col-md-4 paddingReduce">
+                        @{ var totalDiscountedAmount = BankAccountController.DiscountCalculator(Model.DiscountAmount, Model.DiscountType, totalPrice).DiscountValue != null ? BankAccountController.DiscountCalculator(Model.DiscountAmount, Model.DiscountType, totalPrice).DiscountValue : 0;}
+                        @Html.TextBox("totalDiscountedAmount", null, new {  @class = "form-control", @readonly = true, @Value = totalDiscountedAmount })
+                    </div>
+
+                </th>
+                <th class="col-md-3">
+                    @Html.HiddenFor(model=>model.CustomerId)
+                    @Html.TextBox("CustomerName", null, new { @class = "form-control", placeholder = "Customer Name" })
+                
+            </th>               
+                
+              
+            </tr>
+            <tr>
+
+                <th class="col-md-1">
+                    @Html.LabelFor(model => model.TransactionModeId, "Account", new { @class = "required-label" })
+                </th>
+                <th class="col-md-3">
+                    @Html.DropDownList("TransactionModeId", null,  new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.TransactionModeId)
+                </th>
+                
+                <th class="col-md-1">
+                    @Html.Label("After Discount")
+                </th>
+                <th class="col-md-4">
+                   
+                    <div class="col-md-6 paddingReduce">
+                        @{ var afterDiscountAmount = totalPrice - totalDiscountedAmount;}
+                        @Html.TextBox("afterDiscountAmount", null, new { @class = "form-control", @readonly = true, @Value = afterDiscountAmount })
+                    </div>
+                    <div class="col-md-2 paddingReduce">
+                        @Html.Label("VAT")
+                    </div>
+                    <div class="col-md-4 paddingReduce">
+                        @Html.Hidden("VatPercentage",null, new { @value = ViewBag.VatPercentage })
+                        @Html.TextBox("totalVatAmount", null, new { @class = "form-control", @readonly = true, @Value = Model.TotalVat!=null?Model.TotalVat:0 })
+                    </div>
+                </th>
+                <th class="col-md-3">
+                    <div class="input-group  col-md-12">
+                        @Html.TextBox("CustomerContactNo", null, new { @class = "form-control", placeholder = "Customer Contact No" })
+                        <span class="input-group-addon btn btn-default btn-sm " id="phoneNoSearch" title="Seach By Contact Number"><i class="fa fa-search fa-lg"></i></span>
+                    </div>
+                   
+                </th>    
+                
+               
+            </tr>
+
+            <tr>
+                <th class="col-md-1">@Html.LabelFor(model => model.Salesman, "Salesman")</th>
+                <th class="col-md-3">
+                    @Html.DropDownList("SalesmanId", null, "--Select Salesman--", new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.SalesmanId)
+                </th>
+
+                <th class="col-md-1">Grand Total</th>
+                <th class="col-md-4">
+                    @Html.HiddenFor(model => model.InvoiceId)
+                    @{ double? finalValue = afterDiscountAmount + Model.TotalVat;}
+                    @Html.TextBox("FinalValue", null, new { @class = "form-control", @readonly = true, @Value = finalValue })
+                   
+                </th>
+                <th class="col-md-3">
+                    @Html.TextBox("CustomerEmail", null, new { @class = "form-control", placeholder = "Customer Email" })
+                   
+                </th>
+             </tr>
+            <tr>
+                <th>
+                    Cash Paid
+                </th>
+                <th colspan="2">
+                    @Html.TextBox("CashPaid", null, new { @class = "form-control", })
+
+                </th>
+                <th>
+                    Cash Change
+                </th>
+                <th>
+                    @{
+                        double? chashChange = 0;
+                        if (Model.CashPaid != null) { chashChange = Model.CashPaid - finalValue; }
+
+                           
+                          }
+                    @Html.TextBox("CashChange", null, new { @class = "form-control", @readonly = true, @Value = chashChange })
+
+                </th>
+            </tr>
+        </table>
+        <div class="">
+          
+            <button type="button" class="btn btn-primary col-md-offset-2" title="Save Sales" id="saveSales"><i class="fa fa-save"></i> Save Sales Only</button>
+            <button type="button" class="btn btn-primary" title="Save & Print Sales" id="savePrintSales"><i class="fa fa-print"></i> Save Sales & Print</button>
+            <a href='@Url.Action("Index","Invoice")' data-toggle="tooltip" title="" class="btn btn-default" data-original-title="Cancel"><i class="fa fa-reply"></i> Cancel</a>
+        </div>
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/ShopScript")
+<script src="~/Scripts/ProjectJs/Shop/SalesScript.js"></script>
+    <script>
+    $(document).ready(function () {
+
+
+        $('#Product').focus(function () {
+            var url = '@Url.Action("GetProuctForSell", "Product")';
+            AutoCompleteProductName('#Product', url);
+        });
+
+        $('#Product').on('blur', function () {
+            calculateDiscount();
+        });
+        $('#UnitPrice').on('keyup', function () {
+            calculateDiscount();
+        });
+        $('#DiscountAmount').on('keyup', function () {
+            calculateDiscount();
+        });
+
+        $('input[name=DiscountType]').on('click', function () {
+            calculateDiscount();
+        });
+
+        $('#TotalQuantity').on('keyup', function () {
+            calculateTotalPrice();
+        });
+        $('#CashPaid').on('keyup', function () {
+            cashPaidChangeEffect();
+        });
+        //==== Add product for sale =====================
+        $('#addProduct').on('click', function () {
+            addProductForSale();
+
+        });
+        $('.remove').on('click', function () {
+            $(this).closest('tr').remove();
+            TotalFinalTotal();
+            cashPaidChangeEffect();
+        });
+
+
+        $('input[name=TotalDiscountType]').on('click', function () {
+            GrandTotal();
+        });
+        $('#TotalDiscountAmount').on('keyup', function () {
+            GrandTotal();
+        });
+
+
+        $('#TransactionMode').change(function () {
+            $('#TransactionModeId').empty();
+            var value = $(this).val();
+            var paramData = { TransactionMode: value };
+            var url = '@Url.Action("GetAccountByMode", "BankAccount")';
+            getDataShop(url, paramData, 'getAccountNo');
+        });
+
+        $('#phoneNoSearch').click(function () {
+            var paramData = { contNum: $("#CustomerContactNo").val().trim() };
+            var url = '@Url.Action("GetCustomerByContNum", "Customer")';
+                getDataShop(url, paramData, 'renderCustomerInfoLoadInvoice');
+            });
+
+     
+        //for save only===============================================
+        $('#saveSales').on('click', function() {
+            saveSales(1);
+        });
+        //for save and print=================================================================
+        $('#savePrintSales').on('click', function() {
+            saveSales(2);
+        });
+    });
+
+    function saveSales(saveType) {
+        var InvoiceId = $('#InvoiceId').val();
+        var InvoiceDate = $('#InvoiceDate').val();
+        var TransactionMode = $('#TransactionMode option:selected').val();
+        var TransactionModeId = $('#TransactionModeId option:selected').val();
+        var TotalDiscountType = $('input[name=TotalDiscountType]:checked').val();
+        var TotalDiscountAmount = parseFloat($('#TotalDiscountAmount').val());
+        var TotalVat = parseFloat($('#totalVatAmount').val());
+        //var FinalValue = parseFloat($('#afterDiscountAmount').val());
+        var FinalValue = parseFloat($('#FinalTotal').text());
+        var SalesmanId = $('#SalesmanId option:selected').val();
+        var CustomerId = $('#CustomerId').val();
+        var CustomerName = $('#CustomerName').val();
+        var CustomerContactNo = $('#CustomerContactNo').val();
+        var CustomerEmail = $('#CustomerEmail').val();
+        var CashPaid = parseFloat($('#CashPaid').val().trim());
+
+        var productIds = [];
+        var totalQuantities = [];
+        var unitPrices = [];
+        var totalQuantity = [];
+        var totalPrices = [];
+        var productDiscountTypes = [];
+        var productDiscounts = [];
+        var finalTotalPrices = [];
+
+        var count = 0;
+
+        $('#productTable tbody').find('tr').each(function () {
+            productIds.push($(this).find('.productId').text().trim());
+            totalQuantities.push($(this).find('.pices').text().trim());
+            unitPrices.push(parseFloat($(this).find('.unitPrice').text().trim()));
+            totalQuantity.push($(this).find('.totalQuantity').text().trim());
+            totalPrices.push(parseFloat($(this).find('.totalprice').text().trim()));
+            productDiscountTypes.push($(this).find('.productDiscountType').text().trim());
+            productDiscounts.push(parseFloat($(this).find('.productDiscount').text().trim()));
+            finalTotalPrices.push(parseFloat($(this).find('.finalTotalPrice').text().trim()));
+            count++;
+        });
+
+        var invoiceProducts = [];
+
+        for (var i = 0; i <= count; i++) {
+            invoiceProducts.push({ ProductId: productIds[i], TotalQuantity: totalQuantities[i], UnitPrice: unitPrices[i], TotalPrice: finalTotalPrices[i], DiscountType: productDiscountTypes[i], DiscountAmount: productDiscounts[i], FinalTotalPrice: finalTotalPrices[i] });
+        }
+        var data = { InvoiceId: InvoiceId, InvoiceDate: InvoiceDate, TotalVat: TotalVat, InvoiceProducts: invoiceProducts, CashPaid: CashPaid, SalesmanId: SalesmanId, CustomerId: CustomerId, CustomerName: CustomerName, CustomerContactNo: CustomerContactNo, CustomerEmail: CustomerEmail, TransactionMode: TransactionMode, TransactionModeId: TransactionModeId, DiscountType: TotalDiscountType, DiscountAmount: TotalDiscountAmount, TotalPrice: FinalValue };
+        //console.log(data);
+        if (InvoiceDate == '' || productIds.length === 0 || TransactionModeId == '') {
+            $.alert("Please enter required field value", '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+        } else {
+
+            var paramData = { data: data };
+            var url = '@Url.Action("SaveEditedInvoice", "Invoice")';
+            if (saveType == 1) {
+                $.confirm({
+                    title: '<i class="fa fa-exclamation-circle"></i> Confirmation',
+                    content: 'Are you sure want to update invoice? ',
+                    confirmButton: "Yes",
+                    cancelButton: "No",
+                    confirm: function() {
+
+                        DisplayProgressMessage('#saveSales', 'Saving..');
+                        $('#savePrintSales').prop("disabled", true);
+                        SavePurchaseProduct(url, paramData, 'saveInvoice');
+                    },
+                    cancel: function() {
+
+                    }
+                });
+            } else {
+                url = '@Url.Action("SavePrintEditedInvoice", "Invoice")';
+                $.confirm({
+                    title: '<i class="fa fa-exclamation-circle"></i> Confirmation',
+                    content: 'Are you sure want to update and print invoice? ',
+                    confirmButton: "Yes",
+                    cancelButton: "No",
+                    confirm: function () {
+
+                        DisplayProgressMessage('#savePrintSales', 'Saving..');
+                        $('#saveSales').prop("disabled", true);
+                        SavePurchaseProduct(url, paramData, 'saveInvoice');
+                    },
+                    cancel: function () {
+
+                    }
+                });
+            }
+        }
+        }
+
+
+    </script>
+}
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

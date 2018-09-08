@@ -1,0 +1,117 @@
+﻿@using System.Web.Razor.Parser.SyntaxTree
+@using PagedList.Mvc
+@model WarehouseApp.Models.ViewModels.SalsemanSearchViewModel
+
+@{
+    ViewBag.Title = "Index";
+}
+@Styles.Render("~/Content/PagedList")
+<div class="panel panel-primary">
+    <div class="panel-heading">
+        <i class="fa fa-list"></i> Salesman List
+        <a href='@Url.Action("Create", "Salesman")' ><span class="btn btn-xs btn-info pull-right"><i class="fa fa-plus-circle fa-lg"></i>&nbsp;&nbsp;Add New</span></a>
+    </div>
+    <div class="panel-body">
+        <div class="form-horizontal">
+
+            <div class="form-group">
+                @using (Html.BeginForm("Index", "Salesman", FormMethod.Post, new { @class = "", @id = "salesmanSearchForm" }))
+                {
+                    <div class="col-lg-2 paddingReduce">
+                        @Html.Label("Page Size", new { @class = "col-lg-8 pageSizeLabel" })
+                        <div class="col-lg-4 paddingReduce">
+                            @Html.DropDownListFor(model => model.PageSize, new SelectList(new Dictionary<string, int> { { "25", 25 }, { "50", 50 }, { "100", 100 } }, "Key", "Value", null), new { @class = "pageSizeDropdown", id = "pageSizelist" })
+
+                        </div>
+                    </div>
+
+                    <div class="col-lg-2 paddingReduce">
+                        @Html.TextBoxFor(model => model.SalesmanName, new { @class = "form-control input-sm", @placeholder = "Name" })
+                    </div>
+                    <div class="col-lg-1 paddingReduce">
+                        <button type="submit" class="btn btn-sm btn-success">
+                            <span class="glyphicon glyphicon-search"></span>
+                        </button>
+
+
+                    </div>
+                }
+            </div>
+        </div>
+
+        <table class="table table-condensed table-hover table-responsive table-striped" id="salesmanDataTable">
+
+            <thead>
+                <tr>
+                    <th>
+                        @Html.DisplayNameFor(model => model.SalesmanList.First().FullName)
+                    </th>
+
+                    <th>
+                        @Html.DisplayNameFor(model => model.SalesmanList.First().Email)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.SalesmanList.First().ContactNo)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.SalesmanList.First().Address)
+                    </th>
+                    <th>@Html.DisplayNameFor(model => model.SalesmanList.First().Status)</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.SalesmanList)
+                {
+                    <tr>
+                        <td>@Html.DisplayFor(modelItem => item.FullName)</td>
+                        <td>@Html.DisplayFor(modelItem => item.Email)</td>
+                        <td>@Html.DisplayFor(modelItem => item.ContactNo)</td>
+                        <td>@Html.DisplayFor(modelItem => item.Address)</td>
+                        <td>
+                            @{
+                                if (item.Status == 0)
+                                {
+                                    @Html.DisplayName("Inactive")
+                                }
+                                else
+                                {
+                                    @Html.DisplayName("Active")
+                                }
+                            }
+
+                        </td>
+                        <td>
+                            @Html.ActionLink(" ", "Edit", "Salesman", new { id = item.SalesmanId }, new { @class = "btn btn-xs btn-primary fa fa-pencil" })
+                            @Html.ActionLink(" ", "Details", "Salesman", new { id = item.SalesmanId }, new { @class = "btn btn-xs btn-primary fa fa-search-plus", @title = "Details" })
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        Page @(Model.SalesmanList.PageCount < Model.SalesmanList.PageNumber ? 0 : Model.SalesmanList.PageNumber) of @Model.SalesmanList.PageCount
+        @Html.PagedListPager(Model.SalesmanList, Page => Url.Action("Index", "Salesman", new RouteValueDictionary() { { "Page", Page }, { "PageSize", Model.PageSize }, { "SalesmanName", Model.SalesmanName } }))
+
+
+
+    </div></div>
+
+@section Scripts {
+
+
+
+    <script>
+                $(document).ready(function() {
+                    $('#pageSizelist').change(function() {
+                        $('#salesmanSearchForm').submit();
+                    });
+
+
+                });
+                
+    </script>
+}
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

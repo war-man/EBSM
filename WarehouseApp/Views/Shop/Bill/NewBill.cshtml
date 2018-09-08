@@ -1,0 +1,206 @@
+﻿@using WarehouseApp.Controllers
+@using WarehouseApp.Models
+@model WarehouseApp.Models.ViewModels.BillInvoicesViewModel
+
+@{
+    ViewBag.Title = "New Bill";
+}
+
+<div class="panel panel-default">
+    <div class="panel-heading">New Bill
+        @Html.ActionLink(" Back", null, null, null, new { href = Request.UrlReferrer, @class = "btn btn-default fa fa-arrow-circle-left  pull-right" })
+    </div>
+    <div class="panel-body">
+        @using (Html.BeginForm("NewBill", "Bill", null, FormMethod.Post, new {@id = "newBillForm"}))
+        {
+            @Html.AntiForgeryToken()
+            <div class="row">
+               
+             
+               @Html.ValidationSummary(true)
+              @Html.HiddenFor(model => model.Bill.CustomerId, new { @Value = ViewBag.Customer.CustomerId })
+                <h4 class="text-center">@ViewBag.Customer.FullName</h4>
+                
+            @if (ViewBag.InvoiceWithoutBill.Count > 0)
+            {
+                <div class="panel panel-warning">
+                    <div class="panel-heading">
+                        Due Challans
+                    </div>
+                    <div class="panel-body">
+                        <table id="dueInvoiceTable" class="table  table-condensed table-striped">
+                            <tr>
+                                <th class="selecTdWidth">
+                                    @*<input type="checkbox" id="checkall" />*@
+                                </th>
+                                <th class="col-md-2">
+                                    @Html.DisplayName("Date")
+                                </th>
+                                <th>
+                                    @Html.DisplayName("Challan No")
+                                </th>
+                                   
+                                <th>
+                                    @Html.DisplayName("Total Payable")
+
+                                </th>
+                                <th>
+                                    @Html.DisplayName("Paid")
+
+                                </th>
+                                <th>
+                                    @Html.DisplayName("Due")
+
+                                </th>
+
+                                        
+                            </tr>
+                            @{ int j = 0; }
+                            @foreach (Invoice item in ViewBag.InvoiceWithoutBill)
+                            {
+                                var grandTotal = (item.TotalPrice - BankAccountController.DiscountCalculator(item.DiscountAmount, item.DiscountType, item.TotalPrice).DiscountValue) + item.TotalVat;
+                                var totalDue = grandTotal - item.PaidAmount;
+
+                                <tr>
+
+                                    <td class="selecTdWidth">
+                                               
+                                        @*@Html.Hidden("InvoiceId", item.InvoiceId, new {@class = "InvoiceId"})*@
+                                        @Html.Hidden("DueAmount", totalDue, new {@class = "DueAmount"})
+                                                
+                                        @Html.HiddenFor(model => model.InvoiceCheckboxes[j].InvoiceId, new {@Value = item.InvoiceId})
+                                        @Html.CheckBoxFor(model => model.InvoiceCheckboxes[j].IsChecked, new {@class = "checkthis"})
+                                    </td>
+                                    <td class="col-md-2">
+                                        @item.InvoiceDate.ToString("dd-MM-yyyy")
+                                    </td>
+                                    <td>
+                                        <a href='@Url.Action("InvoiceDetails", "Invoice", new {id = @item.InvoiceId})'>@item.InvoiceNumber</a>
+                                    </td>
+                                        
+                                    <td>
+                                        @String.Format("{0:n}", grandTotal)
+                                    </td>
+                                    <td>
+                                        @String.Format("{0:n}", item.PaidAmount)
+                                    </td>
+                                    <td>
+                                           
+                                        @String.Format("{0:n}", totalDue)
+                                    </td>
+
+                                </tr>
+                                j++;
+                            }
+                            <tr>
+                                <td colspan="2">
+                                    <div class="col-md-12 paddingReduce input-group " style="padding-left: 5px">
+                                        @Html.TextBoxFor(model => model.BillDate, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new {@class = "form-control input-sm rfwDatepicker", @Value = string.Format("{0:dd-MM-yyyy}", DateTime.Now)})
+                                        <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+
+                                    </div>
+                                </td>
+                                <td colspan="2">@Html.TextBoxFor(model => model.Bill.BillAmount, new {@id = "SelectedInvoiceAmount", @class = "form-control input-sm", @readonly = true})</td ><td colspan="2"><input type="submit" value="Save" class="btn btn-info" />
+
+                                                                                                                                                                                                   &nbsp;&nbsp;@Html.ActionLink("Cancel", "Index", "Bill", null, new {@class = "btn btn-default"})</td>
+                            </tr>
+                        </table>
+                            
+                    </div>
+                </div>
+
+            }
+            else
+            {
+           
+                    <h4 align="center">No Available due Chalan</h4>
+           
+            }
+       
+    </div> }
+</div></div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/ShopScript")
+    <script>
+        $(document).ready(function() {
+            $("#dueInvoiceTable #checkall").click(function() {
+                if ($("#dueInvoiceTable #checkall").is(':checked')) {
+                    $("#dueInvoiceTable input[type=checkbox]").each(function() {
+                        $(this).prop("checked", true);
+                    });
+
+                } else {
+                    $("#dueInvoiceTable input[type=checkbox]").each(function() {
+                        $(this).prop("checked", false);
+                    });
+                }
+
+                calculateAllDue();
+            });
+            $("#dueInvoiceTable input[type=checkbox]").click(function() {
+                calculateAllDue();
+            });
+            $('#payCustomerDue').on('click', function() {
+                var dueInvoiceIds = [];
+                $("#dueInvoiceTable input[type=checkbox]:checked").each(function () {
+                    dueInvoiceIds.push($(this).parent().find('.InvoiceId').val());
+                });
+
+                var payAmount = parseFloat($("#PayAmount").val().trim());
+
+                if (dueInvoiceIds.length === 0 || isNonNegativeNumber(payAmount) == false || payAmount < 1) {
+                    $.alert("Invalid value provided", '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+                } else {
+
+                    var paramData = { InvoiceIds: dueInvoiceIds, PayAmount: payAmount };
+                    var url = '@Url.Action("CustomerWiseDuePayment", "Invoice")';
+                    $.confirm({
+                        title: '<i class="fa fa-exclamation-circle"></i> Confirmation',
+                        content: 'Are you sure want to proceed? ',
+                        confirmButton: "Yes",
+                        cancelButton: "No",
+                        confirm: function () {
+                            console.log(dueInvoiceIds, PayAmount);
+                            //DisplayProgressMessage('#saveSales', 'Saving..');
+                            //$('#savePrintSales').prop("disabled", true);
+                            SavePurchaseProduct(url, paramData, 'saveCustomerDuePayment');
+                        },
+                        cancel: function () {
+
+                        }
+                    });
+
+                }
+
+            });
+        });
+
+
+        //$({ someValue: 0 }).animate({ someValue: Math.floor(Math.random() * 3000) }, {
+        //    duration: 3000,
+        //    easing: 'swing', // can be anything
+        //    step: function() { // called on every step
+        //        // Update the element's text with rounded-up value:
+        //        $('.count').text(commaSeparateNumber(Math.round(this.someValue)));
+        //    }
+        //});
+   
+        function commaSeparateNumber(val) {
+            while (/(\d+)(\d{3})/.test(val.toString())) {
+                val = val.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,");
+            }
+            return val;
+        }
+        function calculateAllDue() {
+            var totalDue = 0;
+            $("#dueInvoiceTable input[type=checkbox]:checked").each(function () {
+                totalDue += isNonNegativeNumber($(this).parent().find('.DueAmount').val()) == false ? 0 : parseFloat($(this).parent().find('.DueAmount').val());
+            });
+            $("#SelectedInvoiceAmount").val(totalDue);
+            $("#PayAmount").val(totalDue);
+        }
+
+       
+    </script>
+}

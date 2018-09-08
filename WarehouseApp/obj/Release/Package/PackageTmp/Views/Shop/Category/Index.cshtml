@@ -1,0 +1,164 @@
+﻿@using System.Activities.Expressions
+@using System.Web.Razor.Parser.SyntaxTree
+@model WarehouseApp.Models.ViewModels.CategorySearchViewModel
+@using PagedList.Mvc
+@using WarehouseApp.Models
+
+
+@{
+    ViewBag.Title = "Categories";
+}
+@Styles.Render("~/Content/PagedList")
+
+
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="x_panel">
+            <div class="x_title">
+                <i class="fa fa-list"></i> Category List
+                <ul class="nav navbar-right panel_toolbox">
+                    
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" title="Settings" aria-expanded="false"><i class="fa fa-wrench"></i></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href='@Url.Action("AttributeSetList", "ProductAttribute")'>Attribute Sets</a></li>
+                            <li><a href='@Url.Action("ListArrtibuteType", "ProductAttribute")'>Attributes</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+                <div class="col-md-8">
+                    <div class="form-horizontal">
+
+                        <div class="form-group">
+                            @using (Html.BeginForm("Index", "Category", FormMethod.Post, new { @class = "", @id = "categorySearchForm" }))
+                            {
+                                <div class="col-lg-4 paddingReduce">
+                                    @Html.Label("Page Size", new { @class = "col-lg-8 pageSizeLabel" })
+                                    <div class="col-lg-4 paddingReduce">
+                                        @Html.DropDownListFor(model => model.PageSize, new SelectList(new Dictionary<string, int> { { "25", 25 }, { "50", 50 }, { "100", 100 } }, "Key", "Value", null), new { @class = "pageSizeDropdown", id = "pageSizelist" })
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4 paddingReduce">
+                                    @Html.TextBoxFor(model => model.CategoryName, new { @class = "form-control input-sm", @placeholder = "Category" })
+                                </div>
+                                <div class="col-lg-2 paddingReduce">
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <span class="glyphicon glyphicon-search"></span>
+                                    </button>
+
+
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <table class="table table-condensed table-hover table-responsive  table-striped jambo_table">
+                        <thead>
+                            <tr>
+                                <th class="col-md-10">
+                                    @Html.DisplayNameFor(model => model.Categories.First().CategoryName)
+                                </th>
+                                @*<th>
+                        @Html.DisplayNameFor(model => model.CategoryParentId)
+                    </th>*@
+
+                                <th class="col-md-1">
+                                    @Html.DisplayNameFor(model => model.Categories.First().Status)
+                                </th>
+
+                                <th class="col-md-1">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="">
+                            @foreach (var item in Model.Categories)
+                            {
+                                <tr class="@(@item.Status==0 ? "text-muted" : " ")">
+                                    <td class="col-md-10">
+                                        @Html.DisplayFor(modelItem => item.CategoryName)
+                                    </td>
+                                    @*<td>
+                                @{
+                        if (item.CategoryParentId > 0)
+                        {
+                            @Html.DisplayFor(modelItem => item.CategoryParent.CategoryName)
+                        }
+                        else
+                        {
+                            @Html.DisplayText(" ")
+                        }
+                                }
+                            </td>*@
+
+
+                                    <td class="col-md-1">
+                                        @{
+                                if (item.Status != 0)
+                                {
+                                    @Html.DisplayName("Active")
+                                }
+                                else
+                                {
+                                    @Html.DisplayName("Inactive")
+
+                                }
+                                        }
+
+                                    </td>
+
+                                    <td class="col-md-1">
+                                        @Html.ActionLink(" Edit", "Edit", "Category", new { id = item.CategoryId }, new { @class = "btn btn-xs btn-primary fa fa-pencil", @title = "Edit" })
+                                        @*<a href="javascript:void(0);" data-id="-1" class="deleteRow" onclick="removeThis(this, @item.CategoryId)"><span class="btn btn-xs btn-default fa fa-trash fa-lg" title="Delete"></span></a>*@
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    Page @(Model.Categories.PageCount < Model.Categories.PageNumber ? 0 : Model.Categories.PageNumber) of @Model.Categories.PageCount
+                    @Html.PagedListPager(Model.Categories, Page => Url.Action("Index", "Category", new RouteValueDictionary() { { "Page", Page }, { "PageSize", Model.PageSize }, { "CategoryName", Model.CategoryName } }))
+
+
+                </div> <div class="col-md-4" style="padding:0">
+                    @{ Category newCategory = new Category(); }
+                    @Html.Partial("../Shop/Category/_SaveCategoryPartial", newCategory)
+
+                </div>
+            </div>
+        </div>
+            </div>
+            </div>
+            @section Scripts {
+
+                @Scripts.Render("~/bundles/jqueryval")
+
+                <script>
+                    $(document).ready(function () {
+                        $('#pageSizelist').change(function () {
+                            $('#categorySearchForm').submit();
+                        });
+
+                        $('#saveCategory').on('click', function () {
+                            $('#createCategoryForm').submit();
+
+                        });
+
+                    });
+                    function removeThis(obj, paramData) {
+                        //console.log(obj, paramData);
+                        var url = '@Url.Action("DeleteRecord", "Category")';
+                        deleteRow(obj, url, paramData);
+                    }
+
+                </script>
+            }
+            @*//=======================================================================================//
+                //Author : Mahid Choudhury
+                //Creation Date : January 2017
+                //=======================================================================================//*@

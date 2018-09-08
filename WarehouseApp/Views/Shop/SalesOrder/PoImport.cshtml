@@ -1,0 +1,106 @@
+﻿
+@model WarehouseApp.Models.ViewModels.PoImportViewModel
+
+@{
+    ViewBag.Title = "PO Import";
+}
+
+@using (Html.BeginForm("PoImport", "SalesOrder", null, FormMethod.Post, new { enctype = "multipart/form-data", @id = "poImportForm" })) 
+{
+    @Html.AntiForgeryToken()
+    <div class="row">
+	 <div class="col-md-10 col-xs-12">
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2><i class="fa fa-pencil"></i> PO Import</h2>
+                    <ul class="nav navbar-right panel_toolbox">
+                        <li>
+                            <a href="/File/Download/?p=Sample_PO_for_Import.xlsx&d=Sample_PO_for_Import.xlsx" title="Sample Sheet for PO Import"><i class="fa fa-question-circle fa-lg"></i></a>
+                        </li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="Settings"><i class="fa fa-wrench"></i></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href='@Url.Action("NewSalesOrder", "SalesOrder")'>New Slaes Order</a></li>
+                                <li><a href='@Url.Action("Index", "Invoice")'>Sales</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                        </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+       
+                    @Html.ValidationSummary(true)
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.PoDate, new { @class = "control-label" })
+                            <div class="col-md-12 input-group ">
+                                @Html.TextBoxFor(model => model.PoDate, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", @Value = string.Format("{0:dd-MM-yyyy}", DateTime.Now) })
+                                <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.CustomerId, new { @class = "control-label required-label" })
+                            @Html.DropDownList("CustomerId", null, "Select Customer..", new { @class = "form-control input-sm", })
+                            @Html.ValidationMessageFor(model => model.CustomerId)    
+
+                        </div>
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.CustomerBranchId, new { @class = "control-label" })
+                           @Html.DropDownList("CustomerBranchId", new SelectList(Enumerable.Empty<SelectListItem>()), null, new { @class = "form-control input-sm" })
+                            @Html.ValidationMessageFor(model => model.CustomerBranchId)
+                        </div>
+                            
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.PoExcelFile, new { @class = "control-label" })
+                            <input type="file" name="PoExcelFile" id="PoExcelFile" class="form-control input-sm" />
+                        </div>
+                           
+                       
+
+                       
+                           
+                    </div>
+                
+                    <div class="form-group">
+                        <div class="col-md-offset-2 col-md-10">
+                            <button class="btn btn-sm btn-primary" type="submit"><i class="fa fa-upload" aria-hidden="true"></i> Import Data From Excel</button>
+        
+                            &nbsp;&nbsp;@Html.ActionLink("Cancel", "Index", "SalesOrder", null, new { @class = "btn btn-sm btn-default" })
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    
+}
+
+
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/ShopScript")
+
+    <script>
+
+        $(document).ready(function() {
+            $('#CustomerId').change(function() {
+                var value = $(this).val();
+                var paramData = { cid: value };
+                var url = '@Url.Action("GetCustomerProjectsByCustomerId", "Customer")';
+                getDataShop(url, paramData, 'getCustomerProjects');
+
+            });
+        })
+    </script>
+
+}
+@*//=======================================================================================//
+    //Author : Al Monsur
+    //Creation Date : January 2017
+    //=======================================================================================//*@

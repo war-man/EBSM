@@ -1,0 +1,169 @@
+﻿<!DOCTYPE html>
+<html>
+    <head>
+
+        
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <!-- Meta, title, CSS, favicons, etc. -->
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="Powered by - Domain Technologies">
+        <meta name="author" content="Md. Mahid Choudhury">
+
+        <title>@ViewBag.Title -@ProjectGlobalProperties.ProjectName</title>
+        
+        @Styles.Render("~/Content/bootstrap",  "~/Content/JqueryConfirm")
+        @Scripts.Render("~/bundles/modernizr")
+
+        <!-- NProgress -->
+       @Styles.Render("~/Content/nprogress")
+
+        <!-- iCheck -->
+
+        @*@Styles.Render("~/Content/iCheck")*@
+        <!-- bootstrap-progressbar -->
+        @*@Styles.Render("~/Content/bootstrapProgressbar")*@
+   
+        <!-- JQVMap -->
+        @*@Styles.Render("~/Content/JQVMap")*@
+        <!-- bootstrap-daterangepicker -->
+        @Styles.Render("~/Content/bootstrapDaterangepicker") 
+         <!-- bootstrap-datetimepicker -->
+        @Styles.Render("~/Content/bootstrap-datetimepicker")
+
+        
+        @RenderSection("styles", false)
+        <!-- custom -->
+        @Styles.Render("~/Content/css")
+    
+
+    </head>
+    <body class="nav-md">
+        @if (Request.IsAuthenticated)
+        {
+            <div class="container body">
+                <div class="main_container">
+                    <div class="col-md-3 left_col">
+                        <div class="left_col scroll-view">
+                            <div class="navbar nav_title" style="border: 0;">
+                                <a href='@Url.Action("Index", "Home")' class="site_title"><img src="@Url.Content(ProjectGlobalProperties.LogoPath)" height="50" width="50" alt="Warehouse Managemen System" class="img-circle"> <span>@ProjectGlobalProperties.ProjectName</span></a>
+                            </div>
+                            <div class="clearfix"></div>
+                            <!-- menu profile quick info -->
+                            @*<div class="profile clearfix">
+                                <div class="profile_pic">
+                                    <img src="~/Content/Images/img.jpg" alt="..." class="img-circle profile_img">
+                                </div>
+                                <div class="profile_info">
+                                    <span>Welcome,</span>
+                                    <h2>John Doe</h2>
+                                </div>
+                            </div>*@
+                            <!-- /menu profile quick info -->
+                            <br />
+                            <!-- sidebar menu -->
+                            <div id="sidebar-menu" class="main_menu_side hidden-print main_menu">
+                                @Html.Partial("_SidebarPartial")
+                            </div>
+                            <!-- /sidebar menu -->
+                            <!-- /menu footer buttons -->
+                            <div class="sidebar-footer hidden-small">
+                                @*<a data-toggle="tooltip" data-placement="top" title="Settings">
+                                    <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+                                </a>
+                                <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+                                    <span class="glyphicon glyphicon-fullscreen" aria-hidden="true"></span>
+                                </a>
+                                <a data-toggle="tooltip" data-placement="top" title="Lock">
+                                    <span class="glyphicon glyphicon-eye-close" aria-hidden="true"></span>
+                                </a>
+                                <a data-toggle="tooltip" data-placement="top" title="Logout" href="login.html">
+                                    <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+                                </a>*@
+                            </div>
+                            <!-- /menu footer buttons -->
+                        </div>
+                    </div>
+                    <!-- top navigation -->
+                    <div class="top_nav">
+                        @Html.Partial("_TopNavbarPartial")
+                    </div>
+                    <!-- /top navigation -->
+                    <!-- page content -->
+                    <div class="right_col" role="main">
+                        <div class="">
+                            @RenderBody()
+                        </div></div>
+                    <!-- /page content -->
+                    <!-- footer content -->
+                    <footer>
+                        <div class="pull-right">
+                            &nbsp; &copy; @DateTime.Now.Year <a href="http://www.google.com">@ProjectGlobalProperties.CopyRightName</a>
+                        </div>
+                        <div class="clearfix"></div>
+                    </footer>
+                    <!-- /footer content -->
+                </div>
+            </div>
+        }
+        else
+        {
+            @RenderBody()
+        }
+        
+        @Scripts.Render("~/bundles/jquery", "~/bundles/bootstrap", "~/bundles/JqueryConfirm")
+        
+     
+        <!-- FastClick -->
+       @Scripts.Render("~/bundles/fastclick")
+
+        <!-- NProgress -->
+            @Scripts.Render("~/bundles/nprogress") 
+     
+        <!-- Chart.js -->
+        @*@Scripts.Render("~/bundles/chartJs")*@
+        
+        <!-- gauge.js -->
+        @*@Scripts.Render("~/bundles/gaugeJs")*@
+
+        <!-- bootstrap-progressbar -->
+        @*@Scripts.Render("~/bundles/bootstrapProgressbar")*@
+
+        <!-- iCheck -->
+        @*@Scripts.Render("~/bundles/iCheck")*@
+ 
+        <!-- Skycons -->
+        @*@Scripts.Render("~/bundles/Skycons")*@
+        <!-- Flot -->
+        @*<script src="~/Content/Plugins/Flot/jquery.flot.js"></script>
+    <script src="~/Content/Plugins/Flot/jquery.flot.pie.js"></script>
+    <script src="~/Content/Plugins/Flot/jquery.flot.time.js"></script>
+    <script src="~/Content/Plugins/Flot/jquery.flot.stack.js"></script>
+    <script src="~/Content/Plugins/Flot/jquery.flot.resize.js"></script>
+    <!-- Flot plugins -->
+    <script src="~/Content/Plugins/flot.orderbars/js/jquery.flot.orderBars.js"></script>
+    <script src="~/Content/Plugins/flot-spline/js/jquery.flot.spline.min.js"></script>
+    <script src="~/Content/Plugins/flot.curvedlines/curvedLines.js"></script>
+    <!-- DateJS -->
+    <script src="~/Content/Plugins/DateJS/build/date.js"></script>*@
+        <!-- JQVMap -->
+        @*@Scripts.Render("~/bundles/JQVMap")*@
+        <!-- bootstrap-daterangepicker -->
+        @Scripts.Render("~/bundles/bootstrapDaterangepicker")
+        <!-- bootstrap-daterangepicker -->
+        @Scripts.Render("~/bundles/bootstrapDaterangepicker")    
+        <!-- bootstrap-datetimepicker -->
+        @Scripts.Render("~/bundles/bootstrap-datetimepicker")
+
+        <!-- ProjectJs -->
+        @Scripts.Render("~/bundles/ProjectJs")
+
+    
+
+        @RenderSection("scripts", required: false)
+        <!-- Custom Theme Scripts -->
+        @Scripts.Render("~/bundles/Custom")
+        
+    </body>
+</html>

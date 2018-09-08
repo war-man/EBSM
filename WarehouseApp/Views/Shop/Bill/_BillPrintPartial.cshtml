@@ -1,0 +1,181 @@
+﻿@using WarehouseApp.Controllers
+
+@using NPOI.HSSF.EventUserModel
+@model WarehouseApp.Models.Bill
+
+<style media="print">
+    @@page {
+        size: A4;
+    }
+    .floatLeft {
+        float: left;
+    }
+    table > thead > tr > th, table >tbody> tr > td {
+        border: 1px solid #000;
+        white-space: nowrap;
+        padding: 2px !important;
+    }
+    .fullWidth {
+        width:100%
+    }
+</style>
+<style>
+    .billBody {
+        min-height: 270mm;
+    }
+</style>
+@{
+    const int first_col = 5;
+    const int second_col = 45;
+    const int third_col = 15;
+    const int fourth_col = 10;
+    const int fifth_col = 10;
+    const int sixth_col = 15;
+    var companyProfile = SettingsController.CompanyInfo();
+}
+<div class="printBg">
+    <div class="billBody">
+        <div class="col-md-12 fullWidth">
+            <div class="col-md-6" style="float:left">
+                @if (!String.IsNullOrEmpty(companyProfile.CompanyLogo))
+                {
+                    <img src="@Url.Content(companyProfile.CompanyLogo)" width="350px" height="35px" />
+                }
+                else
+                {
+                    <span class="navbar-logoBrand">@companyProfile.CompanyName</span>
+                }
+
+                <p>
+                    @companyProfile.CompanyAddress <br />
+                    Cell:@companyProfile.Phone <br />
+                Email: @companyProfile.Email
+            </p>
+
+        </div>
+        <div class="col-md-6" style="float:right">
+            <h3 class="text-muted">Bill</h3>
+            <strong>Bill No #: @Model.BillNo</strong><br />
+            <strong>Date: @Convert.ToDateTime(Model.BillDate).ToString("dd-MM-yyyy")</strong>
+
+        </div>
+
+    </div>
+    <hr class="col-md-12 fullWidth">
+    <div class="col-md-12 fullWidth">
+
+        <div class="col-md-6" style="width: 50%;float: left">
+            <strong><u>Bill To</u></strong>
+            @if (Model.Customer != null)
+            { <h4>@Model.Customer.FullName</h4>
+                if (!String.IsNullOrEmpty(Model.Customer.Address))
+                {
+                    <p><b>Address:</b> @Model.Customer.Address</p> }
+            }
+        </div>
+
+        <div class="col-md-6" style="width: 50%; float:right">
+            @if (!String.IsNullOrEmpty(ViewBag.RefChalans.ToString()))
+            {<p><b>Ref. Chalan No # </b>@ViewBag.RefChalans.ToString()</p>}
+            @if (!String.IsNullOrEmpty(ViewBag.ReqNo.ToString()))
+            { <p><b>Req No # </b>@ViewBag.ReqNo.ToString()</p>}
+            @if (!String.IsNullOrEmpty(ViewBag.PoNo.ToString()))
+            {<p><b>P.O No # </b>@ViewBag.PoNo.ToString()</p>}
+
+
+        </div>
+
+
+
+    </div>
+    <table class="table table-bordered table-condensed table-responsive">
+        <thead>
+            <tr>
+                <th>Sl</th>
+                <th>Item</th>
+                <th>Unit Price</th>
+                <th>Quantity</th>
+                <th>Unit</th>
+                <th>Net Total</th>
+
+            </tr>
+        </thead>
+        <tbody>
+            @{int count = 1;}
+            @foreach (var item in Model.InvoiceBills)
+            {
+                foreach (var invoiceItem in item.Invoice.InvoiceProducts)
+                {
+                    //customer wise product description 
+                    string productFullName = invoiceItem.Product.ProductFullName;
+                    var customerOptions = invoiceItem.Product.CustomerOptions.FirstOrDefault(x => x.CustomerId == item.Invoice.CustomerId);
+                    if (customerOptions != null)
+                    {
+                        if (!string.IsNullOrEmpty(customerOptions.ProductDescription))
+                        {
+                            productFullName = customerOptions.ProductDescription;
+                        }
+                    }
+                    <tr>
+                        <td width="@first_col%">@count</td>
+                        <td width="@second_col%">@productFullName</td>
+                        <td width="@third_col%">@invoiceItem.Dp</td>
+                        <td width="@fourth_col%">@invoiceItem.Quantity</td>
+
+                        <td width="@fifth_col%">@ProductController.FindProductUnit(invoiceItem.ProductId)</td>
+
+
+                        <td width="@sixth_col%">@invoiceItem.TotalPrice</td>
+                    </tr>
+                    count++;
+                }
+                <tr>
+                    <th colspan="5"><span class="pull-right">Total</span></th>
+
+
+                    <th class="col-md-1">@item.Invoice.TotalPrice</th>
+                </tr>
+                <tr>
+                    @{
+                var discount = BankAccountController.DiscountCalculator(item.Invoice.DiscountAmount, item.Invoice.DiscountType, item.Invoice.TotalPrice);
+
+
+                if (item.Invoice.DiscountAmount > 0)
+                {
+                    var disc = item.Invoice.DiscountType == "Flat" ? item.Invoice.DiscountAmount.ToString() : item.Invoice.DiscountAmount + "%";
+
+                    <th colspan="5"><span class="pull-right">(-) Discount @disc</span></th>
+                        <th class="col-md-1">@discount.DiscountValue</th>
+
+
+                }
+                    }
+                </tr>
+
+                var subTotal = (item.Invoice.TotalPrice - discount.DiscountValue) + item.Invoice.TotalVat;
+                <tr>
+                    @if (item.Invoice.DiscountAmount > 0)
+                    {
+                        <th colspan="5"><span class="pull-right">Sub Total</span></th>
+                        <th class="col-md-1">@subTotal</th>
+                    }
+
+                </tr>
+
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+
+                <th colspan="5"> <span class="pull-right">Grand Total</span></th>
+
+                <th class="col-md-1">@ViewBag.BillAmount</th>
+
+            </tr>
+        </tfoot>
+    </table>
+    <p><b>Total In Word: @ViewBag.BillAmountInWord</b></p><br /><br />
+</div>
+<p><b style="float: left">Receiver Signature</b><b style="float: right">Approve Signature</b></p><br /><br />
+</div>
+

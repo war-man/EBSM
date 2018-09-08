@@ -1,0 +1,108 @@
+﻿@model WarehouseApp.Models.ViewModels.WithdrawDepositViewModel
+
+@{
+    ViewBag.Title = "Withdraw/Deposite";
+}
+
+@using (Html.BeginForm("WithdrawDeposit", "BankAccount", null, FormMethod.Post, new { @id = "withdrawDepositForm" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="row">
+		<div class="col-md-10 col-xs-12">
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2><i class="fa fa-pencil"></i> Withdraw or Deposite Transaction</h2>
+                    <ul class="nav navbar-right panel_toolbox">
+
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="Settings"><i class="fa fa-wrench"></i></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li>
+                                    <a href='@Url.Action("Index","BankAccount")'>Accounts</a>
+                                </li>
+                                <li>
+                                    <a href='@Url.Action("DepositWithdrawReport","ShopReport")'>Withdraw Deposit Report</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                        </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+        
+                    @Html.ValidationSummary(true)
+                      <div class="col-md-1"></div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.TransactionType, new {@class = "required-label control-label"})
+                            <div class="col-md-12">
+                                <div class="radio radio-inline">
+                                    <label>@Html.RadioButtonFor(model => model.TransactionType, "withdraw", new {@class = ""}) Withdraw</label>
+                                </div>
+                                <div class="radio radio-inline">
+                                    <label>@Html.RadioButtonFor(model => model.TransactionType, "deposit", new {@class = ""}) Deposit</label>
+                                </div>
+                                @Html.ValidationMessageFor(model => model.TransactionType)
+                            </div>
+
+                        </div>
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.TransactionMode, new { @class = "required-label control-label" })
+                            @Html.DropDownListFor(model => model.TransactionMode,(SelectList)ViewBag.TransactionMode, new { @class = "input-sm form-control"})
+                            @Html.ValidationMessageFor(model => model.TransactionMode)
+
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.TransactionModeId, "Account", new { @class = "required-label control-label" })
+                            @Html.DropDownListFor(model => model.TransactionModeId, (SelectList)ViewBag.TransactionModeId,  new { @class = "input-sm form-control" })
+                            @Html.ValidationMessageFor(model => model.TransactionModeId)
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Amount, new { @class = "control-label" })
+                            @Html.TextBoxFor(model => model.Amount, new { @class = "form-control input-sm", placeholder = "Amount" })
+                            @Html.ValidationMessageFor(model => model.Amount)
+                        </div>
+                    
+                        <div class="form-group">
+                            <div class="col-md-offset-2 col-md-10">
+                                <input type="submit" value="Save" class="btn btn-info" />
+                                &nbsp;&nbsp;
+                                <input type="Reset" value="Reset" class="btn btn-warning" />
+                                &nbsp;&nbsp;@Html.ActionLink("Cancel", "Index", "Home", null, new { @class = "btn btn-default" })
+
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="col-md-5"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+@Scripts.Render("/bundles/ShopScript")
+    <script>
+        $(document).ready(function() {
+            $('#TransactionMode').change(function () {
+                $('#TransactionModeId').empty();
+                var value = $(this).val();
+                var paramData = { TransactionMode: value };
+                var url = '@Url.Action("GetAccountByMode", "BankAccount")';
+                getDataShop(url, paramData, 'getAccountNo');
+            });
+        })
+    </script>
+}
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

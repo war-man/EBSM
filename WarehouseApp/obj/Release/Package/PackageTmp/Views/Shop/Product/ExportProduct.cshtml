@@ -1,0 +1,29 @@
+﻿@model dynamic
+
+@{
+    ViewBag.Title = "Export Products";
+   
+}
+<div class="row">
+    <div class="col-md-10">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <strong><i class="fa fa-cloud-upload" aria-hidden="true"></i>  Export Products </strong>
+                @Html.ActionLink(" Back", null, null, null, new { href = Request.UrlReferrer, @class = "btn btn-default fa fa-arrow-circle-left  pull-right" })
+                @*@Html.ActionLink(" Go to home", "Index", "Home", null, new { @class = "btn btn-default fa fa-home  pull-right" })*@
+                
+            </div>
+            <div class="panel-body">
+                <div class="col-md-12 text-center">
+                    <a href='@Url.Action("ExportProductInExcel", "Export")' class="btn btn-success btn-lg"><i class="fa fa-download fa-lg"> </i> Export products in excel</a>
+                </div>
+             
+            </div>
+        </div>
+    </div>
+</div>
+
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

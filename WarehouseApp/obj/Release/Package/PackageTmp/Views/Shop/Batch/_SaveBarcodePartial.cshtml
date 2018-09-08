@@ -1,0 +1,56 @@
+﻿@model WarehouseApp.Models.ViewModels.BarcodeViewModel
+@using (Html.BeginForm("SaveBarcode", "Batch", null, FormMethod.Post, new { @id = "saveExistBarcodeForm" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="form-horizontal">
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"><i class="fa fa-pencil"></i> Save Barcode </h3>
+                </div>
+                <div class="panel-body">
+                    @Html.ValidationSummary(true)
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.ProductId, new { @class = "control-label required-label" })
+                            @Html.DropDownListFor(model => model.ProductId, (SelectList)@ViewBag.ProductId, "--Select--", new { @class = "form-control input-sm" })
+                            @*@Html.DropDownList("ProductId", null, "--Select--", new { @class = "form-control input-sm" })*@
+                            @Html.ValidationMessageFor(model => model.ProductId)
+
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Barcode, new { @class = "control-label" })
+                            @Html.TextBoxFor(model => model.Barcode, new { @class = "form-control input-sm" })
+                            @Html.ValidationMessageFor(model => model.Barcode)
+
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Exp, new { @class = "control-label" })
+                            <div class="col-md-12 input-group ">
+                                @Html.TextBoxFor(model => model.Exp, new { @class = "form-control input-sm rfwDatepicker", })
+                                <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-offset-2 col-md-10">
+                            <input type="button" value="Save" id="saveExistBarcode" class="btn btn-primary" />
+                            &nbsp;&nbsp;<input type="reset" value="Reset" class="btn btn-warning" />
+
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+
+@*@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}*@

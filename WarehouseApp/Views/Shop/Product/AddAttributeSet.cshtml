@@ -1,0 +1,68 @@
+﻿@model WarehouseApp.Models.Product
+
+@{
+    ViewBag.Title = "Select Attribute Set";
+}
+@Styles.Render("~/Content/chosen")
+<div class="content">
+    <div class="page-header">
+        <div class="container-fluid">
+
+            <ul class="breadcrumb">
+                <li><a href='@Url.Action("Index","Home")'>Home</a></li>
+                <li><a href='@Url.Action("Index","Product")'>Products</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="container-fluid">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title"><i class="fa fa-pencil"></i> Select Product Attribute Set</h3>
+            </div>
+            <div class="panel-body">
+            @using (Html.BeginForm("EditProduct", "Product", null, FormMethod.Get, new { @id = "addProductForm" }))
+            {
+        @*@Html.AntiForgeryToken()*@
+                <div class="form-horizontal">
+                    @Html.ValidationSummary(true)
+                    @Html.Hidden("productId",new{@Value=@Model.ProductId})
+                    <div class="form-group">
+                        @Html.Label("Select Product Attribute Set", new { @class = "control-label col-md-4" })
+                        <div class="col-md-4">
+                            @Html.DropDownList("attributeSetId", null, "--Select--", new { @class = "form-control input-sm chosen-select", @placeholder = "Select..." })</div>
+
+                        <div class="col-md-2">
+                            <input type="submit" value="Go" class="btn btn-primary col-md-4"/>
+                            <div class="col-md-4">
+                                <a href='@Url.Action("Index","Product")' data-toggle="tooltip" title="" class="btn btn-default" data-original-title="Cancel"><i class="fa fa-reply"></i> Cancel</a>
+                            </div> </div>
+                       
+                    </div>
+                </div>
+            }
+            </div>
+        </div>
+    </div></div>
+    
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/chosen")
+    <script>
+        //chosen-select =========================================================
+        var config = {
+            '.chosen-select': {},
+            '.chosen-select-deselect': { allow_single_deselect: true },
+            '.chosen-select-no-single': { disable_search_threshold: 10 },
+            '.chosen-select-no-results': { no_results_text: 'Oops, nothing found!' },
+            '.chosen-select-width': { width: "95%" }
+        };
+        for (var selector in config) {
+            $(selector).chosen(config[selector]);
+        }
+    </script>
+}
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

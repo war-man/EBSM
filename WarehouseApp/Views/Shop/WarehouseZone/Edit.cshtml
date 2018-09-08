@@ -1,0 +1,99 @@
+﻿@model WarehouseApp.Models.WarehouseZone
+
+@{
+    ViewBag.Title = "Edit";
+}
+
+@using (Html.BeginForm("Edit", "WarehouseZone", null, FormMethod.Post, new { @id = "editZoneForm" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="row">
+        <div class="col-md-10 col-sm-12 col-xs-12">
+            <div class="x_panel">
+                <div class="x_title">
+                    <i class="fa fa-list"></i> Edit Warehouse Zones
+                    <ul class="nav navbar-right panel_toolbox">
+
+                        
+
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><i class="fa fa-wrench"></i></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href='@Url.Action("Index", "Stock")'>Stock</a></li>
+                                <li><a href='@Url.Action("CreateProductTransfer", "TransferProducts")'>Product Transfer</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
+                        </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+                    
+                                @Html.ValidationSummary(true)
+                                @Html.HiddenFor(model=>model.ZoneId)
+                                @Html.Hidden("InitialZoneName", Model.ZoneName)
+
+
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <div class="form-group">
+                                        @Html.LabelFor(model => model.ZoneName, new { @class = "control-label" })
+                                        @Html.TextBoxFor(model => model.ZoneName, new { @class = "form-control input-sm" })
+                                        @Html.ValidationMessageFor(model => model.ZoneName)
+
+                                    </div>
+
+                                    <div class="form-group">
+                                        @Html.LabelFor(model => model.Status, new { @class = "control-label" })
+                                        <div class="gender-radio">
+                                            <label>@Html.RadioButtonFor(model => model.Status, "1", new { @checked = true, @class = "radio-inline" }) Active</label>
+                                            <label>@Html.RadioButtonFor(model => model.Status, "0", new { @class = "radio-inline" }) Inactive</label>
+
+                                        </div>
+                                        @Html.ValidationMessageFor(model => model.Status)
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="col-md-offset-2 col-md-10">
+                                            <input type="submit" value="Update" class="btn btn-info" />
+                                            &nbsp;&nbsp;
+
+                                            &nbsp;&nbsp;@Html.ActionLink("Cancel", "index", "WarehouseZone", null, new { @class = "btn btn-danger" })
+
+                                        </div>
+
+                                    </div>
+                                </div>
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                }
+
+
+
+                @section Scripts {
+                    @Scripts.Render("~/bundles/jqueryval")
+                    @Scripts.Render("~/bundles/chosen")
+                    <script>
+                        ////chosen-select =========================================================
+                        //var config = {
+                        //    '.chosen-select': {},
+                        //    '.chosen-select-deselect': { allow_single_deselect: true },
+                        //    '.chosen-select-no-single': { disable_search_threshold: 10 },
+                        //    '.chosen-select-no-results': { no_results_text: 'Oops, nothing found!' },
+                        //    '.chosen-select-width': { width: "95%" }
+                        //};
+                        //for (var selector in config) {
+                        //    $(selector).chosen(config[selector]);
+                        //}
+                    </script>
+                }
+                @*//=======================================================================================//
+                    //Author : Akbor Hossain
+                    //Creation Date : January 2017
+                    //=======================================================================================//*@

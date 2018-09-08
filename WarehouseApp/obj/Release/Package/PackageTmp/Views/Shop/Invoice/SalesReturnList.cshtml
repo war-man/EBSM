@@ -1,0 +1,164 @@
+﻿@using PagedList.Mvc
+@using WarehouseApp.Controllers
+
+@model WarehouseApp.Models.ViewModels.SalesReturnSearchViewModel
+
+@{
+    ViewBag.Title = "Sales Return List";
+}
+@Styles.Render("~/Content/PagedList")
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="x_panel">
+            <div class="x_title">
+                <i class="fa fa-list"></i> Sales Return List
+                <ul class="nav navbar-right panel_toolbox">
+                   
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" title="Settings" aria-expanded="false"><i class="fa fa-wrench"></i></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href='@Url.Action("Index","Invoice")'>All Sales</a></li>
+                           
+                            <li><a href='@Url.Action("Index","Stock")'>Stock</a></li>
+                            <li><a href='@Url.Action("Index","Customer")'>Customers</a></li>
+                            <li><a href='@Url.Action("Index","Bill")'>Bills</a></li>
+                         
+                          
+                        </ul>
+                    </li>
+                    <li>
+                        <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+                    <div class="form-horizontal">
+                        <div class="form-group">
+                            @using (Html.BeginForm("LoadSalesReturn", "Invoice", FormMethod.Post, new { @class = "", @id = "returnSearchForm" }))
+                            {
+                                <div class="col-lg-1 ">
+                                   
+                                        @Html.DropDownListFor(model => model.PageSize, new SelectList(new Dictionary<string, int> {  { "50", 50 }, { "100", 100 }, { "500", 500 } }, "Key", "Value", null), new { @class = "pageSizeDropdown", id = "pagesizelist" })
+
+                                  
+                                </div>
+                                <div class="col-lg-4 form-inline">
+                                    <div class="col-md-5 input-group " style="">
+                                        @Html.TextBoxFor(model => model.ReturnDateFrom, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", })
+                                        <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                                    </div>
+                                    <i class="fa fa-minus fa-fw"></i>
+                                    <div class="col-md-5 input-group " style="">
+                                        @Html.TextBoxFor(model => model.ReturnDateTo, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", })
+                                        <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                                    </div>
+
+                                </div>
+                                <div class="col-lg-2">
+                                    @Html.TextBox("InvoiceNo", null, new { @class = "form-control input-sm", @placeholder = "Invoice Number" })
+                                </div>
+
+                                <div class="col-lg-2">
+                                        @Html.DropDownList("CustomerId", null, "Select Customer..", new { @class = "form-control input-sm", })
+
+                                    </div>
+
+                               
+                                <div class="col-lg-1">
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <span class="glyphicon glyphicon-search"></span>
+                                    </button>
+
+
+                                </div>
+                            }
+                        </div>
+
+                    </div>
+
+                    <table class="table table-striped table-condensed table-responsive jambo_table">
+                        <thead>
+                            <tr>
+                                <th class="col-md-2">
+                                    @Html.DisplayNameFor(model => model.SalesReturns.First().CreatedDate)
+                                </th>
+                                <th class="col-md-2">
+                                    @Html.DisplayNameFor(model => model.SalesReturns.First().Invoice.InvoiceNumber)
+                                </th>
+                                <th class="col-md-1">
+                                    @Html.DisplayNameFor(model => model.SalesReturns.First().TotalQuantity)
+                                </th>
+                               
+                                <th>
+                                    @Html.DisplayName("Return Amount")
+                                </th>
+                                <th>
+                                    @Html.DisplayName("Customer")
+                                </th>
+                                <th class="col-md-1">Action</th>
+                            </tr>
+                        </thead><tbody>
+    @foreach (var item in Model.SalesReturns)
+    {
+        
+        <tr>
+            <td class="col-md-2">
+                @Html.DisplayFor(modelItem => item.CreatedDate)
+            </td>
+            <td class="col-md-2">
+                @Html.DisplayFor(modelItem => item.Invoice.InvoiceNumber)
+            </td>
+            <td class="col-md-1">
+                @Html.DisplayFor(modelItem => item.TotalQuantity)
+            </td>
+            <td class="col-md-1">
+                @Html.DisplayFor(modelItem => item.TotalPrice)
+            </td>
+
+            
+
+            <td class="col-md-1">
+                @Html.DisplayFor(modelItem => item.Invoice.Customer.FullName)
+            </td>
+
+            <td class="col-md-1">
+                @*@if ((User.IsInRole("Global_SupAdmin")|| User.IsInRole("Sales_Edit"))&&!item.Returns.Any())
+                {
+                    @Html.ActionLink(" ", "EditSales", "Invoice", new {Id = item.InvoiceId}, new {@class = "btn btn-xxs btn-primary fa fa-pencil", @title = "Edit"})
+                }*@
+                
+                @Html.ActionLink(" ", "ReturnDetails", "Invoice", new { id = item.ReturnId }, new { @class = "btn btn-xxs btn-info fa fa-eye", @title = "Details" })
+           
+               
+            </td>
+        </tr>
+    }
+</tbody>
+
+                    </table>
+                    Page @(Model.SalesReturns.PageCount < Model.SalesReturns.PageNumber ? 0 : Model.SalesReturns.PageNumber) of @Model.SalesReturns.PageCount
+                    @Html.PagedListPager(Model.SalesReturns, Page => Url.Action("LoadSalesReturn", "Invoice", new RouteValueDictionary() { { "Page", Page }, { "PageSize", Model.PageSize }, { "InvoiceNo", Model.InvoiceNo }, { "ReturnDateFrom", Model.ReturnDateFrom }, { "ReturnDateTo", Model.ReturnDateTo },  { "CustomerId", Model.CustomerId } }))
+
+                </div>
+
+            </div></div></div>
+
+            @section Scripts {
+                <script>
+                    $(document).ready(function () {
+
+                        $('#pagesizelist').change(function () {
+                            $('#returnSearchForm').submit();
+                        });
+                    });
+                    function removeThis(obj, paramData) {
+                        var url = '@Url.Action("DeleteRecord", "purchase")';
+                        deleteRow(obj, url, paramData);
+                    }
+                </script>
+            }
+            @*//=======================================================================================//
+                //Author : Md. Mahid Choudhury
+                //Creation Date : January 2017
+                //=======================================================================================//*@

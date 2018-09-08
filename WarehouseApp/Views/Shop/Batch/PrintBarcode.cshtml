@@ -1,0 +1,162 @@
+﻿
+
+@using WarehouseApp.Controllers
+@model IEnumerable<WarehouseApp.Models.ViewModels.BarcodeViewModel>
+
+@{
+    Layout = null;
+    //string name = (string)Session["name"];
+    //string image = (string)Session["UImage"];
+    //Services.StoreInfoServices ResInfoService = new Services.StoreInfoServices();
+    //Data.StoreInfo ResInfo = ResInfoService.GetInfo();
+    //List<Data.GetAllProductProperties_Result> Products = Services.StaticServices.ProductPropertyList;
+}
+
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width" />
+        <base href="/" />
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <!-- Meta, title, CSS, favicons, etc. -->
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>Barcode Print</title>
+        <!-- Bootstrap -->
+
+        <link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+
+        <!-- Font Awesome -->
+        <link href="~/Content/font-awesome.min.css" rel="stylesheet" />
+
+        <!-- NProgress -->
+        @*<link href="~/Content/css/custom.min.css" rel="stylesheet" />
+    <link href="~/Content/css/custom.css" rel="stylesheet" />*@
+        <!-- Vue Js Scripts -->
+        @*<script src="~/Content/js/vue.js"></script>
+    <script src="~/Content/js/vue-resource.js"></script>*@
+
+        @*<script src="~/Scripts/ProjectJs/JsBarcode.all.js"></script>*@
+   
+    @Scripts.Render("~/bundles/JsBarcode")
+        <style media="print">
+            @@page {
+                size: A4;
+            }
+       
+
+       
+            .fullWidth {
+                width: 100%;
+            }
+
+            .halfWidth {
+                width: 50%;
+            }
+            .quarterWidth {
+                width: 25%;
+            }
+       
+        </style>
+        <style>
+            @@font-face {
+                font-family: IDAutomationHC39M;
+                src: url('~/fonts/IDAutomationHC39M Code 39 Barcode.ttf');
+            }
+            .col-md-3,.col-md-3 {
+                position: relative;
+                min-height: 1px;
+                float: left;
+                padding-right: 10px;
+                padding-left: 10px;
+            }
+            .row {
+                margin-right: -10px;
+                margin-left: -10px;
+            }
+        </style>
+    </head> 
+
+    <body style="background:white;line-height:12px;color:black;text-align:center;">
+        <div class="container">
+            <div class="row clearfix">
+                <div class="col-md-12 ">
+                    @Html.ActionLink(" Cancel", "Index", "Batch", null, new { @class = "btn btn-default fa fa-arrow-circle-left  pull-left" })
+                    <div class="btn-group pull-right">
+                        <a href="javascript:void(0);" class="btn btn-default" id="printBarcodePage" onclick="printContent('barcodePrintArea')"><i class="fa fa-print" aria-hidden="true"></i> Print</a>
+                        <a href="javascript:void(0);" class="btn btn-default" id="downloadPdf" onclick="getPdf('barcodePrintArea')"><i class="fa fa-arrow-down" aria-hidden="true"></i> PDF</a>
+                    </div>
+                </div>
+            </div>
+            <div class="row" id="barcodePrintArea">
+                @foreach (var pb in Model)
+                {
+          
+                    for (int i = 0; i < pb.PrintQuantity; i++)
+                    {
+                        var BarcodeId = "code_"+pb.Barcode+"_"+ i;
+                        <div class="col-md-3 text-center quarterWidth" style="margin-bottom:20px;">
+                            <span style="font-weight: bold; font-size: 15px; padding: 2px;">@SettingsController.CompanyInfo().CompanyName</span><br />
+                           
+                            <span style=" font-size:13px; padding: 2px; margin: 1px; ">@pb.Product.ProductFullName</span><br />
+
+                            @*<span style="font-family: IDAutomationHC39M;font-size:15px;">@pp.code</span><br />*@
+                            <span style="padding:0px;margin:0px;">
+                                <img id="@BarcodeId" />
+                                <script>
+                                    JsBarcode("#@BarcodeId", "@pb.Barcode", {
+                                        width: 1.75,
+                                        height: 40,
+                                        fontSize:16,
+                                    });
+                                </script>
+                            </span><br />
+                            @*<span style="font-size:11px;">@barcode</span><br />*@
+                            @{ var price = pb.Product.Dp - BankAccountController.DiscountCalculator(pb.Product.DiscountAmount, pb.Product.DiscountType, pb.Product.Dp).DiscountValue;}
+                            <span style="font-size:13px;">Tk. @price</span>
+
+                        </div>
+                    }
+                }
+            </div>
+
+        </div>
+        <script src="~/Scripts/jquery-2.2.4.min.js"></script>
+        <script src="~/Scripts/jspdf.debug.js"></script>
+        <script>
+       
+            var doc = new jsPDF();
+            var specialElementHandlers = {
+                '#editor': function (element, renderer) {
+                    return true;
+                }
+            };
+            function getPdf(el) {
+                doc.fromHTML($(el).html(), 15, 15, {
+        
+                    'width': 170,
+                    'elementHandlers': specialElementHandlers
+                });
+                var curDate = new Date().toLocaleDateString("en-GB");
+                doc.save('barcode_' + curDate + '.pdf');
+            }
+            function printContent(el) {
+                var restorepage = document.body.innerHTML;
+                var printcontent = document.getElementById(el).innerHTML;
+                document.body.innerHTML = printcontent;
+                window.print();
+                document.body.innerHTML = restorepage;
+            }
+
+        </script>
+    
+   
+    </body>
+</html>
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : August 2017
+    //=======================================================================================//*@

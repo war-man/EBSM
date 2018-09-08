@@ -1,0 +1,289 @@
+﻿
+@using WarehouseApp.Controllers
+@model WarehouseApp.Models.ViewModels.SalesReturnViewModel
+@{
+    ViewBag.Title = "Sales Return";
+    const int first_col = 2;
+}
+@section Styles{
+    @Styles.Render("~/Content/jquery-ui")
+}
+<div class="submit-progress hidden">
+    <i class="fa fa-2x fa-spinner fa-spin"></i>
+    <label>Please wait ...</label>
+</div>
+@using (Html.BeginForm("SalesReturn", "Invoice", null, FormMethod.Post, new { @id = "salesReturnForm" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="row">
+        <div class="col-md-12 col-xs-12">
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2><i class="fa fa-pencil"></i> Sales Return (@Model.Invoice.InvoiceNumber)</h2>
+                    <ul class="nav navbar-right panel_toolbox">
+
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="Settings"><i class="fa fa-wrench"></i></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href='@Url.Action("Index","Product")'>Products</a></li>
+                                <li><a href='@Url.Action("Index","Batch")'>Barcodes</a></li>
+                                <li><a href='@Url.Action("Index","Stock")'>Stock</a></li>
+                                <li><a href='@Url.Action("Index","Customer")'>Customers</a></li>
+                                <li><a href='@Url.Action("Index","Bill")'>Bills</a></li>
+                                <li><a href='@Url.Action("Index","BankAccount")'>Accounts</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                        </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+                   
+                            @Html.ValidationSummary(true)
+                    <div class="panel panel-default" style="margin-bottom: 10px;">
+                        <table class="table">
+                            <tr>
+                                
+                                <th>Invoice Date</th>
+                                <th>Total</th>
+                                <th>Discount</th>
+                                <th>Customer</th>
+                                <th>Address</th>
+                                
+                            </tr>
+                            <tr>
+                                @{
+                                    string address = "";
+                                    if (Model.Invoice.Customer != null)
+                                    {
+                                        address = Model.Invoice.CustomerBranchId != null ? Model.Invoice.CustomerBranch.ProjectName + ", " + Model.Invoice.CustomerBranch.ProjectAddress : Model.Invoice.Customer.Address.Trim(',', ' ');
+                                    }
+                                    var discountShow = BankAccountController.DiscountCalculator(Model.Invoice.DiscountAmount, Model.Invoice.DiscountType, Model.Invoice.TotalPrice).DiscountValueShow;
+                                }
+                               
+                                <td class="col-md-1">@String.Format("{0:dd-MM-yyyy}", Model.Invoice.InvoiceDate)</td>
+                                <td class="col-md-1">@Model.Invoice.TotalPrice</td>
+                                <td class="col-md-1">
+                                    @Html.Hidden("InvoiceDiscount", BankAccountController.DiscountCalculator(Model.Invoice.DiscountAmount, Model.Invoice.DiscountType, Model.TotalPrice).DiscountValue)
+                                    @discountShow
+                                </td>
+                                <td class="col-md-2">@Model.Invoice.Customer.FullName</td>
+                                <td class="col-md-7">@address</td>
+                               
+                            </tr>
+                        </table>
+                    </div>
+                
+                        <div class="col-md-10 paddingReduce">
+                            <div class="panel panel-default" style="margin-bottom: 10px;">
+                                <table class="table table-striped table-condensed jambo_table bulk_action" id="productTable">
+                                    <thead style="background-color:#f5f5f5 ;color:black;">
+                                        <tr class="panel-heading">
+                                            <th>SL</th>
+                                            <th>Item</th>
+                                            <th>Price</th>
+                                            <th>Qty</th>
+                                            <th>Total</th>
+                                            <th>Return Qty</th>
+                                            <th>Return Amount</th>
+
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (Model.ReturnProducts != null && Model.ReturnProducts.Any())
+                                        {
+
+                                            int count = 1;
+                                            foreach (var item in Model.ReturnProducts)
+                                            {
+                                                string uniqueProductId = string.IsNullOrEmpty(item.Barcode) ? item.ProductId.ToString() : item.ProductId + "-" + item.Barcode;
+                                                // var discountedProductPrice =item.Product.Dp-BankAccountController.DiscountCalculator(item.Product.DiscountAmount,item.Product.DiscountType,item.Product.Dp).DiscountValue;
+                                                string pUnit = ProductController.FindProductUnit(Convert.ToInt32(item.ProductId));
+                                                <tr>
+                                                    <td width="@first_col%">@count</td>
+                                                    <td class="col-md-4 paddingReduce">
+                                                        <input class="productId-@uniqueProductId" id="ReturnProducts_@item.ProductId _ProductId" name="ReturnProducts[@item.ProductId].ProductId" type="hidden" value="@item.ProductId">
+                                                        <input class="Barcode" id="ReturnProducts_@item.ProductId _Barcode" name="ReturnProducts[@item.ProductId].Barcode" type="hidden" value="@item.Barcode">
+                                                        <input class="defaultWarehouse" id="ReturnProducts_@item.ProductId _DefaultZoneId" name="ReturnProducts[@item.ProductId].DefaultZoneId" type="hidden" value="@item.Product.DefaultZoneId">
+                                                        @item.Product.ProductFullName
+                                                    </td>
+                                                    <td>
+                                                        <input class="UnitPrice" id="ReturnProducts_@item.ProductId _UnitPrice" name="ReturnProducts[@item.ProductId].UnitPrice" type="hidden" value="@item.UnitPrice">
+                                                        @item.UnitPrice
+                                                    </td>
+                                                    <td>
+                                                        <input class="InvoiceProductQuantity" id="ReturnProducts_@item.ProductId _Quantity" name="ReturnProducts[@item.ProductId].Quantity" type="hidden" value="@item.InvoiceProduct.Quantity">
+                                                        @item.InvoiceProduct.Quantity @pUnit
+
+
+                                                    </td>
+                                                    <td>
+                                                        @item.InvoiceProduct.TotalPrice
+                                                    </td>
+                                                    <td class="col-md-2 paddingReduce">
+                                                        <div class="col-md-12 paddingReduce input-group ">
+                                                            <input value="@item.ReturnQty" class="form-control input-sm ReturnQty" id="ReturnProducts_@item.ProductId _ReturnQty" name="ReturnProducts[@item.ProductId].ReturnQty" type="text" onkeyup="updateTotalReturnInQuantityChange(this)">
+                                                            <span class="input-group-addon productUnit">@pUnit</span>
+                                                        </div>
+
+                                                    </td>
+
+                                                    <td class="col-md-2 paddingReduce">
+                                                        <input value="@item.ReturnAmount" class="form-control input-sm ReturnAmount" readonly="True" id="ReturnProducts_@item.ProductId _ReturnAmount" name="ReturnProducts[@item.ProductId].ReturnAmount" type="text">
+                                                    </td>
+
+
+                                                </tr>
+                                                count++;
+                                            }
+                                        }
+
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="7" style="text-align:center; font:bold 20px bold;color:black;">Total Return: <span id="footerTotal">@Model.TotalPrice</span></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+
+                            </div>
+                        </div>
+                        <div class="col-md-2 paddingReduce">
+                            <div class="panel panel-default" style="margin-bottom: 10px;">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">Return</h3>
+                                </div>
+                                <div class="panel-body">
+                                    @Html.HiddenFor(model => model.InvoiceId)
+                                    <div class="row form-group">
+                                       
+                                        <div class="col-md-12 paddingReduce">
+                                            @Html.LabelFor(model => model.ReturnDate, "Return Date", new { @class = "required-label control-label col-md-12 salesLabel" })
+                                            <div class="col-md-12 paddingReduce input-group " style="padding-left:5px">
+                                                @Html.TextBox("ReturnDate", string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control rfwDatepicker", @Value = string.Format("{0:dd-MM-yyyy}", DateTime.Now) })
+                                                <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12 paddingReduce">
+                                            @Html.LabelFor(model => model.TotalReturn,  new { @class = "required-label control-label col-md-12 salesLabel" })
+                                            @Html.TextBoxFor(model => model.TotalReturn, new { @class = "form-control", @style = "font-weight:bold;color:Black;font-size:15px;text-align:center;", @readonly = true, })
+                                        </div>  <div class="col-md-12 paddingReduce hidden">
+                                                    
+                                                    @Html.LabelFor(model => model.Invoice.DiscountAmount, "Discount", new { @class = " control-label col-md-12 salesLabel" })
+
+                                                    @Html.TextBoxFor(model => model.Invoice.DiscountAmount, new { @class = "form-control" })
+                                                     @Html.Hidden("InvoiceDiscountType", Model.Invoice.DiscountType)
+
+                                                    <div class="col-md-12 paddingReduce">
+                                                        <div class="radio radio-inline" style="padding-left: 15px;">
+                                                            <label>@Html.RadioButtonFor(model => model.Invoice.DiscountType, "Flat") Flat</label>
+                                                        </div>
+                                                        <div class="radio radio-inline" style="padding-left: 5px;">
+                                                            <label> @Html.RadioButtonFor(model => model.Invoice.DiscountType, "Percent") Percent</label>
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+
+
+                                    </div>
+
+                                    <div class="row form-group">
+                                        @Html.HiddenFor(model => model.FormSubmitType, 1)
+                                        <button type="button" class="btn btn-block btn-primary" data-id=1 title="Save" id="saveSalesReturn"><i class="fa fa-save"></i> Save</button>
+                                    </div>
+                                    @*<div class="row form-group">
+                    <button type="button" class="btn btn-block  btn-primary" data-id=2 title="Save & Print" id="savePrintSales"><i class="fa fa-print"></i> Save & Print</button>
+                </div>*@
+                                    @*<div class="row form-group">
+                    <button type="button" class="btn btn-block  btn-primary" data-id=3 title="Save & Print Chalan" id="savePrintChalan"><i class="fa fa-print"></i> Save & Print Chalan</button>
+                </div>*@
+                                    @*<div class="row form-group">
+                    <button type="button" class="btn btn-block  btn-primary" data-id=4 title="Save & Create Bill" id="createBilll"><i class="fa fa-print"></i> Save & Create Bill</button>
+                </div>*@
+
+                                    <div class="row form-group">
+                                        <a href='@Url.Action("Index","Invoice")' data-toggle="tooltip" title="Cancel" id="cancel" class="btn btn-block  btn-danger" data-original-title="Cancel"><i class="fa fa-reply"></i> Cancel</a>
+                                    </div>
+
+
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </div></div>
+                }
+
+
+                @section Scripts {
+                    @Scripts.Render("~/bundles/jquery-ui")
+                    @Scripts.Render("~/bundles/jqueryval")
+                    @Scripts.Render("~/bundles/ShopScript")
+                    @Scripts.Render("~/bundles/SalesScript")
+      
+                    <script>
+                        $(document).ready(function () {
+
+                            //for save only===============================================
+                            $('#saveSalesReturn').on('click', function () {
+                                $('#FormSubmitType').val($(this).data('id'));
+                                // saveSales(1);
+                                submitSalesReturnForm();
+                            });
+                            
+                    
+                        });
+                       
+                        function submitSalesReturnForm() {
+                            var count = 0;
+                            $('#productTable tbody').find('tr').each(function () {
+                                var suffix = $(this).find(':input:first').attr('name').match(/\d+/);
+                                $.each($(this).find(':input'), function (i, val) {
+                                    // Replaced Name
+                                    var oldN = $(this).attr('name');
+                                    var newN = oldN.replace('[' + suffix + ']', '[' + count + ']');
+                                    $(this).attr('name', newN);
+
+                                });
+
+                                count++;
+                            });
+                            var InvoiceDate = $('#ReturnDate').val();
+                            var TransactionModeId = $('#TransactionModeId option:selected').val();
+                            if (InvoiceDate == '' || count == 0) {
+                                $.alert("Please enter required field value", '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+                            } else {
+
+                                $.confirm({
+                                    title: '<i class="fa fa-exclamation-circle"></i> Confirmation',
+                                    content: 'Are you sure want save sales return? ',
+                                    confirmButton: "Yes",
+                                    cancelButton: "No",
+                                    confirm: function () {
+
+                                        DisplayProgressMessage('#saveSales', 'Saving..');
+                                        $('#saveSalesReturn').prop("disabled", true);
+                                        $('#cancel').prop("disabled", true);
+                                        // SavePurchaseProduct(url, paramData, 'saveInvoice');
+                                        $('#salesReturnForm').submit();
+                                    },
+                                    cancel: function () {
+
+                                    }
+                                });
+
+                            }
+
+
+                        }
+</script>
+                }
+                @*//=======================================================================================//
+                    //Author : Md. Mahid Choudhury
+                    //Creation Date : January 2017
+                    //=======================================================================================//*@

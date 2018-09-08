@@ -1,0 +1,146 @@
+﻿
+@model WarehouseApp.Models.ViewModels.ExpenseViewModel
+
+@{
+    ViewBag.Title = "Create";
+}
+
+@using (Html.BeginForm("CreateExpense", "Expense", null, FormMethod.Post, new { @id = "createExpenseForm" })) 
+{
+    @Html.AntiForgeryToken()
+    <div class="row">
+	 <div class="col-md-10 col-xs-12">
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2><i class="fa fa-pencil"></i> New Expense</h2>
+                    <ul class="nav navbar-right panel_toolbox">
+
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="Settings"><i class="fa fa-wrench"></i></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href='@Url.Action("ExpenseTypeList", "Expense")'>Expense Head</a></li>
+                                <li><a href='@Url.Action("Index", "BankAccount")'>Accounts</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                        </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+       
+                    @Html.ValidationSummary(true)
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.ExpenseDate, new { @class = "control-label" })
+                            <div class="col-md-12 input-group ">
+                                @Html.TextBoxFor(model => model.ExpenseDate, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", @Value = string.Format("{0:dd-MM-yyyy}", DateTime.Now) })
+                                <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.ExpenseType, new { @class = "control-label required-label"  })
+                            @Html.DropDownList("ExpenseTypeParent", null,"--Select--",new { @class = "form-control input-sm"})
+                            @Html.ValidationMessageFor(model => model.ExpenseType)    
+
+                        </div>
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.ExpenseTypeId,"Expense Head", new { @class = "control-label" })
+                            @*@<select id="selectNameList" name="ExpenseTypeId" class="form-control input-sm"></select>*@
+                            @Html.DropDownListFor(model => model.ExpenseTypeId, (SelectList)@ViewBag.ExpenseTypeId, "Please Select Expense..", new { @class = "form-control input-sm" })
+                            
+                            @Html.ValidationMessageFor(model => model.ExpenseTypeId)
+                        </div>
+                            
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.ExpenseBy, new { @class = "control-label" })
+                            @Html.TextBoxFor(model => model.ExpenseBy, new {@class = "form-control input-sm"})
+                        </div>
+                           
+                       
+
+                       
+                           
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.TransactionMode, new { @class = "control-label" })
+                            @Html.DropDownListFor(model => model.TransactionMode, (SelectList)ViewBag.TransactionMode, new { @class = "form-control input-sm" })
+                            @Html.ValidationMessageFor(model => model.TransactionMode)
+                        </div>
+
+                        <div class="form-group hidden" id="transactionAccountId">
+                            @Html.LabelFor(model => model.TransactionModeId, "Trasaction Account", new { @class = "required-label control-label" })
+                            @Html.DropDownListFor(model => model.TransactionModeId, (SelectList)ViewBag.TransactionModeId, "Please Select Account..", new { @class = "form-control input-sm" })
+                            @Html.ValidationMessageFor(model => model.TransactionModeId)
+                        </div>
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Amount, new { @class = "control-label" })
+                            @Html.TextBoxFor(model => model.Amount, new { @class = "form-control input-sm" })
+                            @Html.ValidationMessageFor(model => model.Amount)
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Description,"Note", new { @class = "control-label" })
+                            @Html.TextAreaFor(model => model.Description, new { @class = "form-control input-sm" })
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-offset-2 col-md-10">
+                            <input type="submit" value="Save" class="btn btn-primary" />
+                            &nbsp;&nbsp;<input type="reset" value="Reset" class="btn btn-warning" />
+                            &nbsp;&nbsp;@Html.ActionLink("Cancel", "Index", "Expense", null, new { @class = "btn btn-default" })
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    
+}
+
+
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/ShopScript")
+
+    <script>
+       
+        $(document).ready(function() {
+            $('#ExpenseTypeParent').change(function() {
+                if ($('#ExpenseTypeParent').val() != '') {
+                    var id = $('#ExpenseTypeParent').val();
+                    var url = '@Url.Action("GetExpenseNameByTypeId", "Expense")';
+                    var paramData = { typeId: id };
+                    getDataShop(url, paramData,'renderExpenseNameDropdown');
+                }
+            }
+              );
+           
+
+            $('#TransactionMode').change(function () {
+                $('#TransactionModeId').empty();
+                var value = $(this).val();
+                if (value == "Cash") {
+                    $('#transactionAccountId').addClass('hidden');
+                }
+                else {
+                    $('#transactionAccountId').removeClass('hidden');
+                }
+
+                    var paramData = { TransactionMode: value };
+                    var url = '@Url.Action("GetAccountByMode", "BankAccount")';
+                    getDataShop(url, paramData, 'getAccountNo');
+            });
+        })
+    </script>
+
+}
+@*//=======================================================================================//
+    //Author : Al Monsur
+    //Creation Date : January 2017
+    //=======================================================================================//*@

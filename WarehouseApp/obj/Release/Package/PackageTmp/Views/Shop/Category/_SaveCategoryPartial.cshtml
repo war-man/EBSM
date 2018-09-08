@@ -1,0 +1,77 @@
+﻿@model WarehouseApp.Models.Category
+
+<link href="~/Content/chosen/chosen.css" rel="stylesheet" />
+
+@using (Html.BeginForm("Create", "Category", null, FormMethod.Post, new { @id = "createCategoryForm" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="form-horizontal">
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"><i class="fa fa-pencil"></i> New Category </h3>
+                </div>
+                <div class="panel-body">
+                    @Html.ValidationSummary(true)
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.CategoryName, new { @class = "control-label" })
+                            @Html.TextBoxFor(model => model.CategoryName, new { @class = "form-control input-sm", placeholder = "Category Name" })
+                            @Html.ValidationMessageFor(model => model.CategoryName)
+
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.CategoryParentId, "Category Parent", new { @class = "control-label" })
+                            @Html.DropDownList("CategoryParentId", null, "--Select--", new { @class = "form-control input-sm chosen-select" })
+                            @Html.ValidationMessageFor(model => model.CategoryParentId)
+
+
+
+
+                        </div>
+
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-offset-2 col-md-10">
+                            <input type="button" value="Save" id="saveCategory" class="btn btn-primary" />
+                            &nbsp;&nbsp;<input type="reset" value="Reset" class="btn btn-warning" />
+
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+
+@section Scripts {
+
+@Scripts.Render("~/bundles/chosen")
+<script>
+    //chosen-select =========================================================
+    var config = {
+        '.chosen-select': {},
+        '.chosen-select-deselect': { allow_single_deselect: true },
+        '.chosen-select-no-single': { disable_search_threshold: 10 },
+        '.chosen-select-no-results': { no_results_text: 'Oops, nothing found!' },
+        '.chosen-select-width': { width: "95%" }
+    };
+    for (var selector in config) {
+        $(selector).chosen(config[selector]);
+    }
+
+
+    
+
+</script>
+
+}
+@*//=======================================================================================//
+    //Author : Akbor Hossain
+    //Creation Date : January 2017
+    //=======================================================================================//*@

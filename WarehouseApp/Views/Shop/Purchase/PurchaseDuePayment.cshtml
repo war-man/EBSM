@@ -1,0 +1,144 @@
+﻿@model WarehouseApp.Models.ViewModels.PrchaseDuePaymentVm
+
+@{
+    ViewBag.Title = "Create";
+}
+
+@using (Html.BeginForm("PurchaseDuePayment", "Purchase", null, FormMethod.Post, new { @id = "purchaseDuePaymentForm" })) 
+{
+    @Html.AntiForgeryToken()
+    <div class="row centered-form">
+        <div class="col-xs-12 col-sm-10 col-md-10">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"><i class="fa fa-pencil"></i> Purchase Payment </h3>
+                </div>
+                <div class="panel-body">
+                    @Html.ValidationSummary(true)
+                    @Html.HiddenFor(model => model.PurchaseId, new { @Value = ViewBag.Purchase.PurchaseId})
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.PaymentFor, new { @class = "control-label" })
+                            @Html.DropDownListFor(model => model.PaymentFor, new SelectList(
+                            new List<Object>{
+                                new { value = "1" , text = "Purchase Due"  },
+                                new { value = "2" , text = "Purchase Cost Due" }
+                            }, "value", "text"), new { @class = "form-control input-sm" })
+                            @Html.ValidationMessageFor(model => model.PaymentFor)
+                        </div>
+                      
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.DuePaymentDate, new { @class = "control-label" })
+                            <div class="col-md-12 input-group paddingReduce" style="">
+                                @Html.TextBox("DuePaymentDate", string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", })
+                                <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                            </div>
+                           
+
+                        </div>
+                      
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.DueTransactionMode,"Transaction Mode", new { @class = "control-label" })
+                            @Html.DropDownList("DueTransactionMode", null, new { @class = "form-control input-sm" })
+                            @Html.ValidationMessageFor(model => model.DueTransactionMode)
+                        </div>
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.TransactionModeId,"Account", new { @class = "control-label" })
+                            @Html.DropDownList("TransactionModeId", null, new { @class = "form-control input-sm" })
+                            @Html.ValidationMessageFor(model => model.TransactionModeId)
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.PaidAmount, new { @class = "control-label" })
+                            @Html.TextBoxFor(model => model.PaidAmount, new { @class = "form-control input-sm", placeholder = "Payment Amount" })
+                            @Html.ValidationMessageFor(model => model.PaidAmount)
+                        </div> 
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            @Html.Label("Purchase Number", new { @class = "control-label" })
+                            @Html.TextBox("PurchaseNumber", null, new { @class = "form-control input-sm", @Value = ViewBag.Purchase.PurchaseNumber,@readonly=true })
+
+                           
+                        </div>
+
+                        <div class="form-group">
+                            @Html.Label("Supplier", new { @class = "control-label" })
+                            @Html.TextBox("Supplier", null, new { @class = "form-control input-sm", @Value = ViewBag.Purchase.Supplier.SupplierName, @readonly = true })
+                        </div>
+                        <div class="form-group">
+                            @Html.Label("Total", new { @class = "control-label" })
+                            @Html.TextBox("Total", null, new { @class = "form-control input-sm", @Value = ViewBag.Purchase.TotalPrice, @readonly = true })
+                        </div>
+                        <div class="form-group">
+                            @Html.Label("Total Paid", new { @class = "control-label" })
+                            @Html.TextBox("Paid", null, new { @class = "form-control input-sm", @Value = ViewBag.Purchase.PaidAmount, @readonly = true })
+                        </div>
+                        <div class="form-group">
+                            @Html.Label("Total Due", new { @class = "control-label" })
+                            @Html.TextBox("DueAmount", null, new { @class = "form-control input-sm", @Value = (ViewBag.Purchase.TotalPrice - ViewBag.Purchase.PaidAmount), @readonly = true })
+                        </div>
+
+                     
+
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-offset-2 col-md-10">
+                            <input type="button" id="duePaymentSubmit" value="Save" class="btn btn-primary" />
+                            &nbsp;&nbsp;@Html.ActionLink("Cancel", "Index", "Purchase", null, new { @class = "btn btn-default" })
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+}
+
+
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/ShopScript")
+    <script>
+    $(document).ready(function () {
+        $('#PaymentFor').change(function () {
+            var purchaseFor = $(this).val();
+            var purchaseId = $('#PurchaseId').val();
+            var paramData = { id: purchaseId };
+            var url = '@Url.Action("GetPurchaseById", "Purchase")';
+            if (purchaseFor == "2") {
+                url = '@Url.Action("GetPurchaseCostById", "Purchase")';
+            }
+
+            getDataShop(url, paramData, 'duePaymmentData');
+        });
+
+        $('#DueTransactionMode').change(function () {
+
+            $('#TransactionModeId').empty();
+            var value = $(this).val();
+            var paramData = { TransactionMode: value };
+            var url = '@Url.Action("GetAccountByMode", "BankAccount")';
+                getDataShop(url, paramData, 'getAccountNo');
+            });
+        $('#duePaymentSubmit').click(function () {
+            var pay = parseFloat($('#PaidAmount').val().trim());
+            var due = parseFloat($('#DueAmount').val());
+               if (pay > due) {
+                   $.alert("Invalid amount", '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+
+               } else {
+                   $('#purchaseDuePaymentForm').submit();
+               }
+            });
+
+
+        });
+    </script>
+}
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

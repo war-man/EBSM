@@ -1,0 +1,140 @@
+﻿
+@{
+    ViewBag.Title = "Report";
+    var today = DateTime.Now;
+    var fromDate = DateTime.Now;
+    var toDate = DateTime.Now;
+    string controllerName = ViewBag.ControllerName;
+}
+@section Styles{
+    @Styles.Render("~/Content/jquery-ui")
+}
+<div class="page-header">
+    <strong>@ViewBag.FormHeading</strong>
+</div>
+<div class="col-sm-9 col-md-9">
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <strong>Daily Report</strong><i class=" fa fa-file-text fa-lg pull-right" aria-hidden="true"></i>
+        </div>
+        <div class="panel-body">
+            @using (Html.BeginForm("SalesReportByDate", controllerName, FormMethod.Get, new { @class = "navbar-form" }))
+            {
+                <div class="form-group">
+                    @Html.Label("Filter Date", new {@class = "control-label col-md-3"})
+                    <div class="col-md-5">
+                        <div class="input-group col-md-12">
+                            @Html.TextBox("date", string.Format("{0:dd-MM-yyyy}", today), new {@class = "form-control input-sm rfwDatepicker"})
+                            <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                        </div>
+                   
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-sm btn-default"><i class="fa fa-search" aria-hidden="true"></i> Search</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="col-sm-9 col-md-9">
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <strong>Date Range Report</strong><i class=" fa fa-file-text fa-lg pull-right" aria-hidden="true"></i>
+        </div>
+        <div class="panel-body">
+            @using (Html.BeginForm("SalesReportByDateRange", controllerName, FormMethod.Get, new { @class = "navbar-form" }))
+            {
+                <div class="form-group">
+                    @Html.Label("Date Range", new {@class = "control-label col-md-2"})
+                    <div class="col-md-4">
+                        <div class="input-group col-md-12">
+                            @Html.TextBox("fromDate", string.Format("{0:dd-MM-yyyy}", fromDate), new { @class = "form-control input-sm rfwDatepicker" })
+                            <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                        </div>
+
+                    </div>
+                    <div class="col-md-4">
+                        <div class="input-group col-md-12">
+                            @Html.TextBox("toDate", string.Format("{0:dd-MM-yyyy}", toDate), new { @class = "form-control input-sm rfwDatepicker" })
+                            <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                        </div>
+                   
+                    </div>
+               
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-sm btn-default"><i class="fa fa-search" aria-hidden="true"></i> Search</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<div class="col-sm-9 col-md-9">
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <strong>Product Wise Sales Report</strong><i class=" fa fa-file-text fa-lg pull-right" aria-hidden="true"></i>
+        </div>
+
+        <div class="panel-body">
+            @if (!String.IsNullOrEmpty(ViewBag.ProductIdNullError.ToString()))
+{
+    <div class="alert alert-danger">
+        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+        <strong>@ViewBag.ProductIdNullError.ToString()</strong>
+    </div>
+}
+            <div class="form-horizontal">
+                <div class="form-group">
+                    @using (Html.BeginForm("SalesProductReportByDateRange", controllerName, FormMethod.Get, new { @class = "navbar-form" }))
+                    {
+
+
+                        <div class="col-lg-5 paddingReduce">
+                           
+                            @Html.Hidden("SelectedProductId")
+                            @Html.TextBox("product", null, new { @class = "form-control input-sm", placeholder = "Product name type here",style="width: 100%"})
+                        </div>
+                        <div class="col-lg-7 paddingReduce">
+                            <div class="col-lg-10 form-inline paddingReduce">
+                                <div class="col-md-5 input-group " style="">
+                                    @Html.TextBox("fromDate2", string.Format("{0:dd-MM-yyyy}", fromDate), new { @class = "form-control input-sm rfwDatepicker" })
+                                    <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                                </div>
+                                <i class="fa fa-minus fa-fw"></i>
+                                <div class="col-md-5 input-group " style="">
+                                    @Html.TextBox("toDate2", string.Format("{0:dd-MM-yyyy}", toDate), new { @class = "form-control input-sm rfwDatepicker" })
+                                    <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                                </div>
+
+                            </div>
+
+                            <div class="col-lg-2 paddingReduce" style="padding-left:0px">
+                                <button type="submit" class="btn btn-sm btn-default"><i class="fa fa-search" aria-hidden="true"></i> Search</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+@section Scripts {
+@Scripts.Render("~/bundles/jquery-ui")
+    <script>
+        $(document).ready(function() {
+            $('#product').focus(function () {
+               
+                var url = '@Url.Action("GetProuctForOthers", "Product")';
+                AutoCompleteProductName('#product', url);
+
+            });
+        });
+    </script>
+}
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

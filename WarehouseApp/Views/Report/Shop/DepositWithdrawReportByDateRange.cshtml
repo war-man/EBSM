@@ -1,0 +1,71 @@
+﻿
+@model IEnumerable<WarehouseApp.Models.Transaction>
+@using PagedList.Mvc;
+@using WarehouseApp.Controllers
+
+@{
+    ViewBag.Title = "Report";
+    var date = DateTime.Now;
+
+}
+<div class="col-md-12">
+    @Html.ActionLink(" Back", null, null, null, new { href = Request.UrlReferrer, @class = "btn btn-default fa fa-arrow-circle-left  pull-left" })
+    <div class="btn-group pull-right">
+        @*<a href="javascript:void(0);" class="btn btn-link"><i class="fa fa-download" aria-hidden="true"></i> PDF</a>*@
+        @*<a href='@Url.Action("ExportDateRangePurchaseReport", "Export")' class="btn btn-link"><i class="fa fa-download" aria-hidden="true"></i> Excel</a>*@
+        @*<a href="javascript:void(0);" onclick="nextVersion()" class="btn btn-link"><i class="fa fa-download" aria-hidden="true"></i> PDF</a>*@
+       @* <a href="javascript:void(0);" onclick="nextVersion()" class="btn btn-link"><i class="fa fa-download" aria-hidden="true"></i> Excel</a>*@
+    </div>
+</div>
+<div  id="reportBody">
+    <div align="center">
+        <h2>@ViewBag.CompanyInfo.CompanyName</h2>
+        <h4>Report - @ViewBag.TransacionType</h4>
+       
+        <h4>Date Range: @ViewBag.currentFrom.ToString("dd-MMM-yyyy") to @ViewBag.currentTo.ToString("dd-MMM-yyyy")</h4>
+
+    </div>
+    <table class="table table-bordered table-hover table-condensed table-striped">
+        <tr>
+            <th>
+                @Html.DisplayName("Date")
+            </th>
+            <th>
+                @Html.DisplayName("Transaction Amount")
+            </th>
+            <th>
+                @Html.DisplayName("Account")
+            </th>
+            <th>
+                @Html.DisplayName("By")
+            </th>
+        </tr>
+   
+                @foreach (var item in Model)
+        {
+           
+           
+                var account = BankAccountController.AllAccountByMode(item.TransactionMode).FirstOrDefault(a => a.Id == item.TransactionModeId);
+                
+            <tr>
+                <td>@item.TransactionDate.ToString("dd-MM-yyyy")</td>
+            
+                <td>@item.Amount.ToString("n") </td>
+                
+                <td>
+                    @if (account != null)
+                    {@account.Name
+                    }
+                </td>
+                <td>@item.CreateUser.UserName</td>
+            </tr>
+        }
+
+        <tr><td colspan="1"><b class="pull-right">Total</b></td><td colspan="3"><b>@String.Format("{0:n}", Model.Sum(x => x.Amount))</b></td></tr>
+       
+    </table>
+</div>
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

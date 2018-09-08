@@ -1,0 +1,168 @@
+﻿@using System.Activities.Expressions
+@using System.Web.Razor.Parser.SyntaxTree
+@model WarehouseApp.Models.ViewModels.ZoneSearchViewModel
+@using PagedList.Mvc
+@using WarehouseApp.Controllers
+@using WarehouseApp.Models
+
+
+@{
+    ViewBag.Title = "Warehouse Zones";
+}
+@Styles.Render("~/Content/PagedList")
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="x_panel">
+            <div class="x_title">
+                <i class="fa fa-list"></i> Warehouse Zones
+                <ul class="nav navbar-right panel_toolbox">
+                    
+                    
+
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><i class="fa fa-wrench"></i></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href='@Url.Action("Index", "Stock")'>Stock</a></li>
+                            <li><a href='@Url.Action("CreateProductTransfer", "TransferProducts")'>Product Transfer</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+                <div class="col-md-8">
+
+                    <div class="form-horizontal">
+
+                        <div class="form-group">
+                            @using (Html.BeginForm("Index", "WarehouseZone", FormMethod.Post, new { @class = "", @id = "zoneSearchForm" }))
+                            {
+                                <div class="col-lg-4 paddingReduce">
+                                    @Html.Label("Page Size", new { @class = "col-lg-8 pageSizeLabel" })
+                                    <div class="col-lg-4 paddingReduce">
+                                        @Html.DropDownListFor(model => model.PageSize, new SelectList(new Dictionary<string, int> { { "25", 25 }, { "50", 50 }, { "100", 100 } }, "Key", "Value", null), new { @class = "pageSizeDropdown", id = "pageSizelist" })
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4 paddingReduce">
+                                    @Html.TextBoxFor(model => model.ZoneName, new { @class = "form-control input-sm", @placeholder = "Zone Name" })
+                                </div>
+                                <div class="col-lg-2 paddingReduce">
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <span class="glyphicon glyphicon-search"></span>
+                                    </button>
+
+
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table  table-striped jambo_table bulk_action">
+                            <thead>
+                                <tr>
+                                    <th class="">
+                                        @Html.DisplayNameFor(model => model.WarehouseZones.First().ZoneName)
+                                    </th>
+                                    <th>
+                                        @Html.DisplayName("Product Stock")
+                                    </th>
+                                    <th class="">Action</th>
+                                </tr>
+
+                            </thead>
+                            <tbody class="table-condensed">
+                                @foreach (var item in Model.WarehouseZones)
+                                {
+                                    //items in zone=====================================
+                                    //string zoneItems = "";
+                                    //foreach (var itemInZone in item.StockWarehouseRelations.GroupBy(x=>x.Stock.ProductId))
+                                    //{
+                                    //    if (itemInZone.Sum(x=>x.Quantity) != 0)
+                                    //    {
+                                    //        zoneItems = itemInZone.First().Stock.Product.ProductFullName+ " " + itemInZone.Sum(x => x.Quantity) + " "+ProductController.FindProductUnit(Convert.ToInt32(itemInZone.First().Stock.ProductId))+ ", ";
+                                    //    }
+                                    //}
+                                    //zoneItems = string.IsNullOrEmpty(zoneItems) ? "" : "("+zoneItems.Trim(',', ' ')+")";
+                                    
+                                    <tr class="@(@item.Status==0 ? "text-muted" : " ")">
+                                        <td class="col-md-2 zoneName">
+                                            @Html.DisplayFor(modelItem => item.ZoneName)
+                                        </td>
+                                        <td class="col-md-9">
+                                            @item.StockWarehouseRelations.Sum(x => x.Quantity) @*@zoneItems*@
+                                        </td>
+
+
+                                        @*<td class="col-md-1">
+                            @{
+                    if (item.Status != 0)
+                    {
+                        @Html.DisplayName("Active")
+                    }
+                    else
+                    {
+                        @Html.DisplayName("Inactive")
+
+                    }
+                            }
+
+                        </td>*@
+
+                                        <td class="col-md-1">
+                                            @Html.ActionLink(" Edit", "Edit", "WarehouseZone", new { id = item.ZoneId }, new { @class = "btn btn-xs btn-primary fa fa-pencil", @title = "Edit" })
+                                            @*<a href="javascript:void(0);" data-id="-1" class="deleteRow" onclick="removeThis(this, @item.CategoryId)"><span class="btn btn-xs btn-default fa fa-trash fa-lg" title="Delete"></span></a>*@
+                                        </td>
+                                    </tr>
+                                }
+
+                            </tbody>
+                        </table>
+                        Page @(Model.WarehouseZones.PageCount < Model.WarehouseZones.PageNumber ? 0 : Model.WarehouseZones.PageNumber) of @Model.WarehouseZones.PageCount
+                        @Html.PagedListPager(Model.WarehouseZones, Page => Url.Action("Index", "WarehouseZone", new RouteValueDictionary() { { "Page", Page }, { "PageSize", Model.PageSize }, { "ZoneName", Model.ZoneName } }))
+                    </div>
+                </div>
+
+                <div class="col-md-4" style="padding:0">
+                    @{ WarehouseZone newZone = new WarehouseZone(); }
+                    @Html.Partial("../Shop/WarehouseZone/_SaveZonePartial", newZone)
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+        @section Scripts {
+       
+@Scripts.Render("~/bundles/jqueryval")
+
+
+            <script>
+                $(document).ready(function() {
+                    $('#pageSizelist').change(function() {
+                        $('#zoneSearchForm').submit();
+                    });
+
+                    $('#saveZone').on('click', function () {
+                        $('#createZoneForm').submit();
+
+                    });
+                   
+                });
+                function removeThis(obj, paramData) {
+                    //console.log(obj, paramData);
+                    var url = '@Url.Action("DeleteRecord", "Category")';
+                    deleteRow(obj, url, paramData);
+                }
+
+            </script>
+        }
+@*//=======================================================================================//
+    //Author : Mahid Choudhury
+    //Creation Date : September 2017
+    //=======================================================================================//*@

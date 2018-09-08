@@ -1,0 +1,182 @@
+﻿
+@using WarehouseApp.Models
+@model WarehouseApp.Models.ViewModels.AttributeSetViewModel
+@{
+    ViewBag.Title = "New Attribute Set";
+
+}
+<style>
+
+</style>
+@using (Html.BeginForm("NewAttributeSet", "ProductAttribute", null, FormMethod.Post, new { @id = "newAttributeSetForm" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="row">
+	<div class="col-md-10 col-xs-12">
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2><i class="fa fa-pencil"></i> New Attribute Set</h2>
+                    <ul class="nav navbar-right panel_toolbox">
+
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="Settings"><i class="fa fa-wrench"></i></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href='@Url.Action("ListArrtibuteType", "ProductAttribute")'>Attributes</a></li>
+                                <li><a href='@Url.Action("Index", "Product")'>Products</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                        </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+       
+                    @Html.ValidationSummary(true)
+                        <div class="col-xs-12 col-sm-12 col-md-12">
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.AttributeSetName, new { @class = "control-label" })
+                                    @Html.TextBoxFor(model => model.AttributeSetName, new { @class = "form-control input-sm", placeholder = "Attribute Set Name" })
+                                    @Html.ValidationMessageFor(model => model.AttributeSetName)
+
+                                </div>
+                            </div>
+                            </div>
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+                        <p class="text-success">*** Swipe the below given values to select or unselect.</p>
+                        <table class="table dragAndDropSelectTable">
+                            <tr><th>Selected Attributes</th><th>Unselected Attributes</th></tr>
+                            <tr>
+                                <td>
+                                    <ul id="selectedListGroup" class="well well-sm">
+                                        @if (ViewBag.SelectedProductAttributeList != null)
+                                        {
+                                            foreach (ProductAttribute item in ViewBag.SelectedProductAttributeList)
+                                            {
+                                                <li><label name="attribute" data-id="@item.AttributeId" class="btn btn-default btn-sm btn-block">@item.AttributeName</label></li>
+                                            }
+                                        }
+                                    </ul>
+                                </td>
+                                <td>
+                                    <ul id="unSelectedListGroup" class="well well-sm">
+                                        @if (ViewBag.NotSelectedProductAttributeList != null)
+                                        {
+                                            foreach (ProductAttribute item in ViewBag.NotSelectedProductAttributeList)
+                                            {
+                                                <li><label name="attribute" data-id="@item.AttributeId" class="btn btn-default btn-sm btn-block">@item.AttributeName</label></li>
+                                            }
+                                        }
+
+                                    </ul>
+                                </td>
+                            </tr>
+                        </table>
+
+                       
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-offset-1 col-md-10">
+                                <input type="button" value="Save" id="attributeSetSaveBtn" class="btn btn-info" />
+                                &nbsp;&nbsp;@Html.ActionLink("Cancel", "AttributeSetList", "ProductAttribute", null, new { @class = "btn btn-default" })
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/jquery-ui")
+    @Scripts.Render("~/bundles/ShopScript")
+
+    <script>
+        $(document).ready(function() {
+            $("#attributeSetSaveBtn").click(function () {
+                if ($('#newAttributeSetForm').valid()) {
+                var attributeSetName = $("#AttributeSetName").val().trim();
+                if (attributeSetName != '') {
+                    var attributeIds = [];
+                    $("#selectedListGroup").find('label').each(function() {
+                        attributeIds.push($(this).data('id'));
+                    });
+                    if (attributeIds.length!=0){
+                    var model = { AttributeSetName: attributeSetName, AttributeIds: attributeIds };
+                    var paramData = { model: model };
+
+                    var url = '@Url.Action("NewAttributeSet", "ProductAttribute")';
+                        postShopData(url, paramData, 'renderAttributeSetSave');
+                    }else {
+                        $.alert("Please select attributes",
+                           '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+                    }
+                } else {
+                    $.alert("Please Enter Attribute Set Name",
+                            '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+                } }
+            });
+ 
+
+        $("ul").on('click', 'li', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                $(this).toggleClass("selected");
+            } else {
+                $(this).addClass("selected").siblings().removeClass('selected');
+            }
+        }).sortable({
+            connectWith: "ul",
+            delay: 150, //Needed to prevent accidental drag when trying to select
+            revert: 0,
+            helper: function(e, item) {
+                //Basically, if you grab an unhighlighted item to drag, it will deselect (unhighlight) everything else
+                if (!item.hasClass('selected')) {
+                    item.addClass('selected').siblings().removeClass('selected');
+                }
+
+                //////////////////////////////////////////////////////////////////////
+                //HERE'S HOW TO PASS THE SELECTED ITEMS TO THE `stop()` FUNCTION:
+
+                //Clone the selected items into an array
+                var elements = item.parent().children('.selected').clone();
+
+                //Add a property to `item` called 'multidrag` that contains the 
+                //  selected items, then remove the selected items from the source list
+                item.data('multidrag', elements).siblings('.selected').remove();
+
+                //Now the selected items exist in memory, attached to the `item`,
+                //  so we can access them later when we get to the `stop()` callback
+
+                //Create the helper
+                var helper = $('<li/>');
+                return helper.append(elements);
+            },
+            stop: function(e, ui) {
+                //Now we access those items that we stored in `item`s data!
+                var elements = ui.item.data('multidrag');
+
+                //`elements` now contains the originally selected items from the source list (the dragged items)!!
+
+                //Finally I insert the selected items after the `item`, then remove the `item`, since 
+                //  item is a duplicate of one of the selected items.
+                ui.item.after(elements).remove();
+            }
+
+        });
+        });
+   
+    </script>
+}
+
+
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

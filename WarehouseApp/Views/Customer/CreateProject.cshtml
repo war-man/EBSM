@@ -1,0 +1,84 @@
+﻿@model WarehouseApp.Models.CustomerProject
+
+@{
+    ViewBag.Title = "New Customer Branch";
+}
+
+@using (Html.BeginForm("CreateCustomerProject", "Customer", null, FormMethod.Post, new { @id = "createCustomerProject" }))
+{
+    @Html.AntiForgeryToken()
+
+    <div class="row">
+	<div class="col-md-10 col-xs-12">
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2><i class="fa fa-pencil"></i> New Branch (@ViewBag.Customer.FullName)</h2>
+                    <ul class="nav navbar-right panel_toolbox">
+
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="Settings"><i class="fa fa-wrench"></i></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li>
+                                    <a href='@Url.Action("Index","Customer")'>Customers</a>
+                                </li>
+                                <li>
+                                    <a href='@Url.Action("Index","WarehouseZone")'>Product Transfer</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                        </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+       
+                    @Html.ValidationSummary(true)
+                    @Html.HiddenFor(x => x.CustomerId)
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.ProjectName, new { @class = "control-label" })
+                        @Html.TextBoxFor(model => model.ProjectName, new { @class = "form-control input-sm", })
+                        @Html.ValidationMessageFor(model => model.ProjectName)
+                    </div>
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.ProjectPhoneNo, new { @class = "control-label" })
+                        @Html.TextBoxFor(model => model.ProjectPhoneNo, new { @class = "form-control input-sm", })
+                        @Html.ValidationMessageFor(model => model.ProjectPhoneNo)
+
+                    </div>
+
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.ProjectAddress, new { @class = "control-label" })
+                        @Html.TextAreaFor(model => model.ProjectAddress, new { @class = "form-control input-sm", })
+                        @Html.ValidationMessageFor(model => model.ProjectAddress)
+                    </div><div class="form-group">
+                        @Html.LabelFor(model => model.ProjectDescription, new { @class = "control-label" })
+                        @Html.TextAreaFor(model => model.ProjectDescription, new { @class = "form-control input-sm", })
+                        @Html.ValidationMessageFor(model => model.ProjectDescription)
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-offset-2 col-md-10">
+                            <button type="submit" class="btn btn-info" title="Save"><i class="fa fa-save"></i> Save</button>
+                            &nbsp;&nbsp;<a href='@Url.Action("Details","Customer", new{id=Model.CustomerId})' data-toggle="tooltip" title="" class="btn btn-default" data-original-title="Cancel"><i class="fa fa-reply"></i> Cancel</a>
+
+
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

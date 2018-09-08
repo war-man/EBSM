@@ -1,0 +1,109 @@
+﻿@model WarehouseApp.Models.Category
+
+@{
+    ViewBag.Title = "Edit";
+}
+@section styles{
+    @Styles.Render("~/Content/chosen")
+}
+@using (Html.BeginForm("Edit", "Category", null, FormMethod.Post, new { @id = "createCategoryForm" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="row">
+       
+        <div class="col-md-10 col-sm-12 col-xs-12">
+            <div class="x_panel">
+                <div class="x_title">
+                    <i class="fa fa-pencil"></i> Edit Category
+                    <ul class="nav navbar-right panel_toolbox">
+
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" title="Settings" aria-expanded="false"><i class="fa fa-wrench"></i></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href='@Url.Action("AttributeSetList", "ProductAttribute")'>Attribute Sets</a></li>
+                                <li><a href='@Url.Action("ListArrtibuteType", "ProductAttribute")'>Attributes</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                        </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+              
+                                @Html.ValidationSummary(true)
+                                @Html.HiddenFor(model=>model.CategoryId)
+                                @*@Html.HiddenFor(model=>model.CategoryName,Model.CategoryName)*@
+                                @Html.Hidden("InitialCategoryName", Model.CategoryName)
+
+
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <div class="form-group">
+                                        @Html.LabelFor(model => model.CategoryName, new { @class = "control-label" })
+                                        @Html.TextBoxFor(model => model.CategoryName, new { @class = "form-control input-sm", placeholder = "Category Name" })
+                                        @Html.ValidationMessageFor(model => model.CategoryName)
+
+                                    </div>
+
+                                    <div class="form-group">
+                                        @Html.LabelFor(model => model.CategoryParentId, "Category Parent", new { @class = "control-label" })
+                                        @Html.DropDownList("CategoryParentId", null, "--Select--", new { @class = "form-control input-sm chosen-select" })
+                                        @Html.ValidationMessageFor(model => model.CategoryParentId)
+
+                                    </div>
+
+                                    <div class="form-group">
+                                        @Html.LabelFor(model => model.Status, new { @class = "control-label" })
+                                        <div class="gender-radio">
+                                            <label>@Html.RadioButtonFor(model => model.Status, "1", new { @checked = true, @class = "radio-inline" }) Active</label>
+                                            <label>@Html.RadioButtonFor(model => model.Status, "0", new { @class = "radio-inline" }) Inactive</label>
+
+                                        </div>
+                                        @Html.ValidationMessageFor(model => model.Status)
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="col-md-offset-2 col-md-10">
+                                            <input type="submit" value="Update" class="btn btn-info" />
+                                            &nbsp;&nbsp;
+
+                                            &nbsp;&nbsp;@Html.ActionLink("Cancel", "index", "Category", null, new { @class = "btn btn-default" })
+
+                                        </div>
+
+                                    </div>
+                                </div>
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                }
+
+
+
+                @section Scripts {
+                    @Scripts.Render("~/bundles/jqueryval")
+                    @*@Scripts.Render("~/bundles/jquery-ui")*@
+                    @Scripts.Render("~/bundles/chosen")
+                    <script>
+                        //chosen-select =========================================================
+                        var config = {
+                            '.chosen-select': {},
+                            '.chosen-select-deselect': { allow_single_deselect: true },
+                            '.chosen-select-no-single': { disable_search_threshold: 10 },
+                            '.chosen-select-no-results': { no_results_text: 'Oops, nothing found!' },
+                            '.chosen-select-width': { width: "95%" }
+                        };
+                        for (var selector in config) {
+                            $(selector).chosen(config[selector]);
+                        }
+                    </script>
+                }
+                @*//=======================================================================================//
+                    //Author : Akbor Hossain
+                    //Creation Date : January 2017
+                    //=======================================================================================//*@

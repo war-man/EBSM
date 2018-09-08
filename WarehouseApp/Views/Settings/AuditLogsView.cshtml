@@ -1,0 +1,137 @@
+﻿@model WarehouseApp.Models.ViewModels.AuditLogSearchViewModel
+@using PagedList.Mvc
+
+@{
+    ViewBag.Title = "Audit Logs";
+
+}
+@Styles.Render("~/Content/PagedList")
+<div class="row panel panel-primary">
+
+        <div class="panel-heading">
+            
+           <i class="fa fa-list"></i> Audit Logs
+           </div>
+    <div class="panel-body">
+        <div class="form-horizontal">
+
+            <div class="form-group">
+                @using (Html.BeginForm("AuditLogsView", "Settings", FormMethod.Post, new { @class = "", @id = "auditLogSearchForm" }))
+                {
+                    <div class="col-lg-1">
+                        @Html.Label(" ", new { @class = "col-lg-4 pageSizeLabel" })
+                        <div class="col-lg-8">
+                            @Html.DropDownListFor(model => model.PageSize, new SelectList(new Dictionary<string, int> { { "50", 50 },  { "100", 100 }, { "500", 500 }}, "Key", "Value", null), null, new { @class = "pageSizeDropdown", id = "pagesizelist" })
+
+                        </div>
+                    </div>
+                    <div class="col-lg-4 form-inline">
+                        <div class="col-md-5 input-group " style="">
+                            @Html.TextBoxFor(model => model.AuditDateFrom, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", })
+                            <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                        </div>
+                        <i class="fa fa-minus fa-fw"></i>
+                        <div class="col-md-5 input-group " style="">
+                            @Html.TextBoxFor(model => model.AuditDateTo, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", })
+                            <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                        </div>
+
+                    </div>
+
+                    <div class="col-lg-2">
+                        
+                      
+                        @Html.DropDownListFor(model => model.EventType, new SelectList(new List<SelectListItem>
+        {
+            new SelectListItem {Text = "Inserted", Value = "I"},
+            new SelectListItem {Text = "Updated", Value = "U"}, 
+            new SelectListItem {Text = "Deleted", Value = "D"},
+        }, "Value", "Text", null), "Select..", new { @class = "form-control input-sm" })
+
+                    </div> <div class="col-lg-2">
+                        @Html.DropDownList("AuditTable", null, "Select..", new { @class = "form-control input-sm" })
+                    </div>
+
+                    @*<div class="col-lg-2">
+                        @Html.DropDownList("TransactionMode", null,  new { @class = "form-control input-sm" })
+                    </div>*@
+
+                    <div class="col-lg-1">
+                        <button type="submit" class="btn btn-sm btn-success">
+                            <span class="glyphicon glyphicon-search"></span>
+                        </button>
+
+
+                    </div>
+                }
+            </div>
+
+        </div>
+
+        <table class="table table-striped table-condensed table-responsive">
+            <thead>
+                <tr>
+                  
+                    <th class="col-md-2">@Html.DisplayName("Date")</th>
+                    <th class="col-md-1">@Html.DisplayName("Event")</th>
+                    
+                    <th class="col-md-3">@Html.DisplayName("Table & Primary Key")</th>
+                    <th class="col-md-1">@Html.DisplayName("Column")</th>
+                    <th class="col-md-2">@Html.DisplayName("Old value")</th>
+                    <th class="col-md-2">@Html.DisplayName("New value")</th>
+                    <th class="col-md-1">@Html.DisplayName("By")</th>
+                 
+                    
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.AuditLogs)
+                {
+
+                    var eventName = "Updated";
+                    if (item.EventType == "I")
+                    {
+                        eventName = "Inserted";
+                    }
+                    else if (item.EventType == "D")
+                    {
+                        eventName = "Deleted";
+                    }
+                    <tr>
+                        <td class="col-md-2">@String.Format("{0:dd-MM-yyyy hh:mm tt}", item.UpdatedDate)</td>
+                        <td class="col-md-1">@eventName</td>
+                        <td class="col-md-2">@item.TableName (@item.PrimaryKeyName  = @item.PrimaryKeyValue)</td>
+                        <td class="col-md-2">@item.ColumnName</td>
+                        <td class="col-md-2">@item.OldValue</td>
+                        <td class="col-md-2">@item.NewValue</td>
+                        <td class="col-md-1">
+                            @Html.DisplayFor(modelItem => item.User.UserName)
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        Page @(Model.AuditLogs.PageCount < Model.AuditLogs.PageNumber ? 0 : Model.AuditLogs.PageNumber) of @Model.AuditLogs.PageCount
+        @Html.PagedListPager(Model.AuditLogs, Page => Url.Action("AuditLogsView", "Settings", new RouteValueDictionary() { { "Page", Page }, { "PageSize", Model.PageSize }, { "AuditDateFrom", Model.AuditDateFrom }, { "AuditDateTo", Model.AuditDateTo }, { "EventType", Model.EventType }, { "AuditTable", Model.AuditTable } }))
+
+
+    </div>
+    
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+<script>
+   $(document).ready(function () {
+
+       $('#pagesizelist').change(function () {
+           $('#auditLogSearchForm').submit();
+        });
+   });
+   </script>
+}
+
+@*//=======================================================================================//
+    //Author : Al Monsur
+    //Creation Date : January 2017
+    //=======================================================================================//*@

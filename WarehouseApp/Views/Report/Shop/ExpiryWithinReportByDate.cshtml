@@ -1,0 +1,158 @@
+﻿
+@model IEnumerable<WarehouseApp.Models.Product>
+          
+@using PagedList.Mvc;
+
+
+@{
+    ViewBag.Title = "Report";
+    var date = DateTime.Now;
+}
+<div class="col-md-12">
+    @Html.ActionLink(" Back", null, null, null, new { href = Request.UrlReferrer, @class = "btn btn-default fa fa-arrow-circle-left  pull-left" })
+    <div class="btn-group pull-right">
+        @*<a href="javascript:void(0);" data-id="AquariumDateReport" id ="ExportPdf"class="btn btn-link"><i class="fa fa-download" aria-hidden="true"></i> PDF</a>
+        <a href='@Url.Action("ExportAquariumDailyReport", "Export")' class="btn btn-link"><i class="fa fa-download" aria-hidden="true"></i> Excel</a>*@ 
+        @*<a href="javascript:void(0);" onclick="nextVersion()" class="btn btn-link"><i class="fa fa-download" aria-hidden="true"></i> PDF</a>*@
+        <a href='@Url.Action("ExportExpiryReport","Export")'  class="btn btn-link"><i class="fa fa-download" aria-hidden="true"></i> Excel</a>
+    </div>
+</div>
+<div id="reportBody">
+    <div align="center">
+        <h2>@ViewBag.CompanyInfo.CompanyName</h2>
+        <h4>Expiry Report</h4>
+        <h4>Within: @ViewBag.currentDate.ToString("dd-MMM-yyyy, dddd")</h4>
+    </div> 
+    <table class="table table-bordered table-condensed table-striped">
+        <tr>
+            <th class="col-md-2">
+                @Html.DisplayName("Expiry")
+            </th>
+
+            <th class="col-md-3">
+                @Html.DisplayNameFor(model => model.First().ProductName)
+            </th>
+            <th class="col-md-1">
+                @Html.DisplayNameFor(model => model.First().ProductCode)
+            </th>
+            
+            <th class="col-md-1">
+                @Html.DisplayNameFor(model => model.First().Tp)
+            </th>
+            <th class="col-md-1">
+                @Html.DisplayNameFor(model => model.First().Dp)
+            </th>
+            <th class="col-md-2">
+                @Html.DisplayName("Stock")
+            </th>
+
+           
+           
+           
+        </tr>
+
+        @foreach (var item in Model.ToList())
+{
+    var stock = 0;
+    if (item.Stocks.Count > 0)
+    {
+        stock = (item.Stocks.Sum(x => x.TotalQuantity) > 0) ? Convert.ToInt32(item.Stocks.Sum(x => x.TotalQuantity)) : 0;
+    }
+           if (stock > 0) { 
+    <tr class="@(@item.Status==0 ? "text-muted" : " ")">
+
+        <td class="col-md-2">
+            @if (!String.IsNullOrEmpty(item.ExpiryDate.ToString()))
+            {
+                @Convert.ToDateTime(item.ExpiryDate).ToString("dd-MM-yyyy")
+            }
+            else
+            {
+                @Html.DisplayName("N/A")
+            }
+        </td>
+
+
+                <td class="col-md-3">
+                    @Html.DisplayFor(modelItem => item.ProductFullName)
+                </td>
+                <td class="col-md-1">
+                    @Html.DisplayFor(modelItem => item.ProductCode)
+                </td>
+               
+
+                <td class="col-md-1">
+                    @Html.DisplayFor(modelItem => item.Tp)
+                </td>
+                <td class="col-md-1">
+                    @Html.DisplayFor(modelItem => item.Dp)
+                </td>
+                <td class="col-md-2">
+                    @if (stock > 0)
+                    {
+
+                        <span class="badge @(Convert.ToDouble(stock) > Convert.ToDouble(item.MinStockLimit) ? "badge-success" : "badge-warning")">@stock</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-important">@stock</span>
+
+                    }
+                </td>
+
+       </tr>
+            }
+}
+        @*@if (Model.Count()>0) { 
+        <tr><td colspan="5"><b class="pull-right">Total Quantity</b></td><td><b>@Model.Sum(x=>x.Stocks.First().TotalQuantity)</b></td></tr>
+        }*@
+    </table>
+</div>
+@section Scripts {
+<script src="~/Scripts/jspdf.debug.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#ExportPdf').click(function () {
+                var documentName= $(this).data('id')+".pdf";
+                var pdf = new jsPDF('p', 'pt', 'letter'),
+                    source = $('#reportBody')[0],
+                    specialElementHandlers = {
+                        '#bypassme': function(element, renderer) {
+                            return true;
+                        }
+                    };
+
+                var margins = {
+                    top: 30,
+                    bottom: 30,
+                    left: 20,
+                    width: 960
+                };
+                // all coords and widths are in jsPDF instance's declared units
+                // 'inches' in this case
+                pdf.fromHTML(
+                    source // HTML string or DOM elem ref.
+                    , margins.left // x coord
+                    , margins.top // y coord
+                    , {
+                        'width': margins.width // max width of content on PDF
+                        ,
+                        'elementHandlers': specialElementHandlers
+                    },
+                    function(dispose) {
+                        // dispose: object with X, Y of the last line add to the PDF
+                        //          this allow the insertion of new lines after html
+                        pdf.save(documentName);
+                    },
+                    margins
+                );
+            });
+
+        });
+    </script>
+}
+
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

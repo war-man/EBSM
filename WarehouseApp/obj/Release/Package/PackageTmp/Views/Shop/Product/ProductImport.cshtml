@@ -1,0 +1,56 @@
+﻿@model WarehouseApp.Models.Product
+
+@{
+    ViewBag.Title = "Import Products";
+}
+
+@using (Html.BeginForm("ProductImport", "Product", null, FormMethod.Post, new { enctype = "multipart/form-data", @id = "productImportForm" })) 
+{
+    @Html.AntiForgeryToken()
+    <div class="row centered-form">
+        <div class="col-xs-12 col-sm-10 col-md-10">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="panel-title">
+                        <i class="fa fa-pencil"></i> Import Products
+           
+                        <div class="pull-right">
+                            <div class="btn-group">
+                                <button data-toggle="dropdown" class="btn btn-link dropdown-toggle" type="button">
+                                    <span class="fa fa-question-circle fa-lg"></span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a href="/File/Download/?p=Sample_Products_sheet_for_Import.xlsx&d=Sample_Products_sheet_for_Import.xlsx">Sample Sheet for Product Import</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-body">
+
+                    @Html.ValidationSummary(true)
+                    <div class="form-inline">
+                        <input type="file" name="ProductExcel" id="ProductExcel" class="form-control" />
+                        <button class="btn btn-default" type="submit"><i class="fa fa-upload" aria-hidden="true"></i> Import Data From Excel</button>
+                       
+                    
+                    </div>
+                  
+                </div>
+            </div>
+        </div>
+    </div>
+    
+}
+
+
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

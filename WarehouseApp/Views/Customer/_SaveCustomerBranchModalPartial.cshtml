@@ -1,0 +1,41 @@
+﻿@model WarehouseApp.Models.CustomerProject
+
+@using (Html.BeginForm("AddCustomerBranch", "Customer", null, FormMethod.Post, new { @id = "newCustomerBranchModalForm" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="exampleModalLabel">New Customer Branch</h4>
+    </div>
+    <div class="modal-body">
+  
+            @Html.ValidationSummary(true)
+        @Html.HiddenFor(x => x.CustomerId,new{@id="customerBranch_customerId"})
+        <div class="form-group">
+            @Html.LabelFor(model => model.ProjectName, new { @class = "control-label" })
+            @Html.TextBoxFor(model => model.ProjectName, new { @class = "form-control input-sm", })
+            @Html.ValidationMessageFor(model => model.ProjectName)
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.ProjectPhoneNo, new { @class = "control-label" })
+            @Html.TextBoxFor(model => model.ProjectPhoneNo, new { @class = "form-control input-sm", })
+            @Html.ValidationMessageFor(model => model.ProjectPhoneNo)
+
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.ProjectAddress, new { @class = "control-label" })
+            @Html.TextAreaFor(model => model.ProjectAddress, new { @class = "form-control input-sm", })
+            @Html.ValidationMessageFor(model => model.ProjectAddress)
+        </div>
+        </div>
+
+    <div class="modal-footer">
+        <input type="button" id="newCustomerBranchModalFormSubmit" class="btn btn-primary" value="Save" />
+        <button data-dismiss="modal" class="btn btn-danger">Cancel</button>
+
+    </div>
+}
+
+@*@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}*@

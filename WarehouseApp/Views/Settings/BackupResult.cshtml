@@ -1,0 +1,31 @@
+﻿@model dynamic
+
+@{
+    ViewBag.Title = "DB Backup Result";
+    string message = ViewBag.Message.ToString();
+}
+<div class="row">
+    <div class="col-md-8">
+        <div class="panel panel-success">
+            <div class="panel-heading">
+                <strong><i class="fa fa-check" aria-hidden="true"></i>  DB Backup </strong>
+                @Html.ActionLink(" Go to home", "Index", "Home", null, new { @class = "btn btn-default fa fa-home  pull-right" })
+                
+            </div>
+            <div class="panel-body">
+                @if (!String.IsNullOrEmpty(message))
+                { 
+                <div class="alert alert-warning">
+                    <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                    <strong>@message</strong>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

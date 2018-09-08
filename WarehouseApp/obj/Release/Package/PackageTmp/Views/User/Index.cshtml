@@ -1,0 +1,118 @@
+﻿@model IEnumerable<WarehouseApp.Models.User>
+
+@{
+    ViewBag.Title = "User List";
+}
+
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="x_panel">
+            <div class="x_title">
+                <i class="fa fa-list"></i> User List
+                <ul class="nav navbar-right panel_toolbox">
+                    <li><a href='@Url.Action("Register", "User")' data-id="0" class="" title="Register New User"><i class="fa fa-user-plus"></i> </a></li>
+
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" title="Settings" aria-expanded="false"><i class="fa fa-wrench"></i></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href='@Url.Action("Roles", "User")'>User Roles</a></li>
+                            <li><a href='@Url.Action("CeateRole", "User")'>Create New Role</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+               
+                    <table class="table table-condensed table-hover table-responsive table-striped jambo_table">
+                        <thead>
+                            <tr>
+
+                                <th>
+                                    @Html.DisplayNameFor(model => model.FullName)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Email)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.ContactNo)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Gender)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.NationalId)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.UserName)
+                                </th>
+
+
+                                <th>
+                                    @Html.DisplayName("Role")
+                                </th>
+                                <th></th>
+                            </tr>
+                        </thead> <tbody>
+    @foreach (var item in Model)
+    {
+        <tr class="@(@item.Status==0 ? "text-muted" : " ")">
+
+            <td>
+                @Html.DisplayFor(modelItem => item.FullName)
+            </td>
+
+            <td>
+                @Html.DisplayFor(modelItem => item.Email)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.ContactNo)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Gender)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.NationalId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.UserName)
+            </td>
+
+            <td>
+                @Html.DisplayFor(modelItem => item.Role.RoleName)
+            </td>
+
+            <td>
+                <!-- Single button -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-xs btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="glyphicon glyphicon-option-vertical"></i> Option <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>@Html.ActionLink("Edit", "UserProfileEdit", new { id = item.UserId }) </li>
+                        <li>@Html.ActionLink("Details", "UserProfile", new { id = item.UserId })</li>
+                        @*<li><a href="javascript:void(0);" data-id="-1" class="deleteRow" onclick="removeThis(this,@item.UserId)">Deactivate</a></li>*@
+
+
+                    </ul>
+                </div>
+
+            </td>
+        </tr>
+    }
+</tbody>
+
+                    </table>
+                </div></div></div>
+            </div>
+            @section Scripts {
+                <script>
+                    function removeThis(obj, paramData) {
+                        var url = '@Url.Action("DeleteUser", "User")';
+                        deleteRow(obj, url, paramData);
+                    }
+                </script>
+            }

@@ -1,0 +1,164 @@
+﻿@model WarehouseApp.Models.ViewModels.GroupSearchViewModel
+@using PagedList.Mvc
+@{
+    ViewBag.Title = "Group Names";
+
+}
+
+@Styles.Render("~/Content/PagedList")
+
+
+
+
+<div class="panel panel-primary">
+    <div class="panel-heading"><i class="fa fa-list"></i> Group Name List<a href="javascript:void(0);" id="newGroupName" class="pull-right" ><span class="btn btn-xs btn-info"><i class="fa fa-plus-circle fa-lg"></i>&nbsp;&nbsp;Add New</span></a>
+    @*<a href="javascript:void(0);" id="newExpense"><span class="btn btn-info glyphicon glyphicon-plus pull-right" title="Add New Expense"></span> </a>*@</div>
+    <div class="panel-body">
+        <div class="form-horizontal">
+
+            <div class="form-group">
+                @using (Html.BeginForm("Index", "Group", FormMethod.Post, new { @class = "", @id = "groupSearchForm" }))
+                {
+                    <div class="col-lg-2 paddingReduce">
+                        @Html.Label("Page Size", new { @class = "col-lg-8 pageSizeLabel" })
+                        <div class="col-lg-4 paddingReduce">
+                            @Html.DropDownListFor(model => model.PageSize, new SelectList(new Dictionary<string, int> { { "25", 25 }, { "50", 50 }, { "100", 100 } }, "Key", "Value", null), new { @class = "pageSizeDropdown", id = "pageSizelist" })
+
+                        </div>
+                    </div>
+
+                    <div class="col-lg-2 paddingReduce">
+                        @Html.TextBoxFor(model => model.GrpName, new { @class = "form-control input-sm", @placeholder = "Group Name" })
+                    </div>                       
+                        <div class="col-lg-1 paddingReduce">
+                            <button type="submit" class="btn btn-sm btn-success">
+                                <span class="glyphicon glyphicon-search"></span>
+                            </button>
+
+
+                        </div>
+                }
+            </div>
+
+        </div>
+        
+        <p id="addGroupName"></p>
+        <table class="table table-condensed table-responsive table-striped" id="groupNameDataTable">
+
+            <thead>
+                <tr>
+                   
+                    <th class="col-md-6">
+                        @Html.DisplayNameFor(model => model.Groups.First().GroupName)
+                    </th>
+                   
+                    <th class="col-md-6">Action</th>
+                   
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Groups)
+                {
+                    <tr>
+                        <td class="col-md-6 groupName text  @(@item.Status==0 ? "text-muted" : " ")">
+                            @Html.DisplayFor(modelItem => item.GroupName)
+                            @Html.HiddenFor(modelItem => item.GroupName)
+                        </td>
+                        
+                        <td class="col-md-6">
+                            <a href="javascript:void(0);" data-id="@item.GroupNameId" class="editGroupName"><span class="btn btn-xs btn-primary fa fa-pencil" title="Edit"> Edit</span></a>
+                            @if (item.Status == 0)
+                            {
+                                <a href="javascript:void(0);" onclick="statusUpdate(@item.GroupNameId, 'active')"  data-id="@item.GroupNameId" ><span class="btn btn-xs btn-danger fa fa-check"> Disabled</span></a>
+                            }
+                            else
+                            {
+                                <a href="javascript:void(0);" onclick="statusUpdate(@item.GroupNameId, 'inactive')" data-id="@item.GroupNameId" ><span class="btn btn-xs btn-primary fa fa-check"> Enabled</span></a>
+                            }
+
+                        </td>
+                       
+                    </tr>
+       
+                }
+            </tbody>
+        </table>
+        Page @(Model.Groups.PageCount < Model.Groups.PageNumber ? 0 : Model.Groups.PageNumber) of @Model.Groups.PageCount
+        @Html.PagedListPager(Model.Groups, Page => Url.Action("Index", "Group", new RouteValueDictionary() { { "Page", Page }, { "PageSize", Model.PageSize }, { "GrpName", Model.GrpName } }))
+
+
+        </div></div>
+        @section Scripts {
+            @Scripts.Render("~/bundles/jqueryval")
+            <script src="~/Scripts/ProjectJs/Shop/ShopScript.js"></script>
+            <script>
+                function statusUpdate(id,val) {
+                    var url = '@Url.Action("UpdateGroupNameStatus", "Group")';
+                    var paramData = { id: id, tag: val };
+                    postShopData(url, paramData, "updateGroupNameStatus", this);
+                }
+                $(document).ready(function () {
+                    
+                    $('.editGroupName').click(function () {
+                        var rowId = $(this).data('id');
+                        var editGroupName = $(this).parent('td').siblings('.groupName').text().trim();
+                        var row = $(this).closest('tr');
+                        row.toggleClass('isediting'); // add a style to highlight the row
+                        var isediting = row.hasClass('isediting');
+                        //var span = $(this).parent('td').siblings('.expType');
+                        $(this).parent('td').siblings('.groupName').prop('contenteditable', isediting).addClass('form-control input-sm');
+                        if (isediting) {
+                            $(this).html('<span class="btn btn-xs btn-info fa fa-floppy-o" title="Update"> Save</span>');
+                        } else {
+                            if (editGroupName != '') {
+                                var url = '@Url.Action("UpdateGroupName", "Group")';
+                                var paramData = { id: rowId, name: editGroupName };
+                                postShopData(url, paramData);
+                                $(this).parent('td').siblings('.groupName').removeClass('form-control input-sm');
+                                $(this).html('<span class="btn btn-xs btn-primary fa fa-pencil" title="Edit"> Edit</span>');
+                            } else {
+                                $.alert("Please Enter Name.", '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+                                row = $(this).closest('tr');
+                                row.toggleClass('isediting');
+                                isediting = row.hasClass('isediting');
+                                $(this).parent('td').siblings('.groupName').prop('contenteditable', isediting);
+                            }
+                        }
+                    });
+
+                    $("#newGroupName").click(function () {
+
+                        var addGroupName = $("#addGroupName");
+                        var newGroupNameField = '<div id="expenseFields"><span><input type="text" id="GroupName" class="form-control input-sm" placeholder="Group Name"/></span><span><input type="button" value="Save" class="btn btn-sm btn-primary" onclick="addGroupName(this)" /></span><span><input type="button" value="Cancel" class="btn btn-sm btn-default" onclick="cancelExpenseType()" /></span></div>';
+                        addGroupName.html(newGroupNameField);
+
+                    });
+                    $('#pageSizelist').change(function () {
+                        $('#groupSearchForm').submit();
+                    });
+
+
+                });
+
+
+                function addGroupName(obj) {
+                    var groupName = $('#GroupName').val().trim();
+                    if (groupName != '') {
+                        var paramData = { GroupName: groupName };
+                        var url = '@Url.Action("AjaxCreateGroupName", "Group")';
+                        postShopData(url, paramData, 'renderGroupNameAdd', obj);
+                    } else {
+                        $.alert("Please enter name",
+                            '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+                    }
+                }
+
+                function cancelExpenseType() {
+                    $("#addGroupName").html('');
+                }
+            </script>
+        }
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

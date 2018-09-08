@@ -1,0 +1,221 @@
+﻿
+@using WarehouseApp.Controllers
+@model WarehouseApp.Models.Purchase
+
+@{
+    ViewBag.Title = "Purchase Details";
+    int itemCount = 1;
+}
+<style>
+   
+
+    .tital {
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .bot-border {
+        border-bottom: 1px #f8f8f8 solid;
+        margin: 5px 0 5px 0;
+    }
+</style>
+<div class="col-md-11 ">
+    <div class="panel panel-default">
+        <div class="panel-heading"> <i class="fa fa-info-circle fa-lg"> </i> Purchase Details @Html.ActionLink(" Back", null, null, null, new { href = Request.UrlReferrer, @class = "btn btn-default btn-sm fa fa-arrow-circle-left  pull-right" })
+            @if (Model.PurchasePayments.Count == 0)
+            {
+                <span class="pull-right ">
+                    @if (User.IsInRole("Global_SupAdmin") ||  User.IsInRole("Purchase_Create"))
+                    {
+                    @Html.ActionLink(" Edit Purchase", "EditPurchase", "Purchase", new {id = Model.PurchaseId}, new {@class = "fa fa-pencil"})}
+                    else{
+                    @Html.ActionLink(" Edit Purchase", "EditStockIn", "Purchase", new { id = Model.PurchaseId }, new { @class = "fa fa-pencil" })}
+                        
+                    }
+                </span>
+            }</div>
+        <div class="panel-body">
+            
+            <div class="box-info">
+
+                <div class="col-md-6">
+                   
+                    <div class="col-sm-5 col-xs-6 tital ">Purchase Number:</div><div class="col-sm-7 col-xs-6 ">@Model.PurchaseNumber</div>
+                    <div class="clearfix"></div>
+                    <div class="bot-border"></div>
+                    <div class="col-sm-5 col-xs-6 tital ">Purchase Date:</div><div class="col-sm-7"> @Model.PurchaseDate.ToString("dd-MM-yyyy")</div>
+                    <div class="clearfix"></div>
+                    <div class="bot-border"></div>
+                    @if (Model.SupplierId != null) { 
+                    <div class="col-sm-5 col-xs-6 tital ">Supplier:</div><div class="col-sm-7"> @Model.Supplier.SupplierName</div>
+                    <div class="clearfix"></div>
+                    <div class="bot-border"></div>}
+                    @{var account = BankAccountController.AllAccountByMode(Model.TransactionMode).FirstOrDefault(a => a.Id == Model.TransactionModeId);}
+
+                    <div class="col-sm-5 col-xs-6 tital ">Account:</div><div class="col-sm-7 col-xs-6 ">
+                                                                            @if (account != null)
+                                                                            {@account.Name
+                                                                            }
+                                                                        </div>
+                    <div class="clearfix"></div>
+                    <div class="bot-border"></div>
+           
+                    <!-- /.box-body -->
+                </div>
+           
+                <!-- /.box -->
+            </div>
+            <table class="table table-bordered table-condensed table-responsive table-striped">
+                
+              
+                    <thead >
+                        <tr>
+                            <th>SL</th>
+                            <th>Code</th>
+                            <th>Product</th>
+                            @if (User.IsInRole("Global_SupAdmin") || User.IsInRole("Purchase_Create"))
+                            {
+                                <th>Unit Price</th>
+                            }
+                            <th>Quantity</th>
+                            @if (User.IsInRole("Global_SupAdmin") || User.IsInRole("Purchase_Create"))
+                            {
+                                <th>Net Total</th>
+                            }
+                            
+                       
+                        </tr>
+                </thead>
+                <tbody>
+                    @if (Model.PurchaseProducts.Count > 0)
+                    {
+                        foreach (var item in Model.PurchaseProducts)
+                    {
+                        <tr>
+                            <td width="3%">@itemCount</td>
+                            <td class="col-md-1">@item.Product.ProductCode</td>
+                            <td class="col-md-3">@item.Product.ProductFullName</td>
+                            @if (User.IsInRole("Global_SupAdmin") || User.IsInRole("Purchase_Create"))
+                            {
+                                 <td class="col-md-1">@item.UnitPrice</td>
+                            }
+                          
+                            <td class="col-md-1">@item.Quantity</td>
+                            @if (User.IsInRole("Global_SupAdmin") || User.IsInRole("Purchase_Create"))
+                            {
+                                   <td class="col-md-1">@item.TotalPrice</td>
+                            }
+                         
+                        </tr>
+                        itemCount++;
+                    }}
+                </tbody>
+                <tfoot>
+                    <tr>
+                       @if (User.IsInRole("Global_SupAdmin") || User.IsInRole("Purchase_Create"))
+                       {
+                           <th colspan="4"><span class="pull-right">Total</span></th>
+                       }
+                       else {<th colspan="3"><span class="pull-right">Total</span></th> }
+                        <th >@Model.TotalQuantity</th>
+                        @{
+                            var purchaseDisc = (Model.PurchaseDiscount != null) ? Model.PurchaseDiscount : 0;
+                            var totalWithoutDisc = Model.TotalPrice + purchaseDisc;
+                        }
+                @if (User.IsInRole("Global_SupAdmin") || User.IsInRole("Purchase_Create"))
+                {
+                    <th>@totalWithoutDisc</th>
+                }
+                    </tr>
+@if (User.IsInRole("Global_SupAdmin") || User.IsInRole("Purchase_Create"))
+{
+    <tr>
+
+                      
+        <th colspan="5"><span class="pull-right">Discount</span></th>
+        <th >@purchaseDisc</th>
+
+    </tr>
+    <tr>
+
+                     
+        <th colspan="5"><span class="pull-right">Total Payable</span></th>
+        <th >@Model.TotalPrice</th>
+
+    </tr>
+    <tr>
+
+        <th colspan="5"><span class="pull-right">Paid Amount</span></th>
+        <th >@Model.PaidAmount</th>
+
+    </tr>
+    <tr>
+        @{ var due = Model.TotalPrice - Model.PaidAmount; }
+                      
+        <th colspan="5"><span class="pull-right">Payment Due</span></th>
+        <th >@due</th>
+
+    </tr>
+    <tr>
+                       
+                  
+        <th colspan="4"><span class="pull-right">Purchase Cost</span></th>
+        <th></th>
+        <th>@Model.PurchaseCosts.Sum(x => x.Amount)</th>
+                       
+
+    </tr>
+}
+                    @*<tr>
+
+                        <th class="col-md-3"></th>
+                       
+                        <th class="col-md-1">Purchase Cost Paid</th>
+                        <th class="col-md-1"></th>
+                        <th class="col-md-1">@Model.PurchaseCosts.Sum(x=>x.PaidAmount)</th>
+                     
+
+                    </tr>
+                    <tr>
+                        @{ var pcDue = Model.PurchaseCosts.Sum(x => x.Amount) - Model.PurchaseCosts.Sum(x => x.PaidAmount);}
+                        <th class="col-md-3"></th>
+                       
+                        <th class="col-md-1">Purchase Cost Due</th>
+                        <th class="col-md-1"></th>
+                        <th class="col-md-1">@pcDue</th>
+                        
+
+                    </tr>*@
+                </tfoot>
+                           </table>
+            <p class="help-block">
+                @if (@Model.CreatedDate != null)
+                {
+                    <div class="col-md-6">
+                        <i class="fa fa-user"></i> Created: <a href="#">@Model.CreateUser.UserName</a>
+                        | <i class="fa fa-calendar"></i> @Convert.ToDateTime(Model.CreatedDate).ToString("dd-MM-yyyy hh:mm tt")
+                    </div>
+                }
+                @if (@Model.UpdatedDate != null)
+                {
+                    <div class="col-md-6">
+                        <i class="fa fa-user"></i> Updated: <a href="#">@Model.UpdateUser.UserName</a>
+                        | <i class="fa fa-calendar"></i> @Convert.ToDateTime(Model.UpdatedDate).ToString("dd-MM-yyyy hh:mm tt")
+                    </div>
+                }
+            </p>
+
+        </div>
+    </div>
+</div>
+
+
+<script>
+   
+</script>
+
+
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

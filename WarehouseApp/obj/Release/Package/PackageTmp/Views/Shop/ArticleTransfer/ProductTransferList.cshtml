@@ -1,0 +1,155 @@
+﻿@model WarehouseApp.Models.ViewModels.ProductTransferSearchViewModel
+@using PagedList.Mvc
+@using WarehouseApp.Models.ViewModels
+
+@{
+    ViewBag.Title = "Product Transfer List";
+}
+
+@Styles.Render("~/Content/PagedList")
+<style>
+    .rfwDatepicker {
+        z-index: 100000 !important;
+    }
+</style>
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="x_panel">
+            <div class="x_title">
+                <i class="fa fa-list"></i> Product Transfer List
+                <ul class="nav navbar-right panel_toolbox">
+                    <li><a href='@Url.Action("CreateProductTransfer", "TransferProducts")' data-id="0" class="" title="Add New"><i class="fa fa-plus-square fa-lg"></i> </a></li>
+
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" title="Settings" aria-expanded="false"><i class="fa fa-wrench"></i></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li>
+                                <a href='@Url.Action("Index","Stock")'>Stocks</a>
+                            </li>
+                            <li>
+                                <a href='@Url.Action("Index","WarehouseZone")'>Warehouse Zone</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+                    <div class="form-horizontal">
+
+                        <div class="form-group">
+                            @using (Html.BeginForm("Index", "TransferProducts", FormMethod.Post, new { @class = " ", @id = "productTransferSearchForm" }))
+                            {
+                                <div class="col-lg-2">
+                                    @Html.Label("PageSize", new { @class = "col-lg-8 pageSizeLabel" })
+                                    <div class="col-lg-4">
+                                        @Html.DropDownList("PageSize", new SelectList(new Dictionary<string, int> { { "25", 25 }, { "50", 50 }, { "100", 100 } }, "Key", "Value", null), new { @class = "pageSizeDropdown", id = "pagesizelist" })
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    @Html.HiddenFor(model => model.SelectedProductId)
+                                    @Html.TextBoxFor(model => model.PName, null, new { @class = "form-control input-sm", @placeholder = "Product Name" })
+                                </div>
+                                <div class="col-lg-4 form-inline">
+                                    <div class="col-md-5 input-group " style="">
+                                        @Html.TextBoxFor(model => model.TransferDateFrom, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", })
+                                        <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                                    </div>
+                                    <i class="fa fa-minus fa-fw"></i>
+                                    <div class="col-md-5 input-group " style="">
+                                        @Html.TextBoxFor(model => model.TransferDateTo, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", })
+                                        <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                                    </div>
+
+                                </div>
+                                <div class="col-lg-1">
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <span class="glyphicon glyphicon-search"></span>
+                                    </button>
+
+
+                                </div>
+                            }
+                        </div>
+
+                    </div>
+
+                    <table class="table table-striped table-condensed table-responsive jambo_table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    @Html.DisplayName("Date")
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.ProductTransfers.First().Stock.Product.ProductName)
+                                </th>
+                                <th>
+                                    @Html.DisplayName("Zone From")
+                                </th><th>
+                                    @Html.DisplayName("Zone To")
+                                </th><th>
+                                    @Html.DisplayNameFor(model => model.ProductTransfers.First().TransferQuantity)
+                                </th>
+                                
+                            </tr>
+                        </thead><tbody>
+
+    @foreach (var item in Model.ProductTransfers)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.CreatedDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Stock.Product.ProductFullName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.ZoneFrom.ZoneName)
+            </td><td>
+                @Html.DisplayFor(modelItem => item.ZoneTo.ZoneName)
+            </td><td>
+                @Html.DisplayFor(modelItem => item.TransferQuantity)
+            </td>
+           
+        </tr>
+    }
+</tbody>
+
+                    </table>
+                    Page @(Model.ProductTransfers.PageCount < Model.ProductTransfers.PageNumber ? 0 : Model.ProductTransfers.PageNumber) of @Model.ProductTransfers.PageCount
+                    @Html.PagedListPager(Model.ProductTransfers, Page => Url.Action("Index", "TransferProducts", new RouteValueDictionary() { { "Page", Page }, { "PageSize", Model.PageSize }, { "SelectedProductId", Model.SelectedProductId }, { "PName", Model.PName }, { "TransferDateFrom", Model.TransferDateFrom }, { "TransferDateTo", Model.TransferDateTo } }))
+
+                </div> </div>
+
+            </div></div>
+           
+
+            @section Scripts {
+                @*@Scripts.Render("~/bundles/ShopScript")*@
+                <script>
+                    $(document).ready(function () {
+
+                        $('#pagesizelist').change(function () {
+                            $('#productTransferSearchForm').submit();
+                        });
+                       
+                        @*$('#ProductNameFull').focus(function () {
+                var url = '@Url.Action("GetProuctForPurchase", "Product")';
+                AutoCompleteProductName('#ProductNameFull', url);
+
+            });*@
+                    });
+
+                   
+                </script>
+            }
+
+            @*//=======================================================================================//
+                //Author : Mahid Choudhury
+                //Creation Date : January 2017
+                //=======================================================================================//*@

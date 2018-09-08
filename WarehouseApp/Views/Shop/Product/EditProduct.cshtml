@@ -1,0 +1,552 @@
+﻿@model WarehouseApp.Models.ViewModels.AddProductViewModel
+
+@using WarehouseApp.Models
+@using WarehouseApp.Models.ViewModels
+@{
+    ViewBag.Title = "Edit Product";
+    var cx = new WmsDbContext();
+    int j = 0;
+}
+@*@Styles.Render("~/Content/JsTree")*@
+@Styles.Render("~/Content/jquery-ui")
+@Styles.Render("~/Content/chosen")
+
+<style>
+    .chosen-container {
+        width: 80% !important;
+    }
+</style>
+<div class="submit-progress hidden">
+    <i class="fa fa-2x fa-spinner fa-spin"></i>
+    <label>Please wait ...</label>
+</div>
+<div class="row">
+    <div class="col-md-12 col-xs-12">
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2><i class="fa fa-pencil"></i> Edit Product</h2>
+                    <ul class="nav navbar-right panel_toolbox">
+
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="Settings"><i class="fa fa-wrench"></i></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li>
+                                    <a href='@Url.Action("ListArrtibuteType","ProductAttribute")'>Attributes</a>
+                                </li>
+                                <li>
+                                    <a href='@Url.Action("AttributeSetList", "ProductAttribute")'>Attribute Sets</a>
+                                    <a href='@Url.Action("Index", "Category")'>Categories</a>
+                                </li>
+                                <li>
+                                    <a href='@Url.Action("Index","Customer")'>Customers</a>
+                                </li>
+                                <li>
+                                    <a href='@Url.Action("Index","Supplier")'>Suppliers</a>
+                                </li>
+                                <li>
+                                    <a href='@Url.Action("Index","WarehouseZone")'>Warehouse Zone</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                        </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+   
+			<div class="pull-right">
+                <button type="submit" form="form-product" data-toggle="tooltip" title="Save" class="btn btn-primary" data-original-title="Save" id="productSaveButton"><i class="fa fa-save"></i></button>
+                <a href='@Url.Action("Index","Product")' data-toggle="tooltip" title="Cancel" class="btn btn-default" data-original-title="Cancel"><i class="fa fa-reply"></i></a>
+            </div>
+                @using (Html.BeginForm("EditProduct", "Product", null, FormMethod.Post, new { @id = "editProductForm" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <ul class="nav nav-tabs" id="addProductTab">
+                        <li class="active"><a href="#tab-general" data-toggle="tab">General</a></li>
+                        <li><a href="#tab-attribute" data-toggle="tab">Attribute</a></li>
+                        <li><a href="#tab-data" data-toggle="tab">Data</a></li>
+                        
+                        <li><a href="#tab-links" data-toggle="tab">Links</a></li>
+                        <li><a href="#tab-customer-option" data-toggle="tab">Customer Option</a></li>
+                        <li><a href="#tab-discount" data-toggle="tab">Discount</a></li>
+                        @*<li><a href="#tab-image" data-toggle="tab">Image</a></li>*@
+
+                    </ul>
+
+                    <div class="tab-content">
+
+                        @Html.ValidationSummary(true)
+                        @Html.HiddenFor(model => model.AttributeSetId)
+                        @Html.HiddenFor(model => model.ProductId)
+                        @Html.Hidden("InitialProductCode", Model.ProductCode)
+                        <div class="tab-pane active" id="tab-general">
+                            <div class="form-horizontal centered-form">
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.ProductName, new { @class = "control-label col-md-2" })
+                                    <div class="col-md-10">
+                                        @Html.TextBoxFor(model => model.ProductName, new { @class = "form-control input-sm", placeholder = "Product Name" })
+                                        @Html.ValidationMessageFor(model => model.ProductName)
+                                    </div>
+
+                                </div>
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.ProductCode, new { @class = "control-label col-md-2" })
+                                    <div class="col-md-10">
+                                        @Html.TextBoxFor(model => model.ProductCode, new { @class = "form-control input-sm", placeholder = "Product Code" })
+                                        @Html.ValidationMessageFor(model => model.ProductCode)
+                                    </div>
+                                </div>
+                                           
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.Details, new { @class = "control-label col-md-2" })
+                                    <div class="col-md-10">
+                                        @Html.TextAreaFor(model => model.Details, new { @id = "FullDescription", @class = "form-control", placeholder = "Description", @rows = 10 })
+                                        @Html.ValidationMessageFor(model => model.Details)
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="tab-attribute">
+                            <div class="form-horizontal centered-form">
+                                @if (Model.PurchaseProducts.Count > 0)
+                                {
+                                    <dl class="dl-horizontal ">
+                                        <div class="col-md-12">
+                                            <div class="col-md-6">
+                                                @foreach (var att in cx.ProductAttributeRelations.Where(x => x.ProductId == Model.ProductId).Select(x => new { Attribute = x.Attribute, Value = x.Value }).ToList())
+                                                {
+                                                    <dt>
+                                                        @Html.DisplayFor(model => att.Attribute.AttributeName)
+                                                    </dt>
+
+                                                    <dd>
+                                                        @Html.DisplayFor(model => att.Value)
+                                                        @Html.HiddenFor(model => model.ProductAtts[j].AttributeId, new
+                                                   { @*@Value = att.Attribute.AttributeId,*@ @class = "attributeId"
+                                                   })
+                                                        @Html.HiddenFor(model => model.ProductAtts[j].Value, new
+                                                   { @*@Value = att.Value,*@ @class = "attributeId"
+                                                   })
+                                                    </dd>
+                                                    j++;
+                                                }
+
+                                            </div>
+                                        </div>
+                                    </dl>
+
+                                }
+                                else
+                                {
+                                    foreach (ProductAttributeValueViewModel att in ViewBag.Attributes)
+                                    {
+                                        if (att.Attribute.AttributeType == "Checkbox")
+                                        {
+                                            string[] values = att.Attribute.Values.Split(',');
+                                            <div class="form-group">
+                                                <label for="" class="control-label col-md-2 @(@att.Attribute.IsRequired == true ? "required-label" : " ")">@att.Attribute.AttributeName</label>
+                                                @Html.HiddenFor(model => model.ProductAtts[j].AttributeId, new { @Value = att.Attribute.AttributeId, @class = "attributeId" })
+                                                <div class="col-md-5">
+                                                    @if (values.Length > 0)
+                                                    {
+                                                        int i = 0;
+                                                        foreach (var value in values)
+                                                        {
+                                                            <div class="checkbox checkbox-inline">
+                                                                @Html.HiddenFor(model => model.ProductAtts[j].ProdAttCheckboxes[i].Value, new { @Value = @value, @class = "attributeValue" })
+                                                                <label> @Html.CheckBoxFor(model => model.ProductAtts[j].ProdAttCheckboxes[i].IsChecked, new { @class = "checkboxFor" }) @value</label>
+                                                            </div>
+                                                            i++;
+                                                        }
+
+                                                    }
+
+                                                </div>
+
+                                            </div>
+                                        }
+                                        if (att.Attribute.AttributeType == "Date")
+                                        {
+                                            <div class="form-group">
+                                                <label for="" class="control-label col-md-2 @(@att.Attribute.IsRequired == true ? "required-label" : " ")">@att.Attribute.AttributeName</label>
+                                                <div class="col-md-5">
+                                                    <div class="input-group col-md-9">
+                                                        @Html.HiddenFor(model => model.ProductAtts[j].AttributeId, new { @Value = att.Attribute.AttributeId, @class = "attributeId" })
+                                                        @Html.TextBoxFor(model => model.ProductAtts[j].Value, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @Value = (String.IsNullOrEmpty(att.Value) == true ? "" : att.Value), @class = "form-control input-sm rfwDatepicker", @required = (@att.Attribute.IsRequired == true ? true : false) })
+                                                        <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                        if (att.Attribute.AttributeType == "Radio")
+                                        {
+                                            string[] values = att.Attribute.Values.Split(',');
+                                            <div class="form-group">
+                                                <label for="" class="control-label col-md-2 @(@att.Attribute.IsRequired == true ? "required-label" : " ")">@att.Attribute.AttributeName</label>
+                                                @Html.HiddenFor(model => model.ProductAtts[j].AttributeId, new { @Value = att.Attribute.AttributeId, @class = "attributeId" })
+                                                <div class="col-md-5">
+                                                    @if (values.Length > 0)
+                                                    {
+                                                        int i = 0;
+                                                        foreach (var value in values)
+                                                        {
+                                                            <div class="radio radio-inline">
+                                                                <label> @Html.RadioButtonFor(model => model.ProductAtts[j].Value, value, new { @class = "radio-inline", @required = (@att.Attribute.IsRequired == true ? true : false) }) @value</label>
+                                                            </div>
+                                                            i++;
+                                                        }
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                        if (att.Attribute.AttributeType == "Selectbox")
+                                        {
+                                            string[] values = att.Attribute.Values.Split(',');
+                                            List<SelectListItem> valuesSelectItemList = new List<SelectListItem>();
+                                            if (values.Length > 0)
+                                            {
+                                                foreach (var value in values)
+                                                {
+                                                    valuesSelectItemList.Add(new SelectListItem { Text = value, Value = value });
+                                                }
+                                            }
+                                            <div class="form-group">
+                                                <label for="" class="control-label col-md-2 @(@att.Attribute.IsRequired == true ? "required-label" : " ")">@att.Attribute.AttributeName</label>
+                                                <div class="col-md-5">
+                                                    @Html.HiddenFor(model => model.ProductAtts[j].AttributeId, new { @Value = att.Attribute.AttributeId, @class = "attributeId" })
+                                                    @Html.DropDownListFor(model => model.ProductAtts[j].Value, new SelectList(valuesSelectItemList, "Value", "Text", att.Value), "--Select--", new { @class = "form-control input-sm", @required = (@att.Attribute.IsRequired == true ? true : false) })
+                                                </div>
+
+                                            </div>
+                                        }
+                                        if (att.Attribute.AttributeType == "Textbox")
+                                        {
+                                            <div class="form-group">
+                                                <label for="" class="control-label col-md-2 @(@att.Attribute.IsRequired == true ? "required-label" : " ")">@att.Attribute.AttributeName</label>
+                                                <div class="col-md-5">
+                                                    @Html.HiddenFor(model => model.ProductAtts[j].AttributeId, new { @Value = att.Attribute.AttributeId, @class = "attributeId" })
+                                                    @Html.TextBoxFor(model => model.ProductAtts[j].Value, new { @Value = att.Value, @class = "form-control input-sm", placeholder = "", @required = (@att.Attribute.IsRequired == true ? true : false) })
+                                                </div>
+                                            </div>
+                                        }
+
+                                        j++;
+                                    }
+                                }
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="tab-data">
+                            <div class="form-horizontal centered-form">
+                                @if (Model.AttributeSet.AttributeSetName == "Medicine")
+                                {
+                                    <div class="form-group">
+                                        @Html.Label("Select Group", new { @class = "control-label col-md-2" })
+                                        <div class="col-md-10">
+                                            @Html.DropDownList("GroupNameId", null, "--Select--", new {@class = "form-control input-lg chosen-select", data_placeholder = "Select...", Size = 5,@required=true})
+                                        </div>
+                                    </div>
+                                }
+                                else{
+                                    <div class="hidden col-md-10">
+                                        @Html.TextBox("GroupNameId", null, new { @class = "form-control input-sm", @Value = "" })
+                                    </div>
+                                }
+                                <div class="form-group @((User.IsInRole("Global_SupAdmin") || User.IsInRole("Purchase_Create"))?" ":"hidden")">
+                                    @Html.LabelFor(model => model.Tp, new { @class = "control-label col-md-2" })
+                                    <div class="col-md-10">
+                                        @Html.TextBoxFor(model => model.Tp, new { @class = "form-control input-sm", placeholder = "Purchase Price" })
+                                        @Html.ValidationMessageFor(model => model.Tp)
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.Dp, new { @class = "control-label col-md-2" })
+                                    <div class="col-md-10">
+                                        @Html.TextBoxFor(model => model.Dp, new { @class = "form-control input-sm", placeholder = "Retail Price" })
+                                        @Html.ValidationMessageFor(model => model.Dp)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    @Html.Label("VAT Percentage", new { @class = "control-label col-md-2" })
+                                    <div class="col-md-10">
+                                        @Html.TextBoxFor(model => model.Vat, new { @class = "form-control input-sm", placeholder = "VAT Percentage" })
+                                        @Html.ValidationMessageFor(model => model.Vat)
+                                    </div>
+                                </div>
+                               
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.MinStockLimit, new { @class = "control-label col-md-2" })
+                                    <div class="col-md-10">
+                                        @Html.TextBoxFor(model => model.MinStockLimit, new { @class = "form-control input-sm", placeholder = "Minimum Stock for Warning" })
+                                        @Html.ValidationMessageFor(model => model.MinStockLimit)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.DefaultZoneId, "Default Stock Zone", new { @class = "control-label col-md-2" })
+                                    <div class="col-md-10">
+                                        @Html.DropDownListFor(model => model.DefaultZoneId, (SelectList)@ViewBag.ZoneId, null, new { @class = "form-control input-sm" })
+                                        @Html.ValidationMessageFor(model => model.DefaultZoneId)
+                                    </div>
+                                </div>   
+
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.Status, new { @class = "control-label col-md-2" })
+                                    <div class="col-md-10">
+                                        <div class="radio radio-inline">
+                                            <label>@Html.RadioButtonFor(model => model.Status, "1", new { @checked = true, @class = "" }) Enabled</label>
+                                        </div>
+                                        <div class="radio radio-inline">
+                                            <label>@Html.RadioButtonFor(model => model.Status, "0", new { @class = "" }) Disabled</label>
+                                        </div>
+
+                                        @Html.ValidationMessageFor(model => model.Status)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                       
+                        <div class="tab-pane" id="tab-links">
+                            <div class="form-horizontal centered-form">
+                                @*<div class="form-group">
+                                        <div id="jstree">
+                                            @(Html.TreeView((List<Category>) ViewBag.Categories).EmptyContent("Categories").Children(m => m.ChildCategories).HtmlAttributes(new {id = "tree"}).ChildrenHtmlAttributes(new {@class = "subItem"}).ItemText(m => m.CategoryName)
+                                                  .ItemTemplate(
+                                                      @<text>
+                                                           <a href="@item.CategoryId" desc="@item.CategoryName">@item.CategoryName</a>
+                                                       </text>)
+                                                  )
+                                        </div>
+                                    </div>*@
+                                <div class="form-group">
+                                    @Html.Label("Manufacturer", new { @class = "control-label col-md-2" })
+                                    <div class="col-md-8">
+                                        @Html.DropDownList("ManufacturerId", null, "--Select--", new { @class = "form-control input-sm" })
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    @Html.Label("Select Categories", new { @class = "control-label col-md-2" })
+                                    <div class="col-md-10">
+                                        @Html.DropDownList("CategoryIds", null, null, new { @class = "form-control input-lg chosen-select", data_placeholder = "Select...", Size = 5, multiple=true })
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="tab-customer-option">
+
+                            <div class="@((User.IsInRole("Global_SupAdmin") || User.IsInRole("Customer_Price_Setup")) ? " " : "hidden") form-horizontal centered-form">
+                                <div class="col-md-12"><span class="btn btn-primary pull-right" id="newCustomerOptionAddButton"><i class="fa fa-plus"></i></span></div>
+
+
+                                <div class="row">
+                                   
+                                    <table id="customer-option-table" class="table">
+                                        <tr>
+
+                                            <th>Customer</th>
+                                            <th>Description </th>
+                                            <th>Code</th>
+                                            <th>Unit Price </th>
+                                            <th>MRP</th>
+                                            <th></th>
+                                        </tr>
+                                        @if (Model.CustomerOptionList != null && Model.CustomerOptionList.Count > 0)
+                                        {
+
+                                            for (int k = 0; k < Model.CustomerOptionList.Count; k++)
+                                            {
+                                                <tr class="customer-option-row">
+
+                                                    <td class="col-md-2">
+                                                        @Html.DropDownListFor(model => Model.CustomerOptionList[k].CustomerId, new SelectList((List<Customer>)ViewBag.Customers, "CustomerId", "FullName", Model.CustomerOptionList[k].CustomerId), "--Select--", new { @class = "form-control input-sm" })
+                                                    </td>
+                                                    <td class="col-md-4">
+                                                        @Html.TextBoxFor(model => Model.CustomerOptionList[k].ProductDescription, new { @class = "form-control input-sm", placeholder = "Description" })
+                                                    </td>
+                                                    <td class="col-md-2">
+                                                        @Html.TextBoxFor(model => Model.CustomerOptionList[k].ProductCode, new { @class = "form-control input-sm", placeholder = "Code" })
+
+
+                                                    </td>
+                                                    <td class="col-md-1">
+                                                        @Html.TextBoxFor(model => Model.CustomerOptionList[k].UnitPrice, new { @class = "form-control input-sm", placeholder = "Unit Price" })
+
+
+                                                    </td>
+                                                    <td class="col-md-1">
+                                                        @Html.TextBoxFor(model => Model.CustomerOptionList[k].Mrp, new { @class = "form-control input-sm", placeholder = "Mrp" })
+                                                    </td>
+                                                    <td class="col-md-1">
+                                                        @if (k > 0)
+                                                        {
+                                                            <span class="btn btn-xs btn-danger removeRow" onclick="removeItem(this)"><i class="fa fa-times"></i></span>
+                                                        }
+                                                    </td>
+                                                </tr>
+
+                                            }
+                                        }
+                                    </table>
+                                </div>
+
+                            </div>
+
+                        </div>
+                        <div class="tab-pane" id="tab-discount">
+                            <div class="form-horizontal centered-form">
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.DiscountAmount, new { @class = "control-label col-md-2" })
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            @Html.TextBoxFor(model => model.DiscountAmount, new { @class = "form-control input-sm col-md-6", @onkeyup = "calculateDiscount()" })
+                                            @Html.ValidationMessageFor(model => model.DiscountAmount)
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="radio radio-inline">
+                                                <label>@Html.RadioButtonFor(model => model.DiscountType, "Flat", new { @checked = true, @onchange = "" }) Flat</label>
+                                            </div>
+                                            <div class="radio radio-inline">
+                                                <label> @Html.RadioButtonFor(model => model.DiscountType, "Percent", new { @onchange = "" }) Percent</label>
+                                            </div>
+                                            @Html.ValidationMessageFor(model => model.DiscountType)
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                            </div>
+
+                        </div>
+                        @*<div class="tab-pane" id="tab-image">
+                                        <div class="form-horizontal centered-form">
+                                            <div class="form-group">
+                                                @Html.Label("Product Image", new { @class = "control-label col-md-2" })
+                                                <div class="col-md-10">
+                                                    <input type="file" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>*@
+                    </div>
+
+                }
+            </div>
+        </div>
+
+    </div>
+               
+</div>
+
+@section Scripts {
+
+    @Scripts.Render("~/bundles/jquer-ui")
+    @Scripts.Render("~/bundles/jqueryval")
+    @*@Scripts.Render("~/bundles/JsTree")*@
+
+    @Scripts.Render("~/bundles/chosen")
+ <script type="text/javascript">CKEDITOR_BASEPATH = "@Url.Content("~/Content/Plugins/ckeditor/")";</script>
+    <script type="text/javascript" src="~/Content/Plugins/ckeditor/ckeditor.js"></script>
+    <script type="text/javascript" src="~/Content/Plugins/ckeditor/adapters/jquery.js"></script>
+    @*@Scripts.Render("~/bundles/ckeditor")*@
+    <script>
+
+
+        $(document).ready(function() {
+            CKEDITOR.replace('FullDescription');
+            $('#productSaveButton').click(function() {
+                if ($('#editProductForm').valid()) {
+                    DisplayProgressMessage(this, ' ');
+                    $('#editProductForm').submit();
+                }
+            });
+            $("#newCustomerOptionAddButton").click(function (e) {
+                e.preventDefault();
+                AddNewRow();
+            });
+        });
+
+        //$(function () {
+        //    var selectedData;
+        //    $('#jstree').jstree({
+        //        "core": {
+        //            "multiple": true,
+        //            "check_callback": false,
+        //            'themes': {
+        //                "responsive": true,
+        //                'variant': 'larg',
+        //                'stripes': false,
+        //                'dots': false
+        //            }
+        //        },
+        //        "types": {
+        //            "default": {
+        //                "icon": "fa fa-folder-open-o icon-state-warning icon-lg"
+        //            },
+        //            "file": {
+        //                "icon": "fa fa-file icon-state-warning icon-lg"
+        //            }
+        //        },
+        //        "plugins": ["dnd", "state", "types", "sort", "checkbox"]
+        //    });
+        //});
+        var config = {
+            '.chosen-select': {},
+            '.chosen-select-deselect': { allow_single_deselect: true },
+            '.chosen-select-no-single': { disable_search_threshold: 10 },
+            '.chosen-select-no-results': { no_results_text: 'Oops, nothing found!' },
+            '.chosen-select-width': { width: "95%" }
+        };
+        for (var selector in config) {
+            $(selector).chosen(config[selector]);
+        }
+        function AddNewRow() {
+            var tableBody = $('#customer-option-table');
+            var trLast = tableBody.find("tr:last");
+            var trNew = trLast.clone();
+            var suffix = trNew.find(':input:first').attr('name').match(/\d+/);
+            trNew.find("td:last").html('<span class="btn btn-xs btn-danger removeRow" onclick="removeItem(this)"><i class="fa fa-times"></i></span>');
+            //$.each(trNew.find(':input'), function (i, val) {
+            $.each(trNew.find('select,input[type=text]'), function (i, val) {
+                // console.log(val);
+                //replace name
+
+                var oldN = $(this).attr('name');
+                var oldId = $(this).attr('id');
+                console.log("old-name: " + oldN, "old-id: " + oldId);
+                var newN = oldN.replace('[' + suffix + ']', '[' + (parseInt(suffix) + 1) + ']');
+                var newId = oldId.replace('_' + suffix + '__', '_' + (parseInt(suffix) + 1) + '__');
+                console.log(newId);
+                $(this).attr('name', newN);
+                $(this).attr('id', newId);
+
+                //replace value
+                var type = $(this).attr('type');
+                var value = $(this).attr('value');
+                console.log("type: " + type, "value: " + value);
+                if (type == "text") {
+                    console.log($(this));
+                    $(this).attr('value', "");
+                }
+
+                //$(this).removeClass('input-validation-error');
+            });
+            trLast.after(trNew);
+            var form = $("form").removeData("validator").removeData("unobtrusiveValidation");
+            $.validator.unobtrusive.parse(form);
+        }
+        function removeItem(selector) {
+            $(selector).parent("td").parent("tr").remove();
+
+        }
+    </script>
+
+}
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

@@ -1,0 +1,74 @@
+﻿@model WarehouseApp.Models.ViewModels.NoticeboardPaginationViewModel
+@using PagedList.Mvc
+
+@{
+    ViewBag.Title = "Noticeboard";
+}
+@Styles.Render("~/Content/PagedList")
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="panel panel-primary">
+            <div class="panel-heading"><i class="fa fa-file-text-o"></i> Noticeboard
+                @if (User.IsInRole("Global_SupAdmin") || User.IsInRole("Shop_Admin"))
+                {
+                    <a href='@Url.Action("NewNotice", "Notice")'><span class="btn btn-xs btn-info pull-right"><i class="fa fa-plus-circle fa-lg"></i>&nbsp;&nbsp;Publish New Notice</span></a>
+                } </div>
+            <!-- /.panel-heading -->
+            <div class="panel-body">
+                <div class="form-horizontal">
+
+                    <div class="form-group">
+                        @using (Html.BeginForm("Index", "Notice", FormMethod.Post, new { @class = "", @id = "noticePaginationForm" }))
+                        {
+                            <div class="col-lg-2 paddingReduce">
+                                @Html.Label("Page Size", new { @class = "col-lg-8 pageSizeLabel" })
+                                <div class="col-lg-4 paddingReduce">
+                                    @Html.DropDownListFor(model => model.PageSize, new SelectList(new Dictionary<string, int> { { "25", 25 }, { "50", 50 }, { "100", 100 } }, "Key", "Value", null), new { @class = "pageSizeDropdown", id = "pageSizelist" })
+
+                                </div>
+                            </div>
+
+                        }
+                    </div>
+
+                </div>
+                @foreach (var item in Model.Notices)
+                {
+                    var date = item.UpdatedDate == null ? item.CreatedDate : item.UpdatedDate;
+                    <div class="alert alert-success">
+                        @item.Heading <small><em>@string.Format("{0:dd-MM-yyyy}", date)</em></small> <a href='@Url.Action("Details","Notice",new {id=item.NoticeId})' class="alert-link">See Details</a>.
+                    </div>
+                }
+                Page @(Model.Notices.PageCount < Model.Notices.PageNumber ? 0 : Model.Notices.PageNumber) of @Model.Notices.PageCount
+                @Html.PagedListPager(Model.Notices, Page => Url.Action("Index", "Notice", new RouteValueDictionary() { { "Page", Page }, { "PageSize", Model.PageSize }}))
+
+
+            </div>
+            <!-- .panel-body -->
+        </div>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-6 -->
+    <!-- /.col-lg-6 -->
+</div>
+@section Scripts {
+  
+
+
+    <script>
+                $(document).ready(function() {
+                    $('#pageSizelist').change(function() {
+                        $('#noticePaginationForm').submit();
+                    });
+
+
+                });
+               
+    </script>
+}
+
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

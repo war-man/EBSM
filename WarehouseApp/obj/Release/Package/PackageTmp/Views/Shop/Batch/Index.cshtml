@@ -1,0 +1,148 @@
+﻿@using System.Web.Razor.Parser.SyntaxTree
+@model WarehouseApp.Models.ViewModels.BarcodeSearchViewModel
+
+@using PagedList.Mvc
+
+
+@{
+    ViewBag.Title = "Barcodes";
+}
+@Styles.Render("~/Content/PagedList")
+
+
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="x_panel">
+            <div class="x_title">
+                <i class="fa fa-list"></i> Barcodes
+                <ul class="nav navbar-right panel_toolbox">
+                    
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" title="Settings" aria-expanded="false"><i class="fa fa-wrench"></i></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href='@Url.Action("GenerateBarcode", "Batch")'><i class="fa fa-barcode fa-lg"></i>&nbsp;&nbsp;Generate New Barcodes</a></li>
+                            <li><a href='@Url.Action("PrintExistBarcodes", "Batch")'><i class="fa fa-print fa-lg"></i>&nbsp;&nbsp;Print Exist Barcodes</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              
+                    <div class="col-md-8">
+                        <div class="form-horizontal">
+
+                            <div class="form-group">
+                                @using (Html.BeginForm("Index", "Batch", FormMethod.Post, new { @class = "", @id = "barcodeSearchForm" }))
+                                {
+                                    <div class="col-lg-3 paddingReduce">
+                                        @Html.Label("Page Size", new { @class = "col-lg-8 pageSizeLabel" })
+                                        <div class="col-lg-4 paddingReduce">
+                                            @Html.DropDownListFor(model => model.PageSize, new SelectList(new Dictionary<string, int> { { "50", 50 }, { "100", 100 }, { "500", 500 } }, "Key", "Value", null), new { @class = "pageSizeDropdown", id = "pageSizelist" })
+
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-3 paddingReduce">
+                                        @Html.TextBoxFor(model => model.PName, new { @class = "form-control input-sm", @placeholder = "Product" })
+                                    </div> <div class="col-lg-2 paddingReduce">
+                                        @Html.TextBoxFor(model => model.PCode, new { @class = "form-control input-sm", @placeholder = "Product Code" })
+                                    </div><div class="col-lg-3 paddingReduce">
+                                        @Html.TextBoxFor(model => model.BCode, new { @class = "form-control input-sm", @placeholder = "Barcode" })
+                                    </div>
+                                    <div class="col-lg-1 paddingReduce">
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <span class="glyphicon glyphicon-search"></span>
+                                        </button>
+
+
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <table class="table table-condensed table-hover table-responsive jambo_table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        @Html.DisplayName("Product")
+                                    </th>
+                                    <th>
+                                        @Html.DisplayNameFor(model => model.Barcodes.First().Product.ProductCode)
+                                    </th>
+                                    <th>
+                                        @Html.DisplayNameFor(model => model.Barcodes.First().Barcode)
+                                    </th>
+                                    <th>
+                                        @Html.DisplayNameFor(model => model.Barcodes.First().Exp)
+                                    </th>
+
+
+                                    @*<th>Action</th>*@
+                                </tr>
+                            </thead><tbody>
+    @foreach (var item in Model.Barcodes)
+    {
+        <tr>
+            <td class="col-md-4">
+                @Html.DisplayFor(modelItem => item.Product.ProductFullName)
+            </td>
+            <td class="col-md-2">
+                @Html.DisplayFor(modelItem => item.Product.ProductCode)
+            </td>
+            <td class="col-md-3">
+                @Html.DisplayFor(modelItem => item.Barcode)
+            </td>
+            <td class="col-md-2">
+                @Html.DisplayFor(modelItem => item.Exp)
+            </td>
+
+            @*<td class="col-md-1">
+                    @Html.ActionLink(" Edit", "Edit", "ItemCategory", new { id = item.Barcode }, new { @class = "btn btn-xs btn-primary fa fa-pencil", @title = "Edit" })
+
+                </td>*@
+        </tr>
+    }
+</tbody>
+
+                        </table>
+                        Page @(Model.Barcodes.PageCount < Model.Barcodes.PageNumber ? 0 : Model.Barcodes.PageNumber) of @Model.Barcodes.PageCount
+                        @Html.PagedListPager(Model.Barcodes, Page => Url.Action("Index", "Batch", new RouteValueDictionary() { { "Page", Page }, { "PageSize", Model.PageSize }, { "PName", Model.PName }, { "PCode", Model.PCode }, { "BCode", Model.BCode } }))
+                    </div>
+                    <div class="col-md-4" style="padding:0">
+                        @Html.Partial("../Shop/Batch/_SaveBarcodePartial", Model.BarcodeModel)
+
+                    </div>
+                </div>
+
+            </div></div></div>
+            @section Scripts {
+
+                @Scripts.Render("~/bundles/jqueryval")
+
+                <script>
+                    $(document).ready(function () {
+                        $('#pageSizelist').change(function () {
+                            $('#groupSearchForm').submit();
+                        });
+
+                        $('#saveExistBarcode').on('click', function () {
+                            $('#saveExistBarcodeForm').submit();
+
+                        });
+                    });
+                    function removeThis(obj, paramData) {
+                        //console.log(obj, paramData);
+                        var url = '@Url.Action("DeleteRecord", "Category")';
+                        deleteRow(obj, url, paramData);
+                    }
+
+                </script>
+            }
+            @*//=======================================================================================//
+                //Author : Akbor Hossain
+                //Creation Date : January 2017
+                //=======================================================================================//*@

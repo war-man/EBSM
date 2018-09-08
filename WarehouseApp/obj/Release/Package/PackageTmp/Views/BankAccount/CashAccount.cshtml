@@ -1,0 +1,62 @@
+﻿@model IEnumerable<WarehouseApp.Models.Cash>
+@{
+    ViewBag.Title = "Bank Account List";
+}
+<div class="row panel panel-primary">
+
+
+
+    <div class="panel-heading">
+        <i class="fa fa-list"></i> Cash Account
+      
+    </div>
+    <div class="panel-body">
+
+        <table class="table table-striped table-condensed table-responsive">
+
+            <thead>
+                <tr>
+                    <th>@Html.DisplayNameFor(model => model.CashName)</th>
+                    <th>@Html.DisplayNameFor(model => model.Balance)</th>
+                    <th>@Html.DisplayNameFor(model => model.Status)</th>
+                    <th>@Html.DisplayNameFor(model => model.CreatedDate)</th>
+                    
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+
+                        <td>@Html.DisplayFor(modelItem => item.CashName)</td>
+                        <td>@string.Format("{0:n}",item.Balance)</td>
+                        <td>
+                            @{
+                    if (item.Status == 0)
+                    {
+                        @Html.DisplayName("Inactive")
+                    }
+                    else
+                    {
+                        @Html.DisplayName("Active")
+                    }
+                            }
+
+                        </td>
+                        <td>@Html.DisplayFor(modelItem => item.CreatedDate)</td>
+                       
+                    </tr>
+                }
+            </tbody>
+
+
+
+        </table>
+
+    </div>
+
+</div>
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

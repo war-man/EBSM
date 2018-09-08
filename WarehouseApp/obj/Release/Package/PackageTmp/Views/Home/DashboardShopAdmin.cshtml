@@ -1,0 +1,573 @@
+﻿
+@using WarehouseApp.Controllers
+@using WarehouseApp.Models
+@using WarehouseApp.Models.ViewModels
+
+@{
+    ViewBag.Title = "Home Page";
+    
+}
+@Styles.Render("~/Content/morris")
+<link href="~/Content/chosen/chosen.css" rel="stylesheet" />
+<style>
+    .table-responsive {
+        height: 300px;
+    }
+</style>
+<div class="row">
+    <div class="col-md-12 page-header">
+        <span class="text-dashboard-heading"> <i class="glyphicon glyphicon-dashboard"></i> Welcome to <strong>@SettingsController.CompanyInfo().CompanyName</strong></span>
+
+        <span class="pull-right"> @DateTime.Now.ToString("dd-MMM-yyyy, dddd")</span>
+
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="col-xs-3">
+                        <i class="fa fa-shopping-cart fa-4x"></i>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                       
+                        <span class="huge swingCount1">@ViewBag.todaySoldItems</span>
+
+                        <div>Today Sold Items</div>
+                    </div>
+                </div>
+            </div>
+
+            <a href='@Url.Action("SalesReportByDate", "ShopReport", new { date = DateTime.Now.ToString("dd-MM-yyyy") })'>
+                <div class="panel-footer">
+                    <span class="pull-left">View Details</span>
+                    <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
+                    <div class="clearfix"></div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="panel panel-green">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="col-xs-3">
+                        <i class="fa fa-shopping-bag fa-4x"></i>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                        <span class="huge swingCount2"> @ViewBag.latestPurchasedItems </span>
+                        <div>New Purchased Items</div>
+                    </div>
+                </div>
+            </div>
+            <a href='@Url.Action("PurchaseReportByDate", "ShopReport", new { date = ViewBag.latestPurchaseDate.ToString("dd-MM-yyyy") })'>
+
+
+                <div class="panel-footer">
+                    <span class="pull-left">View Details</span>
+                    <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
+                    <div class="clearfix"></div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="panel panel-yellow">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="col-xs-3">
+                        <i class="fa fa-hourglass-start fa-4x"></i>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                      
+                        <span class="huge swingCount3">@ViewBag.Inventory</span>
+                        <div>Inventory</div>
+                    </div>
+                </div>
+            </div>
+            @*<a href='@Url.Action("ReportByDate", "MirrorTunnelReport", new { date = DateTime.Now.ToString("dd-MMM-yyyy") })'>*@
+            <a href='@Url.Action("Index", "Stock")'>
+                <div class="panel-footer">
+                    <span class="pull-left">View Details</span>
+                    <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
+                    <div class="clearfix"></div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="panel panel-red">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="col-xs-3">
+                        <i class="fa fa-leaf fa-4x"></i>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                        <span class="huge swingCount4">@ViewBag.totalProducts</span>
+                       
+                        <div>Total Products</div>
+                    </div>
+                </div>
+            </div>
+            <a href='@Url.Action("Index", "Product")'>
+                <div class="panel-footer">
+                    <span class="pull-left">View Details</span>
+                    <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
+                    <div class="clearfix"></div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12 panel btn-group btn-group-justified">
+        <a href='@Url.Action("NewSales", "Invoice")' class="btn btn-primary col-sm-3">
+            <i class="fa fa-shopping-cart fa-lg"></i><br>
+            New Sales
+        </a>
+        <a href='@Url.Action("NewPurchase", "Purchase")' class="btn btn-primary col-sm-3">
+            <i class="fa fa-shopping-bag fa-lg"></i><br>
+            New Purchase
+        </a>
+        <a href="javascript:void(0);" data-id="0" class="selectAttributeModal btn btn-primary col-sm-3">
+            @*<a href='@Url.Action("AddProduct", "Product")' class="btn btn-primary col-sm-3">*@
+            <i class="fa fa-plus-circle fa-lg"></i><br>
+            Add New Product
+        </a>
+        <a href='@Url.Action("Index", "Invoice")' class="btn btn-primary col-sm-3">
+            <i class="fa fa-list fa-lg"></i><br>
+            All Sales
+        </a>
+
+        <a href="javascript:void(0);" onclick="nextVersion()" class="btn btn-primary col-sm-3">
+            <i class="fa fa-question-circle fa-lg"></i><br>
+            Help
+        </a>
+    </div>
+</div>
+<!-- /.row -->
+<div class="row">
+
+    <div class="col-lg-8">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <i class="fa fa-line-chart fa-fw"></i> Day Wise Sales Analytics
+            </div>
+            <!-- /.panel-heading -->
+            <div class="panel-body">
+                <div id="morris-line-chart"></div>
+            </div>
+            <!-- /.panel-body -->
+        </div>
+        
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <i class="fa fa-bar-chart-o fa-fw"></i> Month and Year Analytics
+                <div class="pull-right">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                            <span class="fa fa-calendar fa-fw"></span> Option <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu pull-right" role="menu">
+                            <li>
+                                <a href="javascript:void(0);" data-id="month" id="monthFilter" onclick="barChart('monthFilter',6)">Month</a>
+                            </li>
+                            <li>
+                                <a href="javascript:void(0);" data-id="year" id="yearFilter" onclick="barChart('yearFilter',6)">Year</a>
+                            </li>
+
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- /.panel-heading -->
+            <div class="panel-body">
+                <div class="row">
+                    <!-- /.col-lg-4 (nested) -->
+                    <div class="col-md-12">
+                        <div id="morris-bar-chart"></div>
+                    </div>
+                    <!-- /.col-lg-8 (nested) -->
+                </div>
+                <!-- /.row -->
+            </div>
+        </div>
+        @*<div class="panel panel-default">
+            <div class="panel-heading">
+                <i class="fa fa-pie-chart fa-fw"></i> Pie Analytics
+                <div class="pull-right">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                            <span class="fa fa-calendar fa-fw"></span> Option <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu pull-right" role="menu">
+                            <li>
+                                <a href="javascript:void(0);" data-id="month" id="monthFilter" onclick="barChart('monthFilter',6)">Month</a>
+                            </li>
+                            <li>
+                                <a href="javascript:void(0);" data-id="year" id="yearFilter" onclick="barChart('yearFilter',6)">Year</a>
+                            </li>
+
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- /.panel-heading -->
+            <div class="panel-body">
+                <div class="row">
+                    <!-- /.col-lg-4 (nested) -->
+                    <div class="col-md-12">
+                        <div id="piechart-placeholder"></div>
+                    </div>
+                    <!-- /.col-lg-8 (nested) -->
+                </div>
+                <!-- /.row -->
+            </div>
+        </div>*@
+        <!-- /.panel -->
+        <!-- /.panel-body -->
+        <!-- /.panel-heading -->
+        <!-- /.panel -->
+        <!-- /.panel -->
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-8 -->
+    <div class="col-lg-4">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <i class="fa fa-bell fa-fw"></i> Notifications Panel
+            </div>
+            <!-- /.panel-heading -->
+            <div class="panel-body">
+                <div class="list-group">
+                    @*<a href="javascript:void(0);" onclick="nextVersion()" class="list-group-item">
+                        <i class="fa fa-comment fa-fw"></i> New Comment
+                        <span class="pull-right text-muted small">
+                            <em>4 minutes ago</em>
+                        </span>
+                    </a>*@
+                    <a href='@Url.Action("Index","Notice")' class="list-group-item">
+                        <i class="fa fa-file-text fa-fw"></i> @ViewBag.NewNoticesCount New Notice
+                        <span class="pull-right text-muted small">
+                            <em>@ViewBag.NewNoticesTimeAgo</em>
+                        </span>
+                    </a>
+                    @*<a href="javascript:void(0);" onclick="nextVersion()" class="list-group-item">
+                        <i class="fa fa-envelope fa-fw"></i> Message Sent
+                        <span class="pull-right text-muted small">
+                            <em>27 minutes ago</em>
+                        </span>
+                    </a>*@
+                    @*<a href="javascript:void(0);" onclick="nextVersion()" class="list-group-item">
+                        <i class="fa fa-tasks fa-fw"></i> New Task
+                        <span class="pull-right text-muted small">
+                            <em>43 minutes ago</em>
+                        </span>
+                    </a>*@
+
+                    @*<a href="javascript:void(0);" onclick="nextVersion()" class="list-group-item">
+                        <i class="fa fa-warning fa-fw"></i> Server Not Responding
+                        <span class="pull-right text-muted small">
+                            <em>10:57 AM</em>
+                        </span>
+                    </a>*@
+                    <a href="javascript:void(0);" onclick="nextVersion()" class="list-group-item">
+                        <i class="fa fa-shopping-cart fa-fw"></i> New Order Placed
+                        <span class="pull-right text-muted small">
+                            <em>9:49 AM</em>
+                        </span>
+                    </a>
+                    <a href="javascript:void(0);" onclick="nextVersion()" class="list-group-item">
+                        <i class="fa fa-money fa-fw"></i> Payment Received
+                        <span class="pull-right text-muted small">
+                            <em>Yesterday</em>
+                        </span>
+                    </a>
+                </div>
+                <!-- /.list-group -->
+                <a href="javascript:void(0);" class="btn btn-default btn-block">View All Alerts</a>
+            </div>
+            <!-- /.panel-body -->
+        </div>
+        <!-- /.panel -->
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <i class="fa fa-warning fa-fw"></i> Limit Out Stocks
+
+            </div>
+            <div class="panel-body">
+                <table class="table table-condensed table-hover ">
+                    <thead>
+                        <tr>
+                            <th class="col-md-9">Product</th>
+                            <th class="col-md-3">Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                       
+                        @foreach (Stock item in ViewBag.quickStocksProducts)
+                        {
+                            <tr>
+                                <td class="col-md-9">@item.Product.ProductFullName</td>
+                                <td class="col-md-3">
+                                    @if (item.TotalQuantity > 0)
+                                    {
+                                        <span class="badge @(Convert.ToDouble(item.TotalQuantity) > Convert.ToDouble(item.Product.MinStockLimit) ? "badge-success" : "badge-warning")">@item.TotalQuantity</span>
+
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-important">@item.TotalQuantity</span>
+
+                                    }
+                            </td>
+                          
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <a href='@Url.Action("Index", "Stock", new { StockLimitOut = "StockLimitOut" })'  class="btn btn-default btn-block">View All</a>
+            </div>
+
+            <!-- /.panel-body -->
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <i class="fa fa-sort-amount-desc fa-fw"></i> Top Selling Products of Month
+                @*<div class="pull-right">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                            <span class="fa fa-calendar fa-fw"></span> Option <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu pull-right" role="menu">
+                            <li>
+                                <a href="javascript:void(0);" data-id="today" id="todayFilter" onclick="donut('today')"> Today</a>
+                            </li>
+                            <li>
+                                <a href="javascript:void(0);" data-id="month" id="currentMonthFilter" onclick="donut('currentMonth')">Current Month</a>
+                            </li>
+                            <li>
+                                <a href="javascript:void(0);" data-id="year" id="currentYearFilter" onclick="donut('currentYear')">Current Year</a>
+                            </li>
+
+                        </ul>
+                    </div>
+                </div>*@
+            </div>
+            <div class="panel-body">
+                <table class="table table-condensed table-hover ">
+                    <thead>
+                        <tr>
+                            <th class="col-md-7">Product</th>
+                            <th class="col-md-3">Sold</th>
+                            <th class="col-md-2">Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                       
+                        @foreach (TopSellsMonthly item in ViewBag.topSellingProducts)
+                        {
+                            <tr>
+                                <td class="col-md-7">@item.Product.ProductFullName</td>
+                                <td class="col-md-3">
+                                    <span class="label label-info">@item.TotalSoldQuantity</span>
+                                </td>
+                                <td class="col-md-2">
+                                    <span class="label @(@item.Product.Stocks.Sum(x => x.TotalQuantity) < item.Product.MinStockLimit ? "label-warning" : "label-success")">@item.Product.Stocks.Sum(x => x.TotalQuantity)</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- /.panel-body -->
+        </div>
+        <!-- /.panel -->
+        <!-- /.panel .chat-panel -->
+    </div>
+    <!-- /.col-lg-4 -->
+    <div class="modal" id="addAttributeSetModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
+        <div class="modal-dialog modal-sm" role="document">
+
+            <div class="modal-content">
+                @using (Html.BeginForm("AddProduct", "Product", null, FormMethod.Get, new { @id = "selectAttributeForm" }))
+                {
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h3 class="panel-title"><i class="fa fa-pencil"></i> Select Product Attribute Set</h3>
+                    </div>
+                    <div class="modal-body">
+                        <div class="col-xs-12 col-sm-12 col-md-12">
+                            <div class="form-horizontal">
+                                @Html.ValidationSummary(true)
+
+                                <div class="form-group">
+                                    @Html.DropDownList("attributeSetId", new SelectList(((List<ProductAttributeSet>)@ViewBag.AttributeSetId).Where(x => x.Status > 0), "AttributeSetId", "AttributeSetName"), "--Select--", new { @class = "form-control input-sm chosen-select", @placeholder = "Select..." })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="attributeSetSubmit" class="btn btn-primary"> Go</button>
+                        <button data-dismiss="modal" class="btn btn-default">Cancel</button>
+
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    @Scripts.Render("~/bundles/morris")
+    @*@Scripts.Render("~/bundles/float")*@
+@Scripts.Render("~/bundles/chosen")
+
+    <script>
+        $(document).ready(function() {
+            //loading chart data=========================================================
+            var lineUrl='@Url.Action("FindSalesDaily", "Home")';
+            lineChart(lineUrl, 6);
+
+            
+            barChart("monthFilter", 6);
+
+           // donut("currentMonth");
+
+            
+            //Counting animation=============================================================
+            var swingCount1Value = parseInt($('.swingCount1').text());
+            var swingCount2Value = parseInt($('.swingCount2').text());
+            var swingCount3Value = parseInt($('.swingCount3').text());
+            var swingCount4Value = parseInt($('.swingCount4').text());
+
+            $({ swingCount1Value: 0, swingCount2Value: 0, swingCount3Value: 0, swingCount4Value: 0 }).animate({ swingCount1Value: swingCount1Value, swingCount2Value: swingCount2Value, swingCount3Value: swingCount3Value, swingCount4Value: swingCount4Value }, {
+                duration: 1000,
+                easing: 'swing', // can be anything
+                step: function() { // called on every step
+                    // Update the element's text with rounded-up value:
+                    $('.swingCount1').text(commaSeparateNumber(Math.round(this.swingCount1Value)));
+                    $('.swingCount2').text(commaSeparateNumber(Math.round(this.swingCount2Value)));
+                    $('.swingCount3').text(commaSeparateNumber(Math.round(this.swingCount3Value)));
+                    $('.swingCount4').text(commaSeparateNumber(Math.round(this.swingCount4Value)));
+                }
+            });
+            $('#addAttributeSetModal').on('shown.bs.modal', function () {
+                //$('.chosen-select', this).chosen();
+                var config = {
+                    '.chosen-select': {},
+                    '.chosen-select-deselect': { allow_single_deselect: true },
+                    '.chosen-select-no-single': { disable_search_threshold: 10 },
+                    '.chosen-select-no-results': { no_results_text: 'Oops, nothing found!' },
+                    '.chosen-select-width': { width: "90%" }
+                };
+                for (var selector in config) {
+                    $('.chosen-select', this).chosen(config[selector]);
+                }
+                $('.modal .modal-body').css('overflow-y', 'auto');
+                $('.modal .modal-body').css('min-height', $(window).height() * 0.5);
+
+                $('#attributeSetSubmit').click(function () {
+                    if ($('#attributeSetId').val() == '') {
+                        $.alert("Please select attribute set", '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+                    } else {
+                        $('#selectAttributeForm').submit();
+                    }
+                });
+            });
+
+            $('.selectAttributeModal').click(function () {
+                var rowId = $(this).data('id');
+                $('#addAttributeSetModal').modal('show');
+                if (rowId == 0) {
+
+                } else {
+                    $('#productId').val(rowId);
+                }
+            });
+
+
+
+            //for pie chart================================================================================================
+
+           //var placeholder = $('#piechart-placeholder').css({ 'width': '90%', 'min-height': '250px' });
+          
+           
+           // var data = [
+           //     { label: "social networks", data: 200, color: "#68BC31" },
+           //     { label: "search engines", data: 300, color: "#2091CF" },
+           //     { label: "ad campaigns", data: 280, color: "#AF4E96" },
+           //     { label: "direct traffic", data:100, color: "#DA5430" },
+           //     { label: "other", data: 120, color: "#FEE074" }
+           // ];
+
+           // drawPieChart(placeholder, data);
+
+           // /**
+           // we saved the drawing function and the data to redraw with different position later when switching to RTL mode dynamically
+           // so that's not needed actually.
+           // */
+           //placeholder.data('chart', data);
+           // placeholder.data('draw', drawPieChart);
+
+
+           // //pie chart tooltip example
+           // var $tooltip = $("<div class='tooltip top in'><div class='tooltip-inner'></div></div>").hide().appendTo('body');
+           // var previousPoint = null;
+
+           // placeholder.on('plothover', function (event, pos, item) {
+           //     if (item) {
+           //         if (previousPoint != item.seriesIndex) {
+           //             previousPoint = item.seriesIndex;
+           //             var tip = item.series['label'] + " : " + item.series['percent'] + '% (' + item.series.data[0][1]+ ')';
+           //             $tooltip.show().children(0).text(tip);
+           //         }
+           //         $tooltip.css({ top: pos.pageY + 10, left: pos.pageX + 10 });
+           //     } else {
+           //         $tooltip.hide();
+           //         previousPoint = null;
+           //     }
+
+           // });
+           
+       
+        });
+        //function drawPieChart(placeholder, data, position) {
+        //    $.plot(placeholder, data, {
+        //        series: {
+        //            pie: {
+        //                show: true,
+              
+        //                tilt: 0.7,
+        //                highlight: {
+        //                    opacity: 0.25
+        //                },
+        //                stroke: {
+        //                    color: '#fff',
+        //                    width: 2
+        //                },
+        //                startAngle: 2
+        //            },
+                   
+        //        },
+        //        legend: {
+        //            show: true,
+        //            position: position || "ne",
+        //            labelBoxBorderColor: null,
+        //            margin: [-30, 15]
+        //        },
+        //        grid: {
+        //            hoverable: true,
+        //            clickable: true
+        //        }
+        //    });
+        //}
+       
+
+    </script>
+}
+
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : December 2016
+    //=======================================================================================//*@

@@ -1,0 +1,70 @@
+﻿@model IEnumerable<WarehouseApp.Models.BankAccount>
+@{
+    ViewBag.Title = "Bank Account List";
+}
+<div class="row panel panel-primary">
+
+
+
+    <div class="panel-heading">
+        <i class="fa fa-list"></i> Bank Account List
+        <a href='@Url.Action("CreateBankAccount", "BankAccount")' class="pull-right"><span class="btn btn-xs btn-info"><i class="fa fa-plus-circle fa-lg"></i>&nbsp;&nbsp;Add New Account</span></a>
+
+    </div>
+    <div class="panel-body">
+
+        <table class="table table-striped table-condensed table-responsive">
+            <thead>
+                <tr>
+                    <th>@Html.DisplayNameFor(model => model.AccountName)</th>
+                    <th>@Html.DisplayNameFor(model => model.AccountNo)</th>
+                    <th>@Html.DisplayNameFor(model => model.BankName)</th>
+                    <th>@Html.DisplayNameFor(model => model.Branch)</th>
+                    <th>@Html.DisplayNameFor(model => model.Balance)</th>
+                    <th>@Html.DisplayNameFor(model => model.Status)</th>
+                    
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+{
+    <tr class="@(@item.Status==0 ? "text-muted" : " ")">
+        <td>@Html.DisplayFor(modelItem => item.AccountName)</td>
+        <td>@Html.DisplayFor(modelItem => item.AccountNo)</td>
+        <td>@Html.DisplayFor(modelItem => item.BankName)</td>
+        <td>@Html.DisplayFor(modelItem => item.Branch)</td>
+        <td>@Html.DisplayFor(modelItem => item.Balance)</td>
+        <td>
+            @{
+    if (item.Status != 0)
+    {
+        @Html.DisplayName("Enabled")
+
+    }
+    else
+    {
+        @Html.DisplayName("Disabled")
+    }
+            }
+
+        </td>
+
+        <td>
+            @Html.ActionLink(" ", "EditBankAccount", "BankAccount", new { id = item.BankId }, new { @class = "btn btn-xs btn-primary fa fa-pencil" })
+
+
+        </td>
+    </tr>
+}
+            </tbody>
+
+        </table>
+       
+    </div>
+
+</div>
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

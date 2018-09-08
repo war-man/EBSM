@@ -1,0 +1,51 @@
+﻿
+@using WarehouseApp.Controllers
+@using NPOI.SS.Formula.Functions
+
+@model WarehouseApp.Models.Invoice
+
+@{
+    ViewBag.Title = "Delivery Chalan";
+}
+<style>
+   
+
+    .tital {
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .bot-border {
+        border-bottom: 1px #f8f8f8 solid;
+        margin: 5px 0 5px 0;
+    }
+</style>
+<div class="row">
+    <div class="col-md-12">
+        @Html.ActionLink(" Back", "NewSales", "Invoice", null, new { @class = "btn btn-default fa fa-arrow-circle-left  pull-left" })
+        <div class="btn-group pull-right">
+            <a href="javascript:void(0);" class="btn btn-default" id="printInvoice" onclick="printContent('chalanSectionForPrint')"><i class="fa fa-print" aria-hidden="true"></i> Print</a>
+        </div>
+    </div>
+
+    <div class="col-md-11" id="chalanSectionForPrint">
+        @Html.Partial("../Shop/Invoice/_InvoicePrintPartial", Model)
+    </div>
+</div>
+@section Scripts {
+
+    <
+    <script>
+        function printContent(el) {
+            var restorepage = document.body.innerHTML;
+            var printcontent = document.getElementById(el).innerHTML;
+            document.body.innerHTML = printcontent;
+            window.print();
+            document.body.innerHTML = restorepage;
+        }
+    </script>
+}
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

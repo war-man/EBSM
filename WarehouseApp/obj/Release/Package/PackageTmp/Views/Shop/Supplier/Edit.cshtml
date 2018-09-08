@@ -1,0 +1,118 @@
+﻿@model WarehouseApp.Models.Supplier
+
+@{
+    ViewBag.Title = "Edit Supplier";
+}
+
+
+
+@using (Html.BeginForm("Edit", "Supplier", null, FormMethod.Post, new { @id = "editSupplierForm" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="row">
+		<div class="col-md-10 col-xs-12">
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2><i class="fa fa-pencil"></i> Edit Supplier</h2>
+                    <ul class="nav navbar-right panel_toolbox">
+
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="Settings"><i class="fa fa-wrench"></i></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li>
+                                    <a href='@Url.Action("Index","Customer")'>Customers</a>
+                                </li>
+                                <li>
+                                    <a href='@Url.Action("Index","WarehouseZone")'>Product Transfer</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                        </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+        
+                    @Html.ValidationSummary(true)
+                    @Html.HiddenFor(x=>x.SupplierId)
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.SupplierType, new { @class = "control-label col-md-12" })
+                        <div class="col-md-12">
+                            <div class="radio radio-inline">
+                                <label>@Html.RadioButtonFor(model => model.SupplierType, "1", new {  @class = "" }) Manufacturer</label>
+                            </div>
+                            <div class="radio radio-inline">
+                                <label>@Html.RadioButtonFor(model => model.SupplierType, "2", new { @class = "" }) Distributor</label>
+                            </div>
+                            <div class="radio radio-inline">
+                                <label>@Html.RadioButtonFor(model => model.SupplierType, "3", new { @class = "" }) Both</label>
+                            </div>
+
+                            @Html.ValidationMessageFor(model => model.Status)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.SupplierName, new { @class = "control-label" })
+                        @Html.TextBoxFor(model => model.SupplierName, new { @class = "form-control input-sm", placeholder = "Supplier Name" })
+                        @Html.ValidationMessageFor(model => model.SupplierName)
+                    </div>
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.SupplierAddress, new { @class = "control-label" })
+                        @Html.TextAreaFor(model => model.SupplierAddress, new { @class = "form-control input-sm", placeholder = "Address" })
+                        @Html.ValidationMessageFor(model => model.SupplierAddress)
+
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.ContactPersonName, new { @class = "control-label" })
+                        @Html.TextBoxFor(model => model.ContactPersonName, new { @class = "form-control input-sm", placeholder = "Contact Person name" })
+                        @Html.ValidationMessageFor(model => model.ContactPersonName)
+                    </div>
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Position, new { @class = "control-label" })
+                        @Html.TextBoxFor(model => model.Position, new { @class = "form-control input-sm", placeholder = "Position" })
+                        @Html.ValidationMessageFor(model => model.Position)
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Email, new { @class = "control-label" })
+                        @Html.TextBoxFor(model => model.Email, new { @class = "form-control input-sm", placeholder = "Email" })
+                        @Html.ValidationMessageFor(model => model.Email)
+                    </div>
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.ContactNo, new { @class = "control-label" })
+                        @Html.TextBoxFor(model => model.ContactNo, new { @class = "form-control input-sm", placeholder = "Contact No" })
+                        @Html.ValidationMessageFor(model => model.ContactNo)
+                    </div>
+
+                    <div class="hidden form-group">
+                        @Html.LabelFor(model => model.Balance, new { @class = "control-label" })
+                        @Html.TextBoxFor(model => model.Balance, new { @class = "form-control input-sm", placeholder = "Balance" })
+                        @Html.ValidationMessageFor(model => model.Balance)
+                    </div>
+
+                    <div class="form-group">
+                        <div class="col-md-offset-2 col-md-10">
+                            <input type="submit" value="Save" class="btn btn-primary" />
+                            &nbsp;&nbsp;@Html.ActionLink("Cancel", "Index", "Supplier", null, new { @class = "btn btn-default" })
+
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

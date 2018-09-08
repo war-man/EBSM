@@ -1,0 +1,73 @@
+﻿
+
+@using WarehouseApp.Controllers
+@using WarehouseApp.Models.ViewModels
+@model WarehouseApp.Models.Bill
+
+@{
+    ViewBag.Title = "Bill";
+}
+
+<style media="print">
+
+     @@page {
+         size: A4;
+     }
+    .tital {
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .bot-border {
+        border-bottom: 1px #f8f8f8 solid;
+        margin: 5px 0 5px 0;
+    }
+  
+    .floatLeft {
+        float: left;
+    }
+
+    table > thead > tr > th, table > tbody > tr > td {
+        border: 1px solid #000;
+        white-space: nowrap;
+        padding: 2px !important;
+    }
+
+    .fullWidth {
+        width: 100%;
+    }
+    .halfwidth {
+        width:50%
+    }
+</style>
+<div class="row">
+
+    <div class="col-md-12">
+        @Html.ActionLink(" Back", "Index", "Bill", null, new { @class = "btn btn-default fa fa-arrow-circle-left  pull-left" })
+        <div class="btn-group pull-right">
+            <a href="javascript:void(0);" class="btn btn-default" id="printBill" onclick="printContent('billSectionForPrint')"><i class="fa fa-print" aria-hidden="true"></i> Print</a>
+        </div>
+    </div>
+    <div class="col-md-11" id="billSectionForPrint">
+     
+            @Html.Partial("../Shop/Bill/_BillPrintPartial", Model)
+      
+    </div>
+</div>
+
+@section Scripts {
+
+    <script>
+    function printContent(el) {
+       // var restorepage = document.body.innerHTML;
+        var printcontent = document.getElementById(el).innerHTML;
+        document.body.innerHTML = printcontent;
+        window.print();
+        //document.body.innerHTML = restorepage;
+    }
+</script>
+}
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

@@ -1,0 +1,92 @@
+﻿
+@model IEnumerable<WarehouseApp.Models.Invoice>
+@using PagedList.Mvc;
+@using WarehouseApp.Controllers
+
+
+@{
+    ViewBag.Title = "Report";
+    var date = DateTime.Now;
+
+}
+<div class="col-md-12">
+    @Html.ActionLink(" Back", null, null, null, new { href = Request.UrlReferrer, @class = "btn btn-default fa fa-arrow-circle-left  pull-left" })
+    <div class="btn-group pull-right">
+        @*<a href="javascript:void(0);" class="btn btn-link"><i class="fa fa-download" aria-hidden="true"></i> PDF</a>*@
+        <a href='@Url.Action("ExportDateRangeSalesReport", "Export")' class="btn btn-link"><i class="fa fa-download" aria-hidden="true"></i> Excel</a>
+        @*<a href="javascript:void(0);" onclick="nextVersion()" class="btn btn-link"><i class="fa fa-download" aria-hidden="true"></i> PDF</a>*@
+        @*<a href="javascript:void(0);" onclick="nextVersion()" class="btn btn-link"><i class="fa fa-download" aria-hidden="true"></i> Excel</a>*@
+    </div>
+</div>
+<div  id="reportBody">
+    <div align="center">
+        <h2>@ViewBag.CompanyInfo.CompanyName</h2>
+        <h4>Sales Report</h4>
+        <h4>Date Range: @ViewBag.currentFrom.ToString("dd-MMM-yyyy") to @ViewBag.currentTo.ToString("dd-MMM-yyyy")</h4>
+
+    </div>
+    <table class="table table-bordered table-hover table-condensed table-striped">
+        <tr>
+            <th>
+                @Html.DisplayName("Date")
+            </th>
+            <th>
+                @Html.DisplayName("Total Quantity")
+            </th>
+            <th>
+                @Html.DisplayName("Total Sales")
+            </th>
+            <th>
+                @Html.DisplayName("Total Vat")
+
+            </th>
+            <th>
+                @Html.DisplayName("Total")
+
+            </th>
+
+            
+        </tr>
+        @{
+            var quantity = 0;
+            double totalPrice = 0.0;
+            double vat = 0.0;
+            
+        }
+        
+        @foreach (var item in Model.GroupBy(d => d.InvoiceDate.Date))
+        {
+            var sales = Convert.ToDouble(item.Sum(x => x.TotalPrice - BankAccountController.DiscountCalculator(x.DiscountAmount, x.DiscountType, x.TotalPrice).DiscountValue));
+            totalPrice += sales;
+            quantity += Convert.ToInt32(item.Sum(x => x.TotalQuantity));
+            vat += Convert.ToDouble(item.Sum(x => x.TotalVat));
+            <tr>
+                <td>
+                    <a href='@Url.Action("SalesReportByDate", "ShopReport", new { date = item.First().InvoiceDate.ToString("dd-MMM-yyyy") })' target="_blank">@item.First().InvoiceDate.ToString("dd-MMM-yyyy")</a>
+                </td>
+                <td>
+                    @item.Sum(x=>x.TotalQuantity)
+                </td>
+
+                <td>
+                    @String.Format("{0:n}", sales)
+                </td><td>
+                         @String.Format("{0:n}", item.Sum(x => x.TotalVat))
+                     </td>
+                <td>
+                    @String.Format("{0:n}", sales+item.Sum(x => x.TotalVat))
+                </td>
+
+            </tr>
+        }
+        <tr><td colspan="1"><b class="pull-right">Total</b></td><td><b>@quantity</b></td><td><b>@String.Format("{0:n}", totalPrice)</b></td><td><b>@String.Format("{0:n}", vat)</b></td><td><b>@String.Format("{0:n}", totalPrice + vat)</b></td></tr>
+        @*<tr><td colspan="2"><b class="pull-right">Net Total Sales</b> </td><td><b>@String.Format("{0:n}", totalPrice)</b></td><td></td></tr>
+    <tr><td colspan="2"><b class="pull-right">Total VAT</b></td><td><b>@String.Format("{0:n}", vat)</b></td><td></td></tr>*@
+        @*<tr><td colspan="2"><b class="pull-right">Grand Total</b></td><td><b>@String.Format("{0:n}", totalPrice + vat)</b></td><td></td></tr>*@
+    </table>
+</div>
+
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

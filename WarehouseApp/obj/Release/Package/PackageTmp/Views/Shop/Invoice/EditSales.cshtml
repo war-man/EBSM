@@ -1,0 +1,484 @@
+﻿
+@using WarehouseApp.Controllers
+@model WarehouseApp.Models.ViewModels.InvoiceViewModel
+
+@{
+    ViewBag.Title = "Edit Sales";
+}
+@section Styles{
+    @Styles.Render("~/Content/jquery-ui")
+}
+<div class="submit-progress hidden">
+    <i class="fa fa-2x fa-spinner fa-spin"></i>
+    <label>Please wait ...</label>
+</div>
+@using (Html.BeginForm("EditSales", "Invoice", null, FormMethod.Post, new { @id = "editInvoiceForm" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="row">
+        <div class="col-md-12 col-xs-12">
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2><i class="fa fa-pencil"></i> Edit Sales (@Model.InvoiceNumber)</h2>
+                    <ul class="nav navbar-right panel_toolbox">
+
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="Settings"><i class="fa fa-wrench"></i></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href='@Url.Action("Index","Product")'>Products</a></li>
+                                <li><a href='@Url.Action("Index","Batch")'>Barcodes</a></li>
+                                <li><a href='@Url.Action("Index","Stock")'>Stock</a></li>
+                                <li><a href='@Url.Action("Index","Customer")'>Customers</a></li>
+                                <li><a href='@Url.Action("Index","Bill")'>Bills</a></li>
+                                <li><a href='@Url.Action("Index","BankAccount")'>Accounts</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                        </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+                   
+                            @Html.ValidationSummary(true)
+                            <div class="col-md-3 paddingReduce">
+
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        <h3 class="panel-title">Item Search</h3>
+                                    </div>
+                                    <div class="panel-body">
+                                        <div class="form-horizontal">
+                                            <div class="form-group">
+                                                @Html.TextBox("ProductBarCode", null, new { @class = "form-control", placeholder = "Scan Bar Code" })
+
+                                                @Html.TextBox("ProductName", null, new { @class = "form-control", placeholder = "Product Name" })
+
+                                                @Html.TextBox("ProductCode", null, new { @class = "form-control", placeholder = "Product Code" })
+                                            </div>
+                                            @*<input type="button" id="checkBarcode" value="check">*@
+
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        <h3 class="panel-title">Customer Selection</h3>
+                                    </div>
+                                    <div class="panel-body">
+                                        <div class="form-horizontal">
+                                            <div class="form-group">
+                                                <div class="col-md-12 paddingReduce">
+                                                    @Html.LabelFor(model => model.CustomerId, "Customer", new { @class = "control-label col-md-4 salesLabel" })
+                                                    <div class="col-md-4"> <span class="btn btn-xs btn-primary" id="newCustomerAddButton"><i class="fa fa-plus"></i></span></div>
+                                                    @Html.DropDownListFor(model => model.CustomerId, null, "--Select--", new { @class = "form-control" })
+                                                </div>
+                                                <div class="col-md-12 paddingReduce">
+                                                    @Html.LabelFor(model => model.CustomerBranchId, "Branch", new { @class = "control-label col-md-4 salesLabel" })
+                                                    <div class="col-md-4"> <span class="btn btn-xs btn-primary" id="newCustomerBranchAddButton"><i class="fa fa-plus"></i></span></div>
+                                                    @Html.DropDownList("CustomerBranchId", null, "--Select--", new { @class = "form-control" })
+                                                </div>
+                                            </div>
+
+
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-7 paddingReduce">
+                                <div class="panel panel-default">
+                                    <table class="table table-striped table-condensed jambo_table bulk_action" id="productTable">
+                                        <thead style="background-color:#f5f5f5 ;color:black;">
+                                            <tr class="panel-heading">
+                                                <th>Item</th>
+                                                <th>Price</th>
+                                                <th>Quantity</th>
+                                                <th>Total</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @if (Model.InvoiceProducts!=null && Model.InvoiceProducts.Any())
+                                {
+
+                                    foreach (var item in Model.InvoiceProducts)
+                                    {
+                                        string uniqueProductId = string.IsNullOrEmpty(item.Barcode) ? item.ProductId.ToString() : item.ProductId + "-" + item.Barcode;
+                                       // var discountedProductPrice =item.Product.Dp-BankAccountController.DiscountCalculator(item.Product.DiscountAmount,item.Product.DiscountType,item.Product.Dp).DiscountValue;
+                                        <tr>
+                                            <td class="col-md-5 paddingReduce">
+                                                <input class="productId-@uniqueProductId" id="InvoiceProducts_@item.ProductId _ProductId" name="InvoiceProducts[@item.ProductId].ProductId" type="hidden" value="@item.ProductId">
+                                                <input class="Barcode" id="InvoiceProducts_@item.ProductId _Barcode" name="InvoiceProducts[@item.ProductId].Barcode" type="hidden" value="@item.Barcode">
+                                                <input class="defaultWarehouse" id="InvoiceProducts_@item.ProductId _DefaultZoneId" name="InvoiceProducts[@item.ProductId].DefaultZoneId" type="hidden" value="@item.Product.DefaultZoneId">
+                                                <input class="ProductDiscount" id="InvoiceProducts_@item.ProductId _ProductDiscount" name="InvoiceProducts[@item.ProductId].DiscountAmount" type="hidden" value="@item.DiscountAmount">
+                                                <input class="ProductDiscountType" id="InvoiceProducts_@item.ProductId _ProductDiscountType" name="InvoiceProducts[@item.ProductId].DiscountType" type="hidden" value="@item.DiscountType">
+                                                <input class="Vat" id="InvoiceProducts_@item.ProductId _Vat" name="InvoiceProducts[@item.ProductId].Vat" type="hidden" value="@item.Vat">@item.Product.ProductFullName
+                                            </td>
+                                            <td class="col-md-2 paddingReduce"><input value="@item.UnitPrice" class="form-control input-sm UnitPrice" id="InvoiceProducts_@item.ProductId _UnitPrice" name="InvoiceProducts[@item.ProductId].UnitPrice" type="text" onkeyup="updateTotalProductPriceInQuantityChange(this)"></td>
+                                            <td class="col-md-2 paddingReduce">
+                                                <div class="col-md-12 paddingReduce input-group ">
+                                                    <input value="@item.Quantity" class="form-control input-sm Quantity" id="InvoiceProducts_@item.ProductId _Quantity" name="InvoiceProducts[@item.ProductId].Quantity" type="text" onkeyup="updateTotalProductPriceInQuantityChange(this)">
+                                                    <span class="input-group-addon productUnit">@ProductController.FindProductUnit(Convert.ToInt32(item.ProductId))</span>
+                                                </div>
+                                                @{
+                                                    var stock = ProductController.FindStockByProductIdAndBarcode(item.ProductId, item.Barcode) + item.Quantity;
+                                                }
+                                                <span class="hidden stock">@stock</span>
+                                            </td>
+                                            <td class="col-md-2 paddingReduce">
+                                                <input value="@item.TotalPrice" class="form-control input-sm TotalProductPrice" readonly="True" id="InvoiceProducts_@item.ProductId _TotalProductPrice" name="InvoiceProducts[@item.ProductId].TotalPrice" type="text">
+                                                @{var totalProductVat = (item.Dp * item.Quantity) * (item.Vat / 100);}
+                                                <input class="TotalProductVat" id="InvoiceProducts_@item.ProductId _TotalProductVat" name="InvoiceProducts[@item.ProductId].TotalProductVat" type="hidden" value="@totalProductVat">
+                                            </td>
+                                            <td class="paddingReduce"><span class="btn btn-xs btn-danger remove"><i class="fa fa-times"></i></span></td>
+                                        </tr>
+                                    }
+                                }
+
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="5" style="text-align:center; font:bold 20px bold;color:black;">Total: <span id="footerTotal">@Model.TotalPrice</span></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+
+                                </div>
+                            </div>
+                            <div class="col-md-2 paddingReduce">
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        <h3 class="panel-title">Sales</h3>
+                                    </div>
+                                    <div class="panel-body">
+                                        @Html.HiddenFor(model => model.InvoiceId)
+                                        <div class="row form-group">
+                                            @*<div class="col-md-12 paddingReduce">
+                                                    @Html.LabelFor(model => model.InvoiceNumber, new { @class = "required-label control-label col-md-12" })
+                                                    @Html.TextBoxFor(model => model.InvoiceNumber, new { @class = "form-control", @disabled = true, @Value = ViewBag.InvoiceNumber })
+                                                </div>*@
+                                            <div class="col-md-12 paddingReduce">
+                                                @Html.LabelFor(model => model.InvoiceDate, "Date", new { @class = "required-label control-label col-md-12 salesLabel" })
+                                                <div class="col-md-12 paddingReduce input-group " style="padding-left:5px">
+                                                    @Html.TextBox("InvoiceDate", string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control rfwDatepicker", @Value = string.Format("{0:dd-MM-yyyy}", Model.InvoiceDate) })
+                                                    <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12 paddingReduce">
+                                                @Html.LabelFor(model => model.TotalPrice, new { @class = "required-label control-label col-md-12 salesLabel" })
+                                                @Html.TextBoxFor(model => model.TotalPrice, new { @class = "form-control", @style = "font-weight:bold;color:Black;font-size:15px;text-align:center;", @readonly = true, })
+                                            </div>  <div class="col-md-12 paddingReduce">
+                                                @Html.LabelFor(model => model.DiscountAmount, "Discount", new { @class = " control-label col-md-12 salesLabel" })
+
+                                                @Html.TextBoxFor(model => model.DiscountAmount,  new { @class = "form-control"})
+                                                @Html.ValidationMessageFor(model => model.DiscountAmount)
+
+                                                <div class="col-md-12 paddingReduce">
+                                                    <div class="radio radio-inline" style="padding-left: 15px;">
+                                                        <label>@Html.RadioButtonFor(model => model.DiscountType, "Flat") Flat</label>
+                                                    </div>
+                                                    <div class="radio radio-inline" style="padding-left: 5px;">
+                                                        <label> @Html.RadioButtonFor(model => model.DiscountType, "Percent") Percent</label>
+
+                                                    </div>
+                                                </div>
+                                            </div>  <div class="col-md-12 paddingReduce">
+                                                @Html.LabelFor(model => model.TotalVat, "VAT", new { @class = " control-label col-md-12 salesLabel" })
+                                                @Html.TextBoxFor(model => model.TotalVat, new { @class = "form-control", @readonly = true})
+
+                                            </div>  <div class="col-md-12 paddingReduce">
+                                                @{var FinalTotal =Model.TotalPrice - BankAccountController.DiscountCalculator(Model.DiscountAmount,Model.DiscountType,Model.TotalPrice).DiscountValue;
+
+                                                                var grandTotal = FinalTotal + Model.TotalVat;}
+                                                @Html.Label("Grand Total", new { @class = "required-label control-label col-md-12 salesLabel" })
+                                                @Html.TextBox("grandTotal", null, new { @class = "form-control", @style = "font-weight:bold;color:Black;font-size:15px;text-align:center;", @readonly = true, @Value=@grandTotal})
+                                            </div>  <div class="col-md-12 paddingReduce">
+                                                @Html.LabelFor(model => model.TransactionMode, new { @class = "required-label control-label col-md-12 salesLabel" })
+                                                @Html.DropDownList("TransactionMode", null, new { @class = "form-control" })
+                                                @Html.ValidationMessageFor(model => model.TransactionMode)
+                                            </div>  <div class="col-md-12 paddingReduce hidden" id="transactionAccountId">
+                                                @Html.LabelFor(model => model.TransactionModeId, "Account", new { @class = "required-label control-label col-md-12 salesLabel" })
+                                                @Html.DropDownList("TransactionModeId", null, new { @class = "form-control" })
+                                                @Html.ValidationMessageFor(model => model.TransactionModeId)
+                                            </div>
+                                            <div class="col-md-12 paddingReduce hidden">
+                                                @Html.LabelFor(model => model.CashPaid, new { @class = "control-label col-md-12 salesLabel" })
+                                                @Html.TextBoxFor(model => model.CashPaid, null, new { @class = "form-control", })
+                                            </div><div class="col-md-12 paddingReduce hidden">
+                                                      @Html.Label("Cash Change", new { @class = "control-label col-md-12 salesLabel" })
+                                                      @Html.TextBox("CashChange", null, new { @class = "form-control", @readonly = true})
+                                                  </div>
+                                            <div class="col-md-12 paddingReduce">
+                                                @Html.LabelFor(model => model.PaidAmount, new { @class = "control-label col-md-12 salesLabel" })
+                                                @Html.TextBoxFor(model => model.PaidAmount, new { @class = "form-control" })
+                                                @Html.ValidationMessageFor(model => model.PaidAmount)
+
+
+                                            </div><div class="col-md-12 paddingReduce">
+                                                      @{ var due = grandTotal - Model.PaidAmount;}
+                                                      @Html.Label("Due", new { @class = "control-label col-md-12 salesLabel" })
+                                                      @Html.TextBox("DueAmount", null, new { @Value=due,@class = "form-control", @readonly = true })
+                                                  </div>
+
+                                        </div>
+
+                                        <div class="row form-group">
+                                            @Html.HiddenFor(model => model.FormSubmitType, 1)
+                                            <button type="button" class="btn btn-block btn-primary" data-id=1 title="Update" id="saveSales"><i class="fa fa-save"></i> Update</button>
+                                        </div>
+                                        @*<div class="row form-group">
+                                            <button type="button" class="btn btn-block  btn-primary" data-id=2 title="Save & Print" id="savePrintSales"><i class="fa fa-print"></i> Save & Print</button>
+                                        </div>*@
+                                        <div class="row form-group">
+                                            <button type="button" class="btn btn-block  btn-primary" data-id=3 title="Save & Print Chalan" id="savePrintChalan"><i class="fa fa-print"></i> Save & Print Chalan</button>
+                                        </div> 
+                                        @*<div class="row form-group">
+                                            <button type="button" class="btn btn-block  btn-primary" data-id=4 title="Save & Create Bill" id="createBilll"><i class="fa fa-print"></i> Save & Create Bill</button>
+                                        </div>*@
+                                       
+                                        <div class="row form-group">
+                                            <a href='@Url.Action("Index","Invoice")' data-toggle="tooltip" title="Cancel" id="cancel" class="btn btn-block  btn-danger" data-original-title="Cancel"><i class="fa fa-reply"></i> Cancel</a>
+                                        </div>
+
+
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div></div>
+                }
+
+
+                @section Scripts {
+                    @Scripts.Render("~/bundles/jquery-ui")
+                    @Scripts.Render("~/bundles/jqueryval")
+                    @Scripts.Render("~/bundles/ShopScript")
+                    @Scripts.Render("~/bundles/SalesScript")
+                    @Scripts.Render("~/bundles/barcode-scanner-detection")
+                    <script>
+                        $(document).ready(function () {
+
+
+                            $('#ProductName').focus(function () {
+                                var selectedCustomerId = $('#CustomerId').val();
+                                var paramdata = 0;
+                                var url = '@Url.Action("GetProuctForSell", "Product")';
+                                if (selectedCustomerId > 0) {
+                                    paramdata = selectedCustomerId;
+                                    url = '@Url.Action("GetProuctForSellWithCustomerId", "Product")';
+                                }
+
+                                AutoCompleteProductName('#ProductName', url, paramdata);
+                            });
+                            $('#ProductCode').focus(function () {
+                                var selectedCustomerId = $('#CustomerId').val();
+                                var paramdata = 0;
+                                var url = '@Url.Action("GetProuctbyCodeForSell", "Product")';
+                                if (selectedCustomerId > 0) {
+                                    paramdata = selectedCustomerId;
+                                    url = '@Url.Action("GetProuctbyCodeForSellWithCustomerId", "Product")';
+                                }
+                                AutoCompleteProductName('#ProductCode', url, paramdata);
+                            });
+                            $('#ProductBarCode').scannerDetection({
+                                timeBeforeScanTest: 200, // wait for the next character for upto 200ms
+                                startChar: [120], // Prefix character for the cabled scanner (OPL6845R)
+                                endChar: [13], // be sure the scan is complete if key 13 (enter) is detected
+                                avgTimeByChar: 40, // it's not a barcode if a character takes longer than 40ms
+                                onComplete: function (barcode, qty) {
+
+                                    barcodeSearch(barcode);
+                                    $(this).val('');
+                                    //return false;
+                                } // main callback function
+                            });
+                            $('#checkBarcode').on('click', function () {
+                                var barCode = $('#ProductBarCode').val();
+                                //console.log(barCode);
+                                barcodeSearch(barCode);
+
+                            });
+                            $('#Product').on('blur', function () {
+                                calculateDiscount();
+                            });
+                            $('#UnitPrice').on('keyup', function () {
+                                calculateDiscount();
+                            });
+                            $('#DiscountAmount').on('keyup', function () {
+                                CalculateGrandTotal();
+                            });
+
+                            $('input[name=DiscountType]').on('click', function () {
+                                CalculateGrandTotal();
+                            });
+
+                            $('#TotalQuantity').on('keyup', function () {
+                                calculateTotalPrice();
+                            });
+                            $('#CashPaid').on('keyup', function () {
+                                cashPaidChangeEffect();
+                            });
+                            $('#PaidAmount').on('keyup', function () {
+                                paidAmountChangeEffect();
+                            });
+                            //==== Add product for sale =====================
+                            $('#addProduct').on('click', function () {
+                                addProductForSale();
+
+                            });
+
+
+
+                            $('#TransactionMode').change(function () {
+                                $('#TransactionModeId').empty();
+                                var value = $(this).val();
+                                if (value == "Cash") {
+                                    $('#transactionAccountId').addClass('hidden');
+                                }
+                                else {
+                                    $('#transactionAccountId').removeClass('hidden');
+                                }
+
+                                var paramData = { TransactionMode: value };
+                                var url = '@Url.Action("GetAccountByMode", "BankAccount")';
+                                getDataShop(url, paramData, 'getAccountNo');
+                            });
+
+                            $('#phoneNoSearch').click(function () {
+                                var paramData = { contNum: $("#CustomerContactNo").val().trim() };
+                                var url = '@Url.Action("GetCustomerByContNum", "Customer")';
+                                getDataShop(url, paramData, 'renderCustomerInfoLoadInvoice');
+                            });
+                            $('#CustomerId').change(function () {
+                                var value = $(this).val();
+                                var paramData = { cid: value };
+                                var url = '@Url.Action("GetCustomerProjectsByCustomerId", "Customer")';
+                                getDataShop(url, paramData, 'getCustomerProjects');
+
+                            });
+                            //new customer add=========================================================
+                            $('#newCustomerAddButton').click(function () {
+                                $('#customerAddModal').modal('show');
+
+                            });
+                            $('#newCustomerModalFormSubmit').click(function () {
+                                if ($('#newCustomerModalForm').valid()) {
+                                    var formData = objectifyForm($("#newCustomerModalForm").serializeArray());
+                                    console.log(formData);
+                                    var url = '@Url.Action("AddNewCustomer", "Customer")';
+                                    var paramData = { customer: formData };
+
+                                    postShopData(url, paramData, "renderNewCustomerAddedToSales");
+                                } else {
+                                    return false;
+                                }
+                            });
+
+                            //new customer branch add===================================================
+                            $('#newCustomerBranchAddButton').click(function () {
+                                var customerId = $('#CustomerId').val();
+                                if (customerId > 0) {
+                                    $('#customerBranchAddModal').modal('show');
+                                    $('#customerBranch_customerId').val(customerId);
+                                } else {
+                                    $.alert("Please select customer", '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+                                }
+
+
+                            });
+                            $('#newCustomerBranchModalFormSubmit').click(function () {
+                                if ($('#newCustomerBranchModalForm').valid()) {
+                                    var formData = objectifyForm($("#newCustomerBranchModalForm").serializeArray());
+                                    console.log(formData);
+                                    var url = '@Url.Action("AddCustomerBranch", "Customer")';
+                                    var paramData = { customerBranch: formData };
+
+                                    postShopData(url, paramData, "renderNewCustomerBranchAddedToSales");
+                                } else {
+                                    return false;
+                                }
+                            });
+                            //for save only===============================================
+                            $('#saveSales').on('click', function () {
+                                $('#FormSubmitType').val($(this).data('id'));
+                                // saveSales(1);
+                                submitSalesForm();
+                            });
+                            //for save and print recipt=================================================================
+                            $('#savePrintSales').on('click', function () {
+                                $('#FormSubmitType').val($(this).data('id'));
+                                // saveSales(2);
+                                submitSalesForm();
+                            });
+                            //for save and print chalan=================================================================
+                            $('#savePrintChalan').on('click', function () {
+                                $('#FormSubmitType').val($(this).data('id'));
+                                submitSalesForm();
+                            });
+                            //for save and print chalan=================================================================
+                            $('#createBilll').on('click', function () {
+                                $('#FormSubmitType').val($(this).data('id'));
+                                submitSalesForm();
+                            });
+                    
+                        });
+                        function barcodeSearch(barcode) {
+
+                            var url = '@Url.Action("GetProuctByBarcode", "Product")';
+                            var paramData = { barCode: barcode };
+                            getDataShop(url, paramData, 'renderBarcodeSearchForSale');
+                        }
+                        function submitSalesForm() {
+                            var count = 0;
+                            $('#productTable tbody').find('tr').each(function () {
+                                var suffix = $(this).find(':input:first').attr('name').match(/\d+/);
+                                $.each($(this).find(':input'), function (i, val) {
+                                    // Replaced Name
+                                    var oldN = $(this).attr('name');
+                                    var newN = oldN.replace('[' + suffix + ']', '[' + count + ']');
+                                    $(this).attr('name', newN);
+
+                                });
+
+                                count++;
+                            });
+                            var InvoiceDate = $('#InvoiceDate').val();
+                            var TransactionModeId = $('#TransactionModeId option:selected').val();
+                            if (InvoiceDate == '' || count == 0 || TransactionModeId == '') {
+                                $.alert("Please enter required field value", '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+                            } else {
+
+                                $.confirm({
+                                    title: '<i class="fa fa-exclamation-circle"></i> Confirmation',
+                                    content: 'Are you sure want update sales? ',
+                                    confirmButton: "Yes",
+                                    cancelButton: "No",
+                                    confirm: function () {
+
+                                        DisplayProgressMessage('#saveSales', 'Saving..');
+                                        $('#savePrintSales').prop("disabled", true);
+                                        $('#savePrintChalan').prop("disabled", true);
+                                        $('#createBilll').prop("disabled", true);
+                                        $('#cancel').prop("disabled", true);
+                                        // SavePurchaseProduct(url, paramData, 'saveInvoice');
+                                        $('#editInvoiceForm').submit();
+                                    },
+                                    cancel: function () {
+
+                                    }
+                                });
+
+                            }
+
+
+                        }
+</script>
+                }
+                @*//=======================================================================================//
+                    //Author : Md. Mahid Choudhury
+                    //Creation Date : January 2017
+                    //=======================================================================================//*@

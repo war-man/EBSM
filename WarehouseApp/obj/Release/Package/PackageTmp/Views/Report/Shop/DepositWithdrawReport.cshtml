@@ -1,0 +1,69 @@
+﻿
+@{
+    ViewBag.Title = "Report";
+    var today = DateTime.Now;
+    var fromDate = DateTime.Now;
+    var toDate = DateTime.Now;
+    string controllerName = ViewBag.ControllerName;
+}
+
+<div class="page-header">
+    <strong>@ViewBag.FormHeading</strong>
+</div>
+
+<div class="col-sm-9 col-md-9">
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <strong>Deposit - Withdraw  Report</strong><i class=" fa fa-file-text fa-lg pull-right" aria-hidden="true"></i>
+        </div>
+
+        <div class="panel-body">
+            <div class="row">
+                <div class="form-group">
+                    @using (Html.BeginForm("DepositWithdrawReportByDateRange", controllerName, FormMethod.Get, new { @class = "navbar-form" }))
+                    {
+                        <div class="col-lg-5 paddingReduce">
+                            <div class="col-lg-7 paddingReduce">
+                                @Html.DropDownList("TransactionMode", null,  new { @class = "form-control input-sm" })
+                            </div>
+
+
+                            <div class="col-lg-5 paddingReduce">
+
+                                @Html.DropDownList("TransactionType", new SelectList(new List<SelectListItem>
+                                {
+                                    new SelectListItem {Text = "Deposit", Value = "deposit"},
+                                    new SelectListItem {Text = "Withdraw", Value = "withdraw"},
+                                }, "Value", "Text", null),  new { @class = "form-control input-sm" })
+
+
+                            </div></div>
+                        <div class="col-lg-7 paddingReduce">
+    <div class="col-lg-10 form-inline paddingReduce">
+        <div class="col-md-5 paddingReduce input-group " style="">
+            @Html.TextBox("fromDate", string.Format("{0:dd-MM-yyyy}", fromDate), new { @class = "form-control input-sm rfwDatepicker" })
+            <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+        </div>
+        <i class="fa fa-minus fa-fw"></i>
+        <div class="col-md-5 paddingReduce input-group " style="">
+            @Html.TextBox("toDate", string.Format("{0:dd-MM-yyyy}", toDate), new { @class = "form-control input-sm rfwDatepicker" })
+            <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+        </div>
+
+    </div>
+
+    <div class="col-lg-2 paddingReduce" >
+        <button type="submit" class="btn btn-sm btn-default"><i class="fa fa-search" aria-hidden="true"></i> Search</button>
+    </div></div>
+                    }
+                    </div>
+                </div>
+                   
+                </div>
+    </div>
+</div>
+
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

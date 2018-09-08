@@ -1,0 +1,55 @@
+﻿@model WarehouseApp.Models.Notice
+
+@{
+    ViewBag.Title = "Details";
+}
+
+<div class="panel panel-default">
+    <div class="panel-heading"><i class="fa fa-file-text-o"></i> Notice Details
+        @Html.ActionLink(" Back", null, null, null, new { href = Request.UrlReferrer, @class = "btn btn-default fa fa-arrow-circle-left  pull-right" })
+    </div>
+    <div class="panel-body">
+        <div class="row">
+
+            <div class="col-md-12">
+                <div class="span8">
+                    <h4><strong><a href='@Url.Action("Details","Notice",new {id=Model.NoticeId})'>@Model.Heading</a></strong></h4>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="span8">
+                    <p></p>
+                    <p>
+                        @{var date = Model.UpdatedDate == null ? Model.CreatedDate : Model.UpdatedDate;}
+                        <i class="fa fa-user"></i> by <a href="#">@Model.CreateUser.UserName</a>
+                        | <i class="fa fa-calendar"></i> @string.Format("{0:dd-MM-yyyy}", date)
+                        @if (User.IsInRole("Global_SupAdmin") || User.IsInRole("Shop_Admin"))
+                        {
+                           <a href='@Url.Action("EditNotice","Notice",new {id=Model.NoticeId})'><i class="fa fa-pencil"></i></a>
+                        } 
+                       
+                    </p>
+                </div>
+            </div>
+           <hr>
+            <div class="col-md-12">
+
+                <div class="span6">
+                    <p>
+                        @Model.Description
+                    </p>
+
+                </div>
+            </div>
+        
+        </div>
+    </div>
+
+</div>
+
+    
+
+@*//=======================================================================================//
+//Author : Md. Mahid Choudhury
+//Creation Date : January 2017
+//=======================================================================================//*@

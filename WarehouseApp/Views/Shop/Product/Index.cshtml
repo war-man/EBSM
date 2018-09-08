@@ -1,0 +1,424 @@
+﻿@using PagedList.Mvc
+@using WarehouseApp.Controllers
+@using WarehouseApp.Models
+
+@model WarehouseApp.Models.ViewModels.ProductSearchViewModel
+@section Styles
+{
+
+    <!-- iCheck -->
+@*@Styles.Render("~/Content/iCheck")*@
+
+@Styles.Render("~/Content/chosen")
+@Styles.Render("~/Content/PagedList")
+<!-- Select2 -->
+@*@Styles.Render("~/Content/Select2")*@
+    }
+
+@{
+    ViewBag.Title = "Product List";
+    //var fromDate = DateTime.Now;
+    //var toDate = DateTime.Now; 
+    var cx = new WmsDbContext();
+}
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="x_panel">
+            <div class="x_title">
+                <i class="fa fa-list"></i> Product List
+               
+                @*<a href="javascript:void(0);" data-id="0" class="selectAttributeModal pull-right"><span class="btn btn-xs btn-info"><i class="fa fa-plus-circle fa-lg"></i>&nbsp;&nbsp;Add New</span></a>*@
+                <ul class="nav navbar-right panel_toolbox">
+                    <li>
+                        <a href="javascript:void(0);" data-id="0" class="selectAttributeModal pull-right" title="Add New"><i class="fa fa-plus-square fa-lg"></i> </a>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" title="Settings" aria-expanded="false"><i class="fa fa-wrench"></i></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li>
+                                <a href='@Url.Action("ListArrtibuteType","ProductAttribute")'>Attributes</a>
+                            </li>
+                            <li>
+                                <a href='@Url.Action("AttributeSetList", "ProductAttribute")'>Attribute Sets</a>
+                                <a href='@Url.Action("Index", "Category")'>Categories</a>
+                            </li>
+                            <li>
+                                <a href='@Url.Action("Index","Customer")'>Customers</a>
+                            </li>
+                            <li>
+                                <a href='@Url.Action("Index","Supplier")'>Suppliers</a>
+                            </li>
+                            <li>
+                                <a href='@Url.Action("Index","WarehouseZone")'>Warehouse Zone</a>
+                            </li>
+                            <li>
+                                <a href='@Url.Action("ProductImport","Product")'>Product Import From Excel</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+                <div class="form-horizontal">
+
+                    <div class="form-group">
+                        @using (Html.BeginForm("Index", "Product", FormMethod.Post, new { @class = "", @id = "productSearchForm" }))
+                        {
+                            <div class="col-lg-1 paddingReduce">
+                                @Html.Label(" ", new { @class = "col-lg-6 pageSizeLabel" })
+                                <div class="col-lg-6 paddingReduce">
+                                    @Html.DropDownListFor(model => model.PageSize, new SelectList(new Dictionary<string, int> { { "50", 50 }, { "100", 100 }, { "500", 500 } }, "Key", "Value", null), new { @class = "pageSizeDropdown", id = "pageSizelist" })
+
+                                </div>
+                            </div>
+
+                            <div class="col-lg-2 paddingReduce">
+                                @Html.TextBoxFor(model => model.PName, new { @class = "form-control input-sm", @placeholder = "Product Name" })
+                            </div>                        <div class="col-lg-1 paddingReduce">
+                                @Html.TextBoxFor(model => model.PCode, new { @class = "form-control input-sm", @placeholder = "Code" })
+                            </div>
+                            <div class="col-lg-2 paddingReduce">
+                                @Html.DropDownList("CatId", null, "Categories..", new { @class = "form-control input-sm", @placeholder = "Category" })
+
+                            </div>
+                            if (cx.ProductAttributeSets.Any(x => x.AttributeSetName.ToLower() == "medicine"))
+                            {
+                                <div class="col-lg-2 paddingReduce">
+                                    @Html.DropDownList("GroupNameId", null, "All Group..", new { @class = "form-control input-sm", @placeholder = "Group" })
+                                </div>
+                            }
+
+
+                            <div class="col-lg-2 paddingReduce">
+                                @Html.DropDownList("ManufacId", null, "All Manufacturer..", new { @class = "form-control input-sm", @placeholder = "Manufacturer" })
+                            </div>
+
+                            @*<div class="col-lg-2">
+                        @Html.TextBoxFor(model => model.Price, null, new { @class = "form-control input-sm", @placeholder = "Price (max.)" })
+                    </div>*@
+                            <div class="col-lg-1 paddingReduce">
+                                @Html.DropDownListFor(model => model.Status, new SelectList(new List<SelectListItem>
+                                {
+                                    new SelectListItem {Text = "Enabled", Value = "1"},
+                                    new SelectListItem {Text = "Disabled", Value = "0"},
+                                }, "Value", "Text", null), "Select..", new { @class = "form-control input-sm" })
+
+                            </div>
+                            
+
+                            <div class="col-lg-1 paddingReduce">
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <span class="glyphicon glyphicon-search"></span>
+                                </button>
+
+
+                            </div>
+                        }
+                    </div>
+
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-condensed table-striped jambo_table bulk_action">
+                        <thead>
+                            <tr class="headings">
+                                <th>SL</th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Products.First().ProductName)
+                                </th>
+                                <th>
+                                   @Html.DisplayName("Code")
+                                </th>
+                                @*<th>
+                                    @Html.DisplayName("Manufacturer")
+                                </th>*@
+                                @*<th>
+
+                                    @Html.DisplayNameFor(model => model.Products.First().Tp)
+                                </th>*@
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Products.First().Dp)
+                                </th>
+                                <th>
+                                    @Html.DisplayName("Stock")
+                                </th>
+                                <th>
+                                    @Html.DisplayName("Default Warehouse")
+                                </th>
+                                @*<th>
+                                    @Html.DisplayName("Discount")
+                                </th>*@
+                                @*<th class="col-md-1">
+                @Html.DisplayName("Expiry")
+            </th>*@
+                                @*<th class="col-md-1">
+                @Html.DisplayNameFor(model => model.Products.First().Status)
+            </th>*@
+
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int slNo = Model.Page == 1 ? 1 : (((Model.Page - 1) * Model.PageSize) + 1);
+                            }
+                            @foreach (var item in Model.Products)
+                            {
+                                var stock = 0;
+                                if (item.Stocks.Count > 0)
+                                {
+                                    stock = (item.Stocks.Sum(x => x.TotalQuantity) > 0) ? Convert.ToInt32(item.Stocks.Sum(x => x.TotalQuantity)) : 0;
+                                }
+                                <tr class="@(@item.Status==0 ? "text-muted" : " ")">
+
+                                    <td width="3%">
+                                        @slNo
+                                    </td>
+
+                                    <td class="col-md-4">
+                                        @Html.DisplayFor(modelItem => item.ProductFullName)
+                                    </td>
+                                    <td class="col-md-2">
+                                        @Html.DisplayFor(modelItem => item.ProductCode)
+                                    </td>
+                                    @*<td class="col-md-2">
+                                        @Html.DisplayFor(modelItem => item.Supplier.SupplierName)
+                                    </td>*@
+
+                                    @*<td class="col-md-1">
+                                        @Html.DisplayFor(modelItem => item.Tp)
+                                    </td>*@
+                                    <td class="col-md-1">
+                                        @Html.DisplayFor(modelItem => item.Dp)
+                                    </td>
+                                    <td class="col-md-1">
+                                        @if (stock > 0)
+                                        {
+
+                                            <span class="badge @(Convert.ToDouble(stock) > Convert.ToDouble(item.MinStockLimit) ? "badge-success" : "badge-warning")">@stock</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-important">@stock</span>
+
+                                        }
+                                    </td>
+                                       <td class="col-md-2">
+                                        @Html.DisplayFor(modelItem => item.WarehouseZone.ZoneName)
+                                    </td>
+                                    @*<td class="col-md-1">
+                                        @if (item.DiscountAmount > 0)
+                                        {
+                                            @BankAccountController.DiscountCalculator(item.DiscountAmount, item.DiscountType, item.Dp).DiscountValueShow
+                                        }
+                                        else
+                                        {
+                                            @Html.DisplayName("N/A")
+                                        }
+
+                                    </td>*@
+                                    @*<td class="col-md-1 ">
+                    @if (!String.IsNullOrEmpty(item.ExpiryDate.ToString()))
+                    {
+                        <div class="@(@item.ExpiryDate <= DateTime.Now ? "text-solid-red" : " ")">
+                            @Convert.ToDateTime(item.ExpiryDate).ToString("dd-MM-yyyy")</div>
+                    }
+                    else
+                    {
+                        @Html.DisplayName("N/A")
+                    }
+                </td>*@
+                                    @*<td class="col-md-1">
+                    @{
+                        if (item.Status != 0)
+                        {
+                            @Html.DisplayName("Enabled")
+
+                        }
+                        else
+                        {
+                            @Html.DisplayName("Disabled")
+                        }
+                    }
+                </td>*@
+
+                                    <td class="col-md-1">
+                                        <a class="btn btn-xxs btn-info fa fa-eye" onclick="productView(@item.ProductId)" title="View"></a>
+                                        @*@Html.ActionLink(" ", "SelectAttributeSet", "Product", new { productId = item.ProductId }, new { @class = "btn btn-xxs btn-info fa fa-eye", @title = "View" })*@
+                                        @Html.ActionLink(" ", "SelectAttributeSet", "Product", new { productId = item.ProductId }, new { @class = "btn btn-xxs btn-primary fa fa-pencil", @title = "Edit" })
+                                       
+                                    </td>
+                                </tr>
+                                slNo++;
+                            }
+                        </tbody>
+                    </table>
+                    Page @(Model.Products.PageCount < Model.Products.PageNumber ? 0 : Model.Products.PageNumber) of @Model.Products.PageCount
+
+                    @Html.PagedListPager(Model.Products, Page => Url.Action("Index", "Product", new RouteValueDictionary() { { "Page", Page }, { "PageSize", Model.PageSize }, { "PCode", Model.PCode }, { "PName", Model.PName }, { "CatId", Model.CatId }, { "GroupNameId", Model.GroupNameId }, { "ManufacId", Model.ManufacId }, { "Status", Model.Status } }))
+                </div>
+
+
+            </div>
+        </div>
+    </div></div>
+
+
+<div class="modal" id="addAttributeSetModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
+    <div class="modal-dialog modal-sm" role="document">
+
+        <div class="modal-content">
+            @using (Html.BeginForm("AddProduct", "Product", null, FormMethod.Get, new { @id = "selectAttributeForm" }))
+            {
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h3 class="panel-title"><i class="fa fa-pencil"></i> Select Product Attribute Set</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="col-xs-12 col-sm-12 col-md-12">
+                        <div class="form-horizontal">
+                            @Html.ValidationSummary(true)
+                        
+                            <div class="form-group col-md-12">
+                                @Html.DropDownList("attributeSetId", new SelectList(((List<ProductAttributeSet>)@ViewBag.AttributeSetId).Where(x => x.Status > 0), "AttributeSetId", "AttributeSetName"), "--Select--", new { @class = "form-control input-sm chosen-select ", @placeholder = "Select..." })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="attributeSetSubmit" class="btn btn-primary"> Go</button>
+                    <button data-dismiss="modal" class="btn btn-default">Cancel</button>
+
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<div class="modal" id="productDetailsModal" tabindex="-1" role="dialog" aria-labelledby="productDetailsModalLabel">
+    <div class="modal-dialog modal-lg" role="document">
+
+        <div class="modal-content">
+           
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h3 class="panel-title"><i class="fa fa-info-circle"></i> Product Details</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <table class="table">
+                            <tr>
+                                <td>Name</td>
+                                <td id="View_ProdName"></td>
+                                <td>Retail Price</td>
+                                <td id="View_RetailPrice"></td>
+                            </tr>
+                            <tr>
+                                <td>Code</td>
+                                <td id="View_Code"></td>
+                                <td>Purchase Price</td>
+                                <td id="View_PurchasePrice"></td>
+                            </tr>
+                            <tr>
+                                
+                                <td>Default Stock Zone</td>
+                                <td id="View_StockZone"></td>
+                                <td>Categories</td>
+                                <td id="View_Categories"></td>
+                            </tr>
+                            <tr>
+                                <td>Discount</td>
+                                <td id="View_Discount"></td>
+                                <td>Manufacturer</td>
+                                <td id="View_Manufacturer"></td>
+                            </tr>
+                            <tr>
+                                <td>Specification</td>
+                                <td colspan="3" id="View_Specification"></td>
+                               
+                            </tr>
+                        </table>
+                        <div class="col-md-12">
+                            <legend>Customer Options</legend>
+                            <div id="customerRelationArea"></div>
+                        </div>
+                    </div>
+                </div>
+            <div class="modal-footer">
+                <a href="@Url.Action("SelectAttributeSet", "Product")" id="editButtonModal" class="btn btn-sm btn-primary"><i class="fa fa-pencil"></i> Edit</a>
+                <button data-dismiss="modal" class="btn btn-sm btn-default"><i class="fa fa-times-circle"></i> Close</button>
+ </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+@Scripts.Render("~/bundles/ShopScript")
+    @Scripts.Render("~/bundles/chosen")
+    <!-- Select2 -->
+@*@Scripts.Render("~/bundles/Select2")*@
+@*@Scripts.Render("~/bundles/iCheck")*@
+    <script>
+        //chosen-select =========================================================
+    
+        $(document).ready(function() {
+            $('.selectAttributeModal').click(function () {
+                var rowId = $(this).data('id');
+                $('#addAttributeSetModal').modal('show');
+                if (rowId == 0) {
+                   
+                } else {
+                    $('#productId').val(rowId);
+                }
+            });
+
+            $('#pageSizelist').change(function () {
+                $('#productSearchForm').submit();
+            });
+            
+            $('#addAttributeSetModal').on('shown.bs.modal', function () {
+                $('.chosen-select', this).chosen();
+                var config = {
+                    '.chosen-select': {},
+                    '.chosen-select-deselect': { allow_single_deselect: true },
+                    '.chosen-select-no-single': { disable_search_threshold: 10 },
+                    '.chosen-select-no-results': { no_results_text: 'Oops, nothing found!' },
+                    '.chosen-select-width': { width: "90%" }
+                };
+                for (var selector in config) {
+                    $('.chosen-select', this).chosen(config[selector]);
+                }
+                $('.modal .modal-body').css('overflow-y', 'auto');
+                $('.modal .modal-body').css('min-height', $(window).height() * 0.5);
+
+                $('#attributeSetSubmit').click(function () {
+                    if ($('#attributeSetId').val() == '') {
+                            $.alert("Please select attribute set", '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+                        } else {
+                            $('#selectAttributeForm').submit();
+                        }
+                });
+
+            });
+
+        });
+        function productView(productId) {
+            //console.log(productId);
+            var url = '@Url.Action("GetProuctByproductId", "Product")';
+            var paramData = { productId: productId };
+            getDataShop(url, paramData, 'getProductDetailsModal');
+            
+               
+        
+        }
+        //$('.select2').select2();
+
+    </script>
+}
+    
+       @*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

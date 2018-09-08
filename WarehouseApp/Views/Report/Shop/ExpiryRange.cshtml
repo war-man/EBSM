@@ -1,0 +1,42 @@
+﻿
+@{
+    ViewBag.Title = "Report";
+    var today = DateTime.Now;
+    var fromDate = DateTime.Now;
+    var toDate = DateTime.Now;
+    string controllerName = ViewBag.ControllerName;
+}
+
+<div class="page-header">
+    <strong>@ViewBag.FormHeading</strong>
+</div>
+<div class="col-sm-9 col-md-9">
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <strong>Expiry Products Report</strong><i class=" fa fa-file-text fa-lg pull-right" aria-hidden="true"></i>
+        </div>
+        <div class="panel-body">
+            @using (Html.BeginForm("ExpiryWithinReportByDate", controllerName, FormMethod.Get, new { @class = "navbar-form" }))
+            {
+                <div class="form-group">
+                    @Html.Label("Expiry Within", new {@class = "control-label col-md-4"})
+                    <div class="col-md-5">
+                        <div class="input-group col-md-12">
+                            @Html.TextBox("date", string.Format("{0:dd-MM-yyyy}", today), new {@class = "form-control input-sm rfwDatepicker"})
+                            <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                        </div>
+                   
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-sm btn-default"><i class="fa fa-search" aria-hidden="true"></i> Search</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

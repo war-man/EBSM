@@ -1,0 +1,137 @@
+﻿@model  WarehouseApp.Models.ViewModels.CustomerSearchViewModel
+@using PagedList.Mvc
+
+@{
+    ViewBag.Title = "Customers";
+}
+@Styles.Render("~/Content/PagedList")
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="x_panel">
+            <div class="x_title">
+                <i class="fa fa-list"></i> Customer List
+                <ul class="nav navbar-right panel_toolbox">
+                    <li><a href='@Url.Action("Create", "Customer")' data-id="0" class="" title="Add New"><i class="fa fa-plus-square fa-lg"></i> </a></li>
+
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" title="Settings" aria-expanded="false"><i class="fa fa-wrench"></i></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href='@Url.Action("Index", "Invoice")'>Sales</a></li>
+                            <li><a href='@Url.Action("Index", "Bill")'>Bills</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+
+                    <div class="form-horizontal">
+
+                        <div class="form-group">
+                            @using (Html.BeginForm("Index", "Customer", FormMethod.Post, new { @class = "", @id = "customerSearchForm" }))
+                            {
+                                <div class="col-lg-2 paddingReduce">
+                                    @Html.Label("Page Size", new { @class = "col-lg-8 pageSizeLabel" })
+                                    <div class="col-lg-4 paddingReduce">
+                                        @Html.DropDownListFor(model => model.PageSize, new SelectList(new Dictionary<string, int> { { "25", 25 }, { "50", 50 }, { "100", 100 } }, "Key", "Value", null), new { @class = "pageSizeDropdown", id = "pageSizelist" })
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-2 paddingReduce">
+                                    @Html.TextBoxFor(model => model.CustomerName, new { @class = "form-control input-sm", @placeholder = "Name" })
+                                </div><div class="col-lg-2 paddingReduce">
+                                    @Html.TextBoxFor(model => model.ContactNo, new { @class = "form-control input-sm", @placeholder = "Contact No" })
+                                </div>
+                                <div class="col-lg-1 paddingReduce">
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <span class="glyphicon glyphicon-search"></span>
+                                    </button>
+
+
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <table class="table table-condensed table-hover table-responsive table-striped jammbo_table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    @Html.DisplayName("Customer Id")
+                                </th> <th>
+                                    @Html.DisplayNameFor(model => model.Customers.First().FullName)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Customers.First().Address)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Customers.First().Email)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Customers.First().ContactNo)
+                                </th>
+
+
+
+                                <th>Action</th>
+                            </tr>
+                        </thead><tbody>
+
+    @foreach (var item in Model.Customers)
+    {
+        <tr>
+            <td class="col-md-1">
+                @Html.DisplayFor(modelItem => item.CustomerId)
+            </td>
+            <td class="col-md-3">
+    @Html.DisplayFor(modelItem => item.FullName)
+</td>
+            <td class="col-md-3">
+                @Html.DisplayFor(modelItem => item.Address)
+            </td>
+            <td class="col-md-2">
+                @Html.DisplayFor(modelItem => item.Email)
+            </td>
+            <td class="col-md-2">
+                @Html.DisplayFor(modelItem => item.ContactNo)
+            </td>
+
+            <td class="col-md-1">
+                @*<a href="javascript:void(0);" onclick="nextVersion()" class="btn btn-xs btn-primary fa fa-pencil" title="Edit"></a>*@
+                @*@Html.ActionLink(" ", "Edit", "Customer", new { id = item.CustomerId }, new { @class = "btn btn-xs btn-primary fa fa-pencil", @title = "Edit" })*@
+                @Html.ActionLink(" ", "Details", "Customer", new { id = item.CustomerId }, new { @class = "btn btn-xs btn-info fa fa-search-plus", @title = "Details" })
+
+            </td>
+        </tr>
+    }
+
+</tbody>
+
+                    </table>
+                    Page @(Model.Customers.PageCount < Model.Customers.PageNumber ? 0 : Model.Customers.PageNumber) of @Model.Customers.PageCount
+                    @Html.PagedListPager(Model.Customers, Page => Url.Action("Index", "Customer", new RouteValueDictionary() { { "Page", Page }, { "PageSize", Model.PageSize }, { "CustomerName", Model.CustomerName }, { "ContactNo", Model.ContactNo } }))
+
+
+                </div></div></div>
+            </div>
+
+            @section Scripts {
+                <script>
+                    $(document).ready(function () {
+                        $('#pageSizelist').change(function () {
+                            $('#customerSearchForm').submit();
+                        });
+
+                    });
+
+
+                </script>
+            }
+
+            @*//=======================================================================================//
+                //Author : Md. Mahid Choudhury
+                //Creation Date : December 2016
+                //=======================================================================================//*@

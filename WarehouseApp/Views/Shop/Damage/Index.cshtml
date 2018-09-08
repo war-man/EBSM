@@ -1,0 +1,179 @@
+﻿@model WarehouseApp.Models.ViewModels.DamageSearchViewModel
+@using PagedList.Mvc
+@using WarehouseApp.Models.ViewModels
+
+@{
+    ViewBag.Title = "Damages";
+}
+
+@Styles.Render("~/Content/PagedList")
+<style>
+    .rfwDatepicker {
+        z-index: 100000 !important;
+    }
+</style>
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="x_panel">
+            <div class="x_title">
+                <i class="fa fa-list"></i> Damage List
+                <ul class="nav navbar-right panel_toolbox">
+                    <li><a href='@Url.Action("Create", "Damage")' data-id="0" class="" title="Add New"><i class="fa fa-plus-square fa-lg"></i> </a></li>
+
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" title="Settings" aria-expanded="false"><i class="fa fa-wrench"></i></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href='@Url.Action("Index", "Stock")'>Stock</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+                    <div class="form-horizontal">
+
+                        <div class="form-group">
+                            @using (Html.BeginForm("Index", "Damage", FormMethod.Post, new { @class = " ", @id = "damageSearchForm" }))
+                            {
+                                <div class="col-lg-2">
+                                    @Html.Label("PageSize", new { @class = "col-lg-8 pageSizeLabel" })
+                                    <div class="col-lg-4">
+                                        @Html.DropDownList("PageSize", new SelectList(new Dictionary<string, int> { { "25", 25 }, { "50", 50 }, { "100", 100 } }, "Key", "Value", null), new { @class = "pageSizeDropdown", id = "pagesizelist" })
+
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    @Html.HiddenFor(model => model.SelectedProductId)
+                                    @Html.TextBox("ProductNameFull", null, new { @class = "form-control input-sm", @placeholder = "Product Name" })
+                                </div>
+                                <div class="col-lg-1">
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <span class="glyphicon glyphicon-search"></span>
+                                    </button>
+
+
+                                </div>
+                            }
+                        </div>
+
+                    </div>
+
+                    <table class="table table-striped table-condensed table-responsive jambo_table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    @Html.DisplayName("Date")
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Damages.First().Stock.Product.ProductName)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Damages.First().Quantity)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Damages.First().Note)
+                                </th>
+
+                                <th>Action</th>
+                            </tr>
+                        </thead><tbody>
+
+    @foreach (var item in Model.Damages)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.CreatedDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Stock.Product.ProductFullName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Quantity)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Note)
+            </td>
+
+            <td>
+                @*@if (item.DamageDismisses.Any()==false && item.DamageReturns.Any()==false)
+                    {
+                    @Html.ActionLink(" Edit", "Edit", "Damage", new { Id = item.DamageId }, new { @class = "btn btn-xs btn-primary fa fa-pencil", @title = "Edit" })
+
+                    }*@
+                @if (item.Quantity > 0)
+                {
+                    <a href="javascript:void(0);" id="@item.DamageId" onclick=" showModal(this) "><span class="btn btn-xs btn-primary fa fa-times-circle-o" title="Retun or Dismiss"> Return / Dismiss</span> </a>
+                    @*<a href="javascript:void(0);" data-id="-1" class="deleteRow" onclick="removeThis(this,@item.DamageId)"><span class="btn btn-xs btn-default fa fa-trash fa-lg" title="Delete"></span></a>*@
+                }
+            </td>
+        </tr>
+    }
+</tbody>
+
+                    </table>
+                    Page @(Model.Damages.PageCount < Model.Damages.PageNumber ? 0 : Model.Damages.PageNumber) of @Model.Damages.PageCount
+                    @Html.PagedListPager(Model.Damages, Page => Url.Action("Index", "Damage", new RouteValueDictionary() { { "Page", Page }, { "PageSize", Model.PageSize }, { "SelectedProductId", Model.SelectedProductId }, { "ProductNameFull", Model.ProductNameFull } }))
+
+                </div> </div>
+
+            </div>
+            <div class="modal" id="retunDismissModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
+                <div class="modal-dialog modal-md" role="document">
+
+                    <div class="modal-content">
+                        @{ var damageReturnDismiss = new DamageDismissViewModel();}
+                        @Html.Partial("../Shop/Damage/_DamageReturnDismissModalPartial", damageReturnDismiss)
+                    </div>
+                </div>
+            </div></div>
+
+            @section Scripts {
+                @Scripts.Render("~/bundles/ShopScript")
+                <script>
+                    $(document).ready(function () {
+
+                        $('#pagesizelist').change(function () {
+                            $('#damageSearchForm').submit();
+                        });
+                        $('#SubmitDamageReturnForm').click(function () {
+
+                            var oldQuantity = parseFloat($('#OldQuantity').val().trim());
+                            var totalQuantity = parseFloat($('#Quantity').val().trim());
+                            if (totalQuantity > oldQuantity || totalQuantity == 0) {
+                                $.alert("Invalid Quantity !", '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+                            } else {
+                                $('#DamageReturnForm').submit();
+                            }
+
+                        });
+
+                        @*$('#ProductNameFull').focus(function () {
+                var url = '@Url.Action("GetProuctForPurchase", "Product")';
+                AutoCompleteProductName('#ProductNameFull', url);
+
+            });*@
+                    });
+
+                    function showModal(obj) {
+                        var damageId = parseInt(obj.id);
+                        var paramData = { damageId: damageId };
+                        // console.log(damageId, paramData);
+                        var url = '@Url.Action("GetDamage", "Damage")';
+                        getDataShop(url, paramData, 'GetDamage');
+
+                        $('#retunDismissModal').modal('show');
+                    }
+                    @*function removeThis(obj, paramData) {
+                        var url = '@Url.Action("DeleteRecord", "Damage")';
+                        deleteRow(obj, url, paramData);
+                    }*@
+                </script>
+            }
+            @*//=======================================================================================//
+                //Author : Mahid Choudhury
+                //Creation Date : January 2017
+                //=======================================================================================//*@

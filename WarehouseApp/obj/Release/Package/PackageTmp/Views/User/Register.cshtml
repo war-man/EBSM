@@ -1,0 +1,140 @@
+﻿@using System.IdentityModel.Configuration
+@using Microsoft.AspNet.Identity
+
+@model WarehouseApp.Models.ViewModels.RegisterViewModel
+
+@{
+    ViewBag.Title = "Register";
+}
+@using (Html.BeginForm("Register", "User",null, FormMethod.Post,new{@id="RegisterForm"})) 
+{
+    @Html.AntiForgeryToken()
+     <div class="row">
+	 	<div class="col-md-10 col-xs-12">
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2><i class="fa fa-user-plus"></i> Register New User</h2>
+                    <ul class="nav navbar-right panel_toolbox">
+
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="Settings"><i class="fa fa-wrench"></i></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href='@Url.Action("Roles", "User")'>User Roles</a></li>
+                                <li><a href='@Url.Action("CeateRole", "User")'>Create New Role</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                        </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+                          @if (@ViewBag.Message != "")
+                                {
+                                    <div class="alert alert-danger">
+                                        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                                        <strong>@ViewBag.Message</strong>
+                                    </div>
+                                }
+                                @Html.ValidationSummary(true)
+
+                                      <div class="col-xs-6 col-sm-6 col-md-6">
+                                          <div class="form-group">
+                                              @Html.LabelFor(model => model.FullName, new { @class = "control-label" })
+                                              @Html.TextBoxFor(model => model.FullName, new { @class = "form-control input-sm", placeholder="Full Name" })
+                                              @Html.ValidationMessageFor(model => model.FullName)
+
+                                          </div>
+                                          <div class="form-group">
+                                              @Html.LabelFor(model => model.Address, new { @class = "control-label" })
+                                              @Html.TextAreaFor(model => model.Address, new { @class = "form-control input-sm", placeholder = "Address" })
+                                              @Html.ValidationMessageFor(model => model.Address)
+                                          </div>
+                                          <div class="form-group">
+                                              @Html.LabelFor(model => model.Email, new { @class = "control-label" })
+                                              @Html.TextBoxFor(model => model.Email, new { @class = "form-control input-sm", placeholder = "Email" })
+                                              @Html.ValidationMessageFor(model => model.Email)
+                                          </div>
+                                          <div class="form-group">
+                                              @Html.LabelFor(model => model.ContactNo, new { @class = "control-label" })
+                                              @Html.TextBoxFor(model => model.ContactNo, new { @class = "form-control input-sm", placeholder = "Contact No" })
+                                              @Html.ValidationMessageFor(model => model.ContactNo)
+                                          </div>
+                                          <div class="form-group">
+                                              @Html.LabelFor(model => model.Gender, new { @class = "control-label" })
+                                              <div class="gender-radio">
+                                                  @Html.RadioButtonFor(model => model.Gender, "Male", new { @checked = true,@class = "radio-inline gender"  }) Male
+                                                  @Html.RadioButtonFor(model => model.Gender, "Female", new {@class = "radio-inline gender" }) Female
+                                              </div>
+                                              @Html.ValidationMessageFor(model => model.Gender)
+                                          </div>
+
+                                          <div class="form-group">
+                                              @Html.LabelFor(model => model.NationalId, new { @class = "control-label" })
+                                              @Html.TextBoxFor(model => model.NationalId, new { @class = "form-control input-sm", placeholder = "National ID" })
+                                              @Html.ValidationMessageFor(model => model.NationalId)
+                                          </div>
+
+                                      </div>
+						     <div class="col-xs-6 col-sm-6 col-md-6">
+						         
+						         <div class="form-group">
+                                   @Html.LabelFor(model => model.RoleId, "Role", new { @class = "control-label required-label" })
+                                   @Html.DropDownList("RoleId", null, "--Select--", new { @class = "form-control input-sm" })
+                                   @*<select name="RoleId" id="RoleId" class="form-control input-sm">
+                                       <option value="">--Select--</option>
+                                   </select>*@
+                                   @Html.ValidationMessageFor(model => model.RoleId)
+                               </div>
+						        
+						         <div class="form-group">
+						             @Html.LabelFor(model => model.UserName, new { @class = "control-label" })
+						             @Html.TextBoxFor(model => model.UserName, new { @class = "form-control input-sm", placeholder = "Username" })
+						             @Html.ValidationMessageFor(model => model.UserName)
+						         </div>
+						         <div class="form-group">
+						             @Html.LabelFor(model => model.Password, new { @class = "control-label required-label" })
+						             @Html.PasswordFor(model => model.Password, new { @class = "form-control input-sm", placeholder = "Password" })
+						             @Html.ValidationMessageFor(model => model.Password)
+						         </div>
+						         <div class="form-group">
+						             @Html.LabelFor(model => model.ConfirmPassword, new { @class = "control-label required-label" })
+						             @Html.PasswordFor(model => model.ConfirmPassword, new { @class = "form-control input-sm", placeholder = "Confirm Password" })
+						             @Html.ValidationMessageFor(model => model.ConfirmPassword)
+						         </div>
+						         <div class="form-group">
+						             <div class="col-md-offset-2 col-md-10">
+						                 <input type="submit" value="Register" class="btn btn-info" />
+						                 @*<input type="submit" value="Save & Print" class="btn btn-info btn-block">*@
+						                 &nbsp;&nbsp;@Html.ActionLink("Cancel", "Index", null, new { @class = "btn btn-default" })
+						             </div>
+						         </div>
+						     </div>
+                          </div> 
+	    		</div>
+    		</div>
+    	</div>
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+@Scripts.Render("~/bundles/Aquarium/AquariumScript")
+<script>
+    $(document).ready(function () {
+        //$('input[name="DiscountType"]').change(function () {
+        //    calculateDiscount();
+        //});
+        $("#DepartmentId").change(function () {
+           
+            var departmentId = $("#DepartmentId").val();
+            
+            var paramData = { departmentId: departmentId };
+            var url = '@Url.Action("GetRoleByDepartmentId", "User")';
+           
+            getData(url, paramData, 'renderRoleDropdown');
+        });
+    });
+ 
+</script>
+}

@@ -1,0 +1,174 @@
+﻿
+@using WarehouseApp.Controllers
+@model WarehouseApp.Models.SalesOrder
+
+@{
+    ViewBag.Title = "Details";
+    int itemCount = 1;
+}
+<style>
+   
+
+    .tital {
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .bot-border {
+        border-bottom: 1px #f8f8f8 solid;
+        margin: 5px 0 5px 0;
+    }
+</style>
+<div class="col-md-11 ">
+    <div class="panel panel-default">
+        <div class="panel-heading"> <i class="fa fa-info-circle fa-lg"> </i> Order Details 
+            @*@Html.ActionLink(" Re-Print Invoice", "RePrintInvoice", "TicketPrint", new { id = Model.InvoiceId }, new { @class = "btn btn-sm btn-primary col-md-offset-1 fa fa-print" })*@
+            @Html.ActionLink(" Order To Sales", "OrderToSales", "SalesOrder", new { orderId = Model.SalesOrderId }, new { @class = "btn btn-xs btn-primary fa fa-external-link" })
+            @Html.ActionLink(" Export", "ExportOrderChalanExcel", "SalesOrder", new { id = Model.SalesOrderId }, new { @class = "btn btn-xs btn-success fa fa-download" })
+            @*@if (Model.InvoiceBills.Any())
+            { @Html.ActionLink(" Print Bill", "BillDetails", "Bill", new { id = Model.InvoiceBills.FirstOrDefault().BillId }, new { @class = "btn btn-sm btn-primary fa fa-print" })}*@   
+         @Html.ActionLink(" Back", null, null, null, new { href = Request.UrlReferrer, @class = "btn btn-xs btn-default fa fa-arrow-circle-left  pull-right" })<span class="pull-right ">@Html.ActionLink(" Edit Sales Order", "EditSalesOrder", "SalesOrder", new { id = Model.SalesOrderId }, new { @class = "fa fa-pencil" })</span></div>
+        <div class="panel-body">
+            
+            <div class="">
+
+                <div class="col-md-6">
+                   
+                    <div class="col-sm-5 col-xs-6 tital ">Order Number:</div><div class="col-sm-7 col-xs-6 ">@Model.OrderNumber</div>
+                    <div class="clearfix"></div>
+                    <div class="bot-border"></div>
+                    <div class="col-sm-5 col-xs-6 tital ">Order Date:</div><div class="col-sm-7"> @Convert.ToDateTime(Model.OrderDate).ToString("dd-MM-yyyy")</div>
+                    <div class="clearfix"></div>
+                    <div class="bot-border"></div>
+                    @{var account = BankAccountController.AllAccountByMode(Model.TransactionMode).FirstOrDefault(a => a.Id == Model.TransactionModeId);}
+
+                    @*<div class="col-sm-5 col-xs-6 tital ">Account:</div><div class="col-sm-7 col-xs-6 ">
+                                                                            @if (account != null)
+                                                                            {@account.Name
+                                                                            }
+                                                                        </div>*@
+                    @*<div class="clearfix"></div>
+                    <div class="bot-border"></div>*@
+           
+                    <!-- /.box-body -->
+                </div>
+                <div class="col-md-6">
+                    <div class="col-sm-5 col-xs-6 tital ">Customer:</div><div class="col-sm-7">
+                        @if (Model.Customer != null)
+                        {
+                            <a href='@Url.Action("Details","Customer", new{id=@Model.Customer.CustomerId})'>@Model.Customer.FullName</a>
+                        }
+                    </div>
+                    <div class="clearfix"></div>
+                    <div class="bot-border"></div>
+                    @{
+                        string address = "";
+                        if (Model.Customer != null)
+                        {
+                            address = Model.CustomerBranchId != null ? Model.CustomerBranch.ProjectName + ", " + Model.CustomerBranch.ProjectAddress : Model.Customer.Address.Trim(',', ' ');
+                        }}
+                    <div class="col-sm-5 col-xs-6 tital ">Address:</div><div class="col-sm-7">@address</div>
+                    <div class="clearfix"></div>
+                    <div class="bot-border"></div>
+    
+
+                    <!-- /.box-body -->
+                </div>
+                <!-- /.box -->
+            </div>
+            <table class="table table-bordered table-condensed table-responsive table-striped">
+                
+              
+                    <thead >
+                    <tr>
+                        <th>SL</th>
+                        <th>Item Code</th>
+                        <th>Item</th>
+                        <th>Customer Item Code</th>
+                        <th>Unit Price</th>
+                        <th>Quantity</th>
+                        <th>Net Total</th>
+                       
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.OrderProducts)
+                    {
+                        string customerCode = item.Product.CustomerOptions.Any(x => x.CustomerId == Model.CustomerId) ? item.Product.CustomerOptions.FirstOrDefault(x => x.CustomerId == Model.CustomerId).ProductCode : "";
+                        string customerProductName = item.Product.CustomerOptions.Any(x => x.CustomerId == Model.CustomerId) ? item.Product.CustomerOptions.FirstOrDefault(x => x.CustomerId == Model.CustomerId).ProductDescription : "";
+                        string peoductFullName = !string.IsNullOrEmpty(customerProductName) ? customerProductName : item.Product.ProductFullName;
+                       
+                        <tr>
+                            <td width="3%">@itemCount</td>
+                            <td class="col-md-1">@item.Product.ProductCode</td>
+                            <td class="col-md-4">@peoductFullName</td>
+                            <td class="col-md-2">@customerCode</td>
+                            <td class="col-md-1">@item.Dp</td>
+                            <td class="col-md-1">@item.Quantity</td>
+                            <td class="col-md-1">@item.TotalPrice</td>
+                        </tr>
+                        itemCount ++;
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        
+                        <th colspan="5"><span class="pull-right">Total</span></th>
+                        <th>@Model.TotalQuantity</th>
+                        <th>@Model.TotalPrice</th>
+
+                    </tr>
+                    <tr>
+                        @{var discount=BankAccountController.DiscountCalculator(Model.DiscountAmount, Model.DiscountType, Model.TotalPrice);}
+                        
+                        <th colspan="6"><span class="pull-right">(-) Discount</span></th>
+                        <th >@discount.DiscountValueShow</th>
+
+                    </tr>
+                    <tr>
+
+                       
+                        <th colspan="6"><span class="pull-right">(+) Total VAT</span></th>
+                        
+                        <th >@Model.TotalVat</th>
+
+                    </tr>
+                    <tr>
+
+                    
+                        <th colspan="6"><span class="pull-right">Grand Total</span></th>
+                        @{ var grandTotal = (Model.TotalPrice - discount.DiscountValue) + Model.TotalVat;}
+                        <th>@grandTotal</th>
+
+                    </tr>
+                </tfoot>
+                           </table>
+            <p class="help-block">
+                @if (@Model.CreatedDate != null)
+                {
+                    <div class="col-md-6">
+                        <i class="fa fa-user"></i> Created: <a href="#">@Model.CreateUser.UserName</a>
+                        | <i class="fa fa-calendar"></i> @Convert.ToDateTime(Model.CreatedDate).ToString("dd-MM-yyyy hh:mm tt")
+                    </div>
+                }
+                @if (@Model.UpdatedDate != null)
+                {
+                    <div class="col-md-6">
+                        <i class="fa fa-user"></i> Updated: <a href="#">@Model.UpdateUser.UserName</a>
+                        | <i class="fa fa-calendar"></i> @Convert.ToDateTime(Model.UpdatedDate).ToString("dd-MM-yyyy hh:mm tt")
+                    </div>
+                }
+            </p>
+        </div>
+    </div>
+</div>
+
+
+<script>
+   
+</script>
+
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

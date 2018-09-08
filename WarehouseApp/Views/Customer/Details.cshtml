@@ -1,0 +1,398 @@
+﻿@using WarehouseApp.Controllers
+@model WarehouseApp.Models.ViewModels.CustomerDetailsViewModel
+
+@{
+    ViewBag.Title = "Customer Details";
+}
+<style>
+    .selecTdWidth {
+        width:50px
+    }
+     .stats {
+         text-align: center;
+         text-shadow: 1px 1px 0px #fff;
+         margin-top: 25px;
+     }
+
+    .stats li {
+        width: 125px;
+    }
+
+    .stats span {
+        font-family: Helvetica;
+        font-weight: bold;
+        text-shadow: 1px 1px 0px #fff;
+        font-size: 4em;
+        display: block;
+        line-height: 1em;
+    }
+
+    .widget {
+        margin: 0 0 25px 0;
+        display: block;
+        -webkit-border-radius: 2px;
+        -moz-border-radius: 2px;
+        border-radius: 2px;
+    }
+
+    .widget .widget-heading {
+        padding: 7px 15px;
+        -webkit-border-radius: 2px 2px 0 0;
+        -moz-border-radius: 2px 2px 0 0;
+        border-radius: 2px 2px 0 0;
+        text-transform: uppercase;
+        text-align: center;
+        background: #38BDFF;
+        color: white;
+    }
+
+    .widget .widget-body {
+        padding: 10px 15px;
+        font-size: 36px;
+        font-weight: 300;
+        background: #8FDEFF;
+    }
+</style>
+<div class="panel panel-default">
+    <div class="panel-heading">Customer Details
+        @Html.ActionLink(" Back", null, null, null, new { href = Request.UrlReferrer, @class = "btn btn-default fa fa-arrow-circle-left  pull-right" })
+    </div>
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-xs-12 col-md-6 paddingReduce">
+              
+                    <div class="row">
+                        <div class="col-sm-6 col-md-4">
+                            <img src="~/Content/Images/img380-500.png" alt="" class="img-rounded img-responsive" />
+                        </div>
+                        <div class="col-sm-6 col-md-8">
+                            <h4>
+                                @Html.DisplayFor(model => model.Customer.FullName)
+                            </h4>
+                            <small>
+                                <cite>
+                                    <i class="glyphicon glyphicon-map-marker"> </i>  @Html.DisplayFor(model => model.Customer.Address)
+                                </cite>
+                            </small>
+                            <p>
+                                <i class="glyphicon glyphicon-phone"></i> @Html.DisplayFor(model => model.Customer.ContactNo) <br />
+                                <i class="glyphicon glyphicon-envelope"></i> @Html.DisplayFor(model => model.Customer.Email)
+                                <br />
+                                @*<i class="glyphicon glyphicon-user"></i> @Html.DisplayFor(model => model.Gender)*@
+
+                            </p>
+                            <!-- Split button -->
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-primary btn-xs">
+                                    Option
+                                </button>
+                                <button type="button" class="btn btn-primary btn-xs dropdown-toggle" data-toggle="dropdown">
+                                    <span class="caret"></span><span class="sr-only">Option</span>
+                                </button>
+                                <ul class="dropdown-menu" role="menu">
+                                    <li><a href='@Url.Action("EditCustomerInfo", "Customer", new { id = Model.Customer.CustomerId })'>Edit Info</a></li>
+                                    <li><a href='@Url.Action("CreateCustomerProject", "Customer", new { customerId = Model.Customer.CustomerId })'>New Branch</a></li>
+                                    <li><a href='@Url.Action("NewBill", "Bill", new { id = Model.Customer.CustomerId })'>Create New Bill </a></li>
+                                    <li><a href='@Url.Action("Index", "Bill", new { Customer = Model.Customer.CustomerId })'>All Bills </a></li>
+
+                                </ul>
+                            </div>
+                        </div>
+
+                    </div>
+                <div class="row">
+                    @if (Model.Customer.CustomerBranches.Any())
+                            {
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            Branches
+                        </div>
+                        <div class="panel-body">
+                           
+
+                            <table class="table table-condensed table-striped">
+                                <tr>
+                                    <th class="col-md-3">
+                                        @Html.DisplayNameFor(model => model.Customer.CustomerBranches.First().ProjectName)
+                                    </th>
+                                    <th class="col-md-6">
+                                        @Html.DisplayNameFor(model => model.Customer.CustomerBranches.First().ProjectAddress)
+                                    </th>
+                                    <th class="col-md-2">
+                                        @Html.DisplayNameFor(model => model.Customer.CustomerBranches.First().ProjectPhoneNo)
+
+                                    </th>
+
+                                    <th class="col-md-1">
+                                        Action
+                                    </th>
+
+
+                                </tr>
+
+                                @foreach (var item in Model.Customer.CustomerBranches)
+                                {
+
+                                    <tr>
+
+                                        <td class="col-md-3">
+                                            @Html.DisplayFor(modelItem => item.ProjectName)
+                                        </td>
+
+                                        <td class="col-md-6">
+                                            @Html.DisplayFor(modelItem => item.ProjectAddress)
+                                        </td>
+                                        <td class="col-md-2">
+                                            @Html.DisplayFor(modelItem => item.ProjectPhoneNo)
+                                        </td>
+
+                                        <td class="col-md-1">
+                                            @Html.ActionLink(" ", "EditCustomerProject", "Customer", new { id = item.CustomerProjectId }, new { @class = "btn btn-xs btn-primary fa fa-pencil", @title = "Edit" })
+                                        </td>
+
+
+                                    </tr>
+                                }
+
+                            </table>
+                           
+                        </div>
+                    </div> }
+                </div>
+           
+            </div>
+            <div class="col-xs-12 col-md-6 paddingReduce">
+                <div class="panel panel-warning">
+                    <div class="panel-heading">
+                        Due Payment Section
+                    </div>
+                    <div class="panel-body">
+                        @using (Html.BeginForm("CustomerBillPayment", "Bill", null, FormMethod.Post, new { @id = "customerPaymentForm" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            @Html.ValidationSummary(true)
+                            <div class="col-md-8">
+                                <div class="well well-sm">
+                                    <b>Total Due: @String.Format("{0:n}", ViewBag.TotalDue)</b>
+                                    @Html.HiddenFor(model => model.CustomerPayment.CustomerId, new { @Value = Model.Customer.CustomerId })
+                                </div></div>
+                             <div class="col-xs-6 col-sm-6 col-md-2">
+                                <div class="form-group">
+                                    @*<label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>*@
+                                    @*<label class="col-md-12 control-label">&nbsp;</label>*@
+                                    @*@Html.Label(" ", new { @class = "col-md-12 control-label" })*@
+                                    <button type="button" id="payCustomerDue" class="btn btn-success btn-sm" ><i class="fa fa-check-circle-o fa-lg"></i> Paid</button>
+
+                                    @*<i class="fa fa-check-circle-o"></i>*@
+
+
+                                </div>
+                            </div>
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+
+                                    @Html.LabelFor(model => model.CustomerPayment.PaymentDate, new { @class = "control-label col-md-12" })
+                                    <div class="col-md-12 paddingReduce input-group " style="padding-left: 5px">
+                                        @Html.TextBoxFor(model => model.CustomerPayment.PaymentDate, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", @Value = string.Format("{0:dd-MM-yyyy}", DateTime.Now) })
+                                        <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+
+                                    </div>
+                                    @Html.ValidationMessageFor(model => model.CustomerPayment.PaymentDate)
+                                </div>
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.CustomerPayment.PaidAmount, new { @class = " control-label" })
+                                    @Html.TextBoxFor(model => model.CustomerPayment.PaidAmount, new { @class = "form-control input-sm" })
+                                @Html.ValidationMessageFor(model => model.CustomerPayment.PaidAmount)
+                                </div>
+                            </div>
+                            <div class="col-xs-6 col-sm-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.CustomerPayment.TransactionMode,new { @class = "control-label" })
+                                    @Html.DropDownListFor(model => model.CustomerPayment.TransactionMode, (SelectList)ViewBag.TransactionMode, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(model => model.CustomerPayment.TransactionMode)
+                                </div>
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.CustomerPayment.TransactionModeId, new { @class = "required-label control-label" })
+                                    @Html.DropDownListFor(model => model.CustomerPayment.TransactionModeId, (SelectList)ViewBag.TransactionModeId, new { @class = "form-control input-sm" })
+                                    @Html.ValidationMessageFor(model => model.CustomerPayment.TransactionModeId)
+                                </div>
+
+                            </div>
+                                   <div class="col-md-12"> <div class="form-group">
+                                    @Html.LabelFor(model => model.CustomerPayment.Note, new { @class = " control-label" })
+                                    @Html.TextBoxFor(model => model.CustomerPayment.Note, new { @class = "form-control input-sm" })
+                                @Html.ValidationMessageFor(model => model.CustomerPayment.Note)
+                                </div> </div>
+                           
+                        }
+    </div>
+                </div>
+            </div></div>
+
+
+            @*<div class="row">
+                <div class="panel panel-success">
+                    <div class="panel-heading">
+                        All Invoices
+                    </div>
+                    <div class="panel-body">
+                        @if (Model.Invoices.Count > 0)
+                        {
+
+                            <table class="table table-bordered table-condensed table-striped">
+                                <tr>
+                                    <th class="col-md-2">
+                                        @Html.DisplayName("Date")
+                                    </th>
+                                    <th>
+                                        @Html.DisplayName("Invoice Number")
+                                    </th>
+                                    <th>
+                                        @Html.DisplayName("Total Quantity")
+
+                                    </th>
+                                    <th>
+                                        @Html.DisplayName("Total Payable")
+
+                                    </th>
+
+                                    <th>
+                                        @Html.DisplayName("Paid")
+                                    </th>
+                                    <th>
+                                        @Html.DisplayName("Due")
+                                    </th>
+
+
+                                </tr>
+
+                                @foreach (var item in Model.Invoices)
+                                {
+
+                                    <tr>
+
+                                        <td class="col-md-2">
+                                            @item.InvoiceDate.ToString("dd-MM-yyyy")
+                                        </td>
+                                        <td>
+                                            <a href='@Url.Action("InvoiceDetails","Invoice",new{id=@item.InvoiceId})'>@item.InvoiceNumber</a>
+                                        </td>
+                                        <td>
+                                            @Html.DisplayFor(modelItem => item.TotalQuantity)
+                                        </td>
+                                        <td>
+                                            @{ var grandTotal = (item.TotalPrice - BankAccountController.DiscountCalculator(item.DiscountAmount, item.DiscountType, item.TotalPrice).DiscountValue) + item.TotalVat;}
+
+                                            @String.Format("{0:n}", grandTotal)
+                                        </td>
+                                        <td>
+                                            @String.Format("{0:n}", item.PaidAmount)
+                                        </td>
+                                        <td>
+                                            @{ var totalDue = grandTotal - item.PaidAmount;}
+                                            @String.Format("{0:n}", totalDue)
+                                        </td>
+
+
+                                    </tr>
+                                }
+                               
+                                <tr>
+                                    @{
+                                        var totalPrice = Model.Invoices.Sum(x => ((x.TotalPrice - BankAccountController.DiscountCalculator(x.DiscountAmount, x.DiscountType, x.TotalPrice).DiscountValue) + x.TotalVat));
+                                        var totalPaid = Model.Invoices.Sum(x => x.PaidAmount);
+                                        
+                                    }
+                                    <td colspan="2"><b class="pull-right">Total</b></td>
+                                    <td><b>@Model.Invoices.Sum(x => x.TotalQuantity)</b></td>
+                                    <td><b>@String.Format("{0:n}", totalPrice) </b></td>
+                                    <td><b>@String.Format("{0:n}", totalPaid)</b></td>
+                                    <td><b>@String.Format("{0:n}", totalPrice - totalPaid)</b></td>
+                                </tr>
+                                @*<tr><td colspan="3"><b class="pull-right">Grand Total</b></td><td><b>@String.Format("{0:n}", totalPrice + Model.Invoices.Sum(x => x.TotalVat))</b></td><td colspan="2"></td></tr>*@
+                            @*</table>
+                }
+            </div>
+        </div>
+    </div>*@
+
+        </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/ShopScript")
+    <script>
+        $(document).ready(function() {
+            $("#dueInvoiceTable #checkall").click(function() {
+                if ($("#dueInvoiceTable #checkall").is(':checked')) {
+                    $("#dueInvoiceTable input[type=checkbox]").each(function() {
+                        $(this).prop("checked", true);
+                    });
+
+                } else {
+                    $("#dueInvoiceTable input[type=checkbox]").each(function() {
+                        $(this).prop("checked", false);
+                    });
+                }
+
+                calculateAllDue();
+            });
+            $("#dueInvoiceTable input[type=checkbox]").click(function() {
+                calculateAllDue();
+            });
+            $('#payCustomerDue').on('click', function() {
+         
+                    $.confirm({
+                        title: '<i class="fa fa-exclamation-circle"></i> Confirmation',
+                        content: 'Are you sure want to proceed? ',
+                        confirmButton: "Yes",
+                        cancelButton: "No",
+                        confirm: function () {
+                            $('#customerPaymentForm').submit();
+                        },
+                        cancel: function () {
+
+                        }
+                    });
+
+               
+
+            });
+            $('#TransactionMode').change(function () {
+
+                $('#TransactionModeId').empty();
+                var value = $(this).val();
+                var paramData = { TransactionMode: value };
+                var url = '@Url.Action("GetAccountByMode", "BankAccount")';
+                getDataShop(url, paramData, 'getAccountNo');
+            });
+        });
+
+
+        //$({ someValue: 0 }).animate({ someValue: Math.floor(Math.random() * 3000) }, {
+        //    duration: 3000,
+        //    easing: 'swing', // can be anything
+        //    step: function() { // called on every step
+        //        // Update the element's text with rounded-up value:
+        //        $('.count').text(commaSeparateNumber(Math.round(this.someValue)));
+        //    }
+        //});
+   
+        function commaSeparateNumber(val) {
+            while (/(\d+)(\d{3})/.test(val.toString())) {
+                val = val.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,");
+            }
+            return val;
+        }
+        function calculateAllDue() {
+            var totalDue = 0;
+            $("#dueInvoiceTable input[type=checkbox]:checked").each(function () {
+                totalDue+= parseFloat($(this).parent().find('.DueAmount').val());
+            });
+            $("#SelectedInvoiceAmount").val(totalDue);
+            $("#PayAmount").val(totalDue);
+        }
+
+       
+    </script>
+}

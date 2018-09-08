@@ -1,0 +1,88 @@
+﻿
+@model IEnumerable<WarehouseApp.Models.InvoiceProduct>
+@using PagedList.Mvc;
+
+
+@{
+    ViewBag.Title = "Report";
+    var date = DateTime.Now;
+
+}
+<div class="col-md-12">
+    @Html.ActionLink(" Back", null, null, null, new { href = Request.UrlReferrer, @class = "btn btn-default fa fa-arrow-circle-left  pull-left" })
+    <div class="btn-group pull-right">
+        @*<a href="javascript:void(0);" class="btn btn-link"><i class="fa fa-download" aria-hidden="true"></i> PDF</a>*@
+        @*<a href='@Url.Action("ExportDateRangeSalesReport", "Export")' class="btn btn-link"><i class="fa fa-download" aria-hidden="true"></i> Excel</a>*@
+        @*<a href="javascript:void(0);" onclick="nextVersion()" class="btn btn-link"><i class="fa fa-download" aria-hidden="true"></i> PDF</a>*@
+        @*<a href="javascript:void(0);" onclick="nextVersion()" class="btn btn-link"><i class="fa fa-download" aria-hidden="true"></i> Excel</a>*@
+    </div>
+</div>
+<div  id="reportBody">
+    <div align="center">
+        <h2>@ViewBag.CompanyInfo.CompanyName</h2>
+        <h4>Product Wise Sales Report</h4>
+        <h4>Date Range: @ViewBag.currentFrom.ToString("dd-MMM-yyyy") to @ViewBag.currentTo.ToString("dd-MMM-yyyy")</h4>
+
+    </div>
+    <table class="table table-bordered table-hover table-condensed table-striped">
+        <tr>
+            <th>
+                @Html.DisplayName("Date")
+            </th>
+           
+            <th>
+                @Html.DisplayName("Invoice Number")
+            </th>
+            <th>
+                @Html.DisplayName("Product Name")
+
+            </th>
+            <th>
+                @Html.DisplayName("Retail Price")
+
+            </th>
+            <th>
+                @Html.DisplayName("Total Quantity")
+            </th>
+            <th>
+                @Html.DisplayName("Total")
+
+            </th>
+
+            
+        </tr>
+       
+        @foreach (var item in Model)
+        {
+            //var sales = Convert.ToDouble(item.Sum(x => x.TotalPrice - BankAccountController.DiscountCalculator(x.DiscountAmount, x.DiscountType, x.TotalPrice).DiscountValue));
+            //totalPrice += sales;
+            <tr>
+                <td>
+                   @item.Invoice.InvoiceDate.ToString("dd-MMM-yyyy")
+                </td>
+                <td>
+                   @item.Invoice.InvoiceNumber
+                </td>
+                <td>
+                    @item.Product.ProductFullName
+                </td>
+
+                <td>
+                    @String.Format("{0:n}", item.Dp)
+                </td><td>
+                         @item.Quantity
+                     </td>
+                <td>
+                    @String.Format("{0:n}", item.TotalPrice)
+                </td>
+
+            </tr>
+        }
+        <tr><td colspan="4"><b class="pull-right">Total</b></td><td><b>@Model.Sum(x=>x.Quantity)</b></td><td><b>@String.Format("{0:n}", Model.Sum(x=>x.TotalPrice))</b></td></tr>
+    </table>
+</div>
+
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

@@ -1,0 +1,169 @@
+﻿@model  WarehouseApp.Models.ViewModels.StockSearchViewModel
+@using PagedList.Mvc
+@using WarehouseApp.Controllers
+@{
+    ViewBag.Title = "Stock";
+}
+@section Styles{
+@Styles.Render("~/Content/jquery-ui")
+@Styles.Render("~/Content/PagedList")
+}
+
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="x_panel">
+            <div class="x_title">
+                <i class="fa fa-list"></i> Stock
+                <ul class="nav navbar-right panel_toolbox">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" title="Settings" aria-expanded="false"><i class="fa fa-wrench"></i></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href='@Url.Action("index", "Product")'>Products</a></li>
+                            <li><a href='@Url.Action("StockIn", "Purchase")'>Stock In</a></li>
+                            <li><a href='@Url.Action("NewSales", "Invoice")'>New Sales</a></li>
+                            <li><a href='@Url.Action("index", "WarehouseZone")'>Warehouse Zone</a></li>
+                            <li><a href='@Url.Action("CreateProductTransfer", "TransferProducts")'>Product Transfer</a></li>
+                            <li><a href='@Url.Action("CreateArticleTransfer", "ArticleTransfer")'>Article Transfer</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+
+                <div class="form-group">
+                    @using (Html.BeginForm("Index", "Stock", FormMethod.Post, new { @class = " ", @id = "stockSearchForm" }))
+                    {
+                        <div class="col-lg-1">
+                                @Html.DropDownList("PageSize", new SelectList(new Dictionary<string, int> { { "50", 50 }, { "100", 100 }, { "500", 500 } }, "Key", "Value", null), new { @class = "pageSizeDropdown", id = "pagesizelist" })
+                        </div>
+
+                        <div class="col-lg-3">
+                            @Html.HiddenFor(model => model.SelectedProductId, new { @Value = Model.SelectedProductId })
+
+                            @Html.TextBoxFor(model => model.PName, new { @class = "form-control input-sm", @placeholder = "Product Name" })
+              
+                        </div> <div class="col-lg-2">
+                                   @Html.TextBoxFor(model => model.PCode, new { @class = "form-control input-sm", @placeholder = "Code" })
+
+                               </div>
+                        <div class="col-lg-2">
+                            @Html.DropDownList("StockZoneId", null, "Stock Zone..", new { @class = "form-control input-sm", @placeholder = "Stock Zone" })
+                        </div>
+                        <div class="col-lg-2">
+                          
+                                @Html.DropDownListFor(model => model.StockLimitOut, new SelectList(new List<SelectListItem>
+                        {
+                            new SelectListItem {Text = "Stock Limit Out", Value = "StockLimitOut"},
+
+                        }, "Value", "Text", null), "All Items...", new { @class = "form-control input-sm" })
+
+                           
+                        </div>
+                        <div class="col-lg-1">
+                            <button type="submit" class="btn btn-sm btn-success">
+                                <span class="glyphicon glyphicon-search"></span>
+                            </button>
+
+
+                        </div>
+                    }
+                </div>
+
+            </div>
+            <table class="table table-condensed table-hover table-responsive jambo_table table-striped" id="stockDataTable">
+
+                <thead>
+                    <tr>
+                        <th>
+                            @Html.DisplayName("Product")
+                        </th>
+                        <th>
+                            @Html.DisplayName("Product Code")
+                        </th>
+
+                        <th>
+                            Remaining Stocks (@ViewBag.Inventory)
+                        </th>
+                        @*@if (User.IsInRole("Global_SupAdmin") || User.IsInRole("Purchase_Price"))
+                        {
+                            <th>
+                                Total Pur. Value(@ViewBag.InventoryPurchasedValue.ToString("n"))
+                            </th>
+                        }*@
+                        <th>
+                            Total Sales Value(@ViewBag.InventorySalesValue.ToString("n"))
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Stocks)
+                    {
+                        //string zoneItems = "";
+
+                        //       foreach (var itemInZone in item.StockWarehouseRelations)
+                        //       {
+                        //           if (itemInZone.Quantity != 0) {
+                        //           zoneItems = itemInZone.WarehouseZone.ZoneName + " - " + itemInZone.Quantity + ",";}
+                        //       }
+
+                        string itemsInZone = String.IsNullOrEmpty(@ViewBag.ZoneWiseStockList[item.StockId]) ? "" : "(" + @ViewBag.ZoneWiseStockList[item.StockId] + ")";
+                        <tr>
+                            <td class="col-md-3">@Html.DisplayFor(modelItem => item.Product.ProductFullName)</td>
+                            <td class="col-md-2">@Html.DisplayFor(modelItem => item.Product.ProductCode)</td>
+
+                            <td class="col-md-3">
+                                @if (item.TotalQuantity > 0)
+                                {
+                                    <span class="badge @(Convert.ToDouble(item.TotalQuantity) > Convert.ToDouble(item.Product.MinStockLimit) ? "badge-success" : "badge-warning")">@item.TotalQuantity</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-important">@Html.DisplayFor(modelItem => item.TotalQuantity)</span>
+
+                                } @ProductController.FindProductUnit(Convert.ToInt32(item.ProductId)) @itemsInZone
+
+                            </td>
+                            @*@if (User.IsInRole("Global_SupAdmin") || User.IsInRole("PurchasePrice"))
+                                {
+                                    <td class="col-md-2">@string.Format("{0:n}", item.TotalQuantity * item.Product.Tp)</td>
+                                }*@
+                            <td class="col-md-2">@string.Format("{0:n}", item.TotalQuantity * item.Product.Dp)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            Page @(Model.Stocks.PageCount < Model.Stocks.PageNumber ? 0 : Model.Stocks.PageNumber) of @Model.Stocks.PageCount
+            @Html.PagedListPager(Model.Stocks, Page => Url.Action("Index", "Stock", new RouteValueDictionary() { { "Page", Page }, { "PageSize", Model.PageSize }, { "SelectedProductId", Model.SelectedProductId }, { "PName", Model.PName }, { "PCode", Model.PCode }, { "StockLimitOut", Model.StockLimitOut }, { "StockZoneId", Model.StockZoneId } }))
+
+        </div> </div>
+    </div>
+    @section Scripts {
+        @Scripts.Render("~/bundles/jquery-ui")
+        @Scripts.Render("~/bundles/jqueryval")
+        @Scripts.Render("~/bundles/ShopScript")
+
+        <script>
+            $(document).ready(function () {
+
+                $('#pagesizelist').change(function () {
+                    $('#stockSearchForm').submit();
+                });
+
+
+                $('#PName').focus(function () {
+                   var url = '@Url.Action("GetProuctForPurchase", "Product")';
+                   // AutoCompleteProductName('#PName', url);
+
+                });
+            });
+
+        </script>
+    }
+    @*//=======================================================================================//
+        //Author : Md. Mahid Choudhury
+        //Creation Date : January 2017
+        //=======================================================================================//*@

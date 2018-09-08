@@ -1,0 +1,81 @@
+﻿@model IEnumerable<WarehouseApp.Models.Role>
+
+@{
+    ViewBag.Title = "Roles";
+}
+
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="x_panel">
+            <div class="x_title">
+                <i class="fa fa-list"></i> Roles
+                <ul class="nav navbar-right panel_toolbox">
+                    <li><a href='@Url.Action("CeateRole", "User")' data-id="0" class="" title="Add New"><i class="fa fa-plus-square fa-lg"></i> </a></li>
+
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" title="Settings" aria-expanded="false"><i class="fa fa-wrench"></i></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href='@Url.Action("Register", "User")'>Register New User</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+               
+                    <table class="table table-condensed table-hover table-responsive table-striped jambo_table">
+                        <thead>
+                            <tr>
+
+                                <th>
+                                    @Html.DisplayNameFor(model => model.RoleName)
+                                </th>
+                                <th>
+                                    @Html.DisplayName("Task Assigned")
+                                </th>
+                              
+                                <th></th>
+                            </tr>
+                        </thead> <tbody>
+                           @foreach (var item in Model){
+                         //string taskName = item.RoleTasks.Aggregate("", (current, task) => current + (task.Task + ", "));
+                         // taskName=taskName.Trim(',',' ');
+                    <tr class="@(@item.Status==0 ? "text-muted" : " ")">
+
+            <td class="col-md-2">
+                @Html.DisplayFor(modelItem => item.RoleName)
+            </td>
+
+                        <td class="col-md-8">
+                            @foreach (var i in item.RoleTasks)
+                            {
+                                <span class='badge'>@i.Task</span>
+                            }
+
+                            @*@taskName*@
+                        </td>
+           
+
+                        <td class="col-md-1">
+                            @Html.ActionLink(" Edit", "EditRole", "User", new { id = item.RoleId }, new { @class = "btn btn-xs btn-primary fa fa-pencil" })
+                            
+                           
+                        </td>
+        </tr>
+    }
+</tbody>
+
+                    </table>
+                </div></div></div>
+            </div>
+            @section Scripts {
+                <script>
+                    @*function removeThis(obj, paramData) {
+                        var url = '@Url.Action("DeleteUser", "User")';
+                        deleteRow(obj, url, paramData);
+                    }*@
+                </script>
+            }

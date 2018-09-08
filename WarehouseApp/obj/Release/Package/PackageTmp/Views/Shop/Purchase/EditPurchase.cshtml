@@ -1,0 +1,327 @@
+﻿
+@using WarehouseApp.Controllers
+@model WarehouseApp.Models.ViewModels.PuchaseViewModel
+
+@{
+    ViewBag.Title = "Edit Purchase";
+    var today = DateTime.Now;
+}
+@section Styles{
+    @Styles.Render("~/Content/jquery-ui")
+}
+<div class="submit-progress hidden">
+    <i class="fa fa-2x fa-spinner fa-spin"></i>
+    <label>Please wait ...</label>
+</div>
+@using (Html.BeginForm("EditPurchase", "Purchase", null, FormMethod.Post, new { @id = "EditPurchaseForm" }))
+{
+    @Html.AntiForgeryToken()
+         <div class="row">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"><i class="fa fa-pencil"></i> Edit Purchase (@Model.PurchaseNumber)</h3>
+                </div>
+                <div class="panel-body">
+                    @Html.ValidationSummary(true)
+                    <div class="col-md-3 paddingReduce">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Item Search</h3>
+                            </div>
+                            <div class="panel-body">
+                                <div class="form-horizontal">
+                                    <div class="form-group">
+                                        @Html.TextBox("ProductBarCode", null, new { @class = "form-control", placeholder = "Scan Bar Code"@*@style="background-color: rgb(255, 215, 215)",@style = "background-color: rgb(191, 255, 191);"*@ })
+                                   
+                                        @Html.TextBox("ProductName", null, new { @class = "form-control", placeholder = "Product Name" })
+                                    
+                                        @Html.TextBox("ProductCode", null, new { @class = "form-control", placeholder = "Product Code" })
+                                    </div>
+                                    @*<input type="button" id="checkBarcode" value="check">*@
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-7 paddingReduce">
+                        <div class="panel panel-default">
+                            <table class="table table-striped table-condensed jambo_table bulk_action" id="productTable">
+                                <thead style="background-color:#f5f5f5 ;color:black;">
+                                    <tr class="panel-heading">
+                                        <th>Item</th>
+                                        <th>Price</th>
+                                        <th>Quantity</th>
+                                        <th>Total</th>
+                                        <th>Warehouse</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.PurchaseProducts.Count > 0)
+                                    {
+                                        foreach (var item in Model.PurchaseProducts)
+                                        {
+                                             string uniqueProductId = string.IsNullOrEmpty(item.Barcode) ? item.ProductId.ToString() : item.ProductId + "-" + item.Barcode;
+                                            <tr><td class="col-md-5 paddingReduce">
+                                                    <input class="productId-@uniqueProductId" id="PurchaseProducts_ @item.ProductId _ProductId" name="PurchaseProducts[@item.ProductId].ProductId" type="hidden" value="@item.ProductId">
+                                                    <input id="PurchaseProducts_ @item.ProductId _Barcode" name="PurchaseProducts[@item.ProductId].Barcode" type="hidden" value="@item.Barcode">@item.Product.ProductFullName</td>
+                                                    <td class="col-md-2 paddingReduce"><input value="@item.UnitPrice" class="form-control input-sm UnitPrice" id="PurchaseProducts_ @item.ProductId _UnitPrice" name="PurchaseProducts[@item.ProductId].UnitPrice" type="text" onkeyup="updateTotalProductPrice(this)"></td>
+                                                <td class="col-md-2 paddingReduce">
+                                                    <div class="col-md-12 paddingReduce input-group ">
+                                                        <input value="@item.Quantity" class="form-control input-sm Quantity" id="PurchaseProducts_ @item.ProductId _Quantity" name="PurchaseProducts[@item.ProductId].Quantity" type="text" onkeyup="updateTotalProductPrice(this)">
+                                                        <span class="input-group-addon productUnit">@ProductController.FindProductUnit(Convert.ToInt32(item.ProductId))</span>
+                                                    </div> </td>
+                                                      @{ var totalProductPrice = item.UnitPrice*item.Quantity;}
+                                                <td class="col-md-2 paddingReduce"><input value="@totalProductPrice" class="form-control input-sm TotalProductPrice" readonly="True" id="PurchaseProducts_ @item.ProductId _TotalPrice" name="PurchaseProducts[@item.ProductId].TotalPrice" type="text"></td>
+                                                <td class="col-md-2 paddingReduce">@Html.DropDownListFor(model => Model.PurchaseProducts[@item.ProductId].ZoneId, new SelectList(ViewBag.ZoneId, "ZoneId", "ZoneName", item.ZoneId), null, new { @class = "form-control input-sm " })</td>
+                                                    <td class="col-md-1 paddingReduce"><span class="btn btn-xs btn-danger remove"><i class="fa fa-times"></i></span></td></tr>
+                                                                               
+                                        }
+                                    }
+                                        
+           </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="5" style="text-align:center; font:bold 20px bold;color:black;">Total: <span id="footerTotal">@Model.PurchaseProducts.Sum(y=>y.TotalPrice)</span></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                         
+                        </div>
+                    </div>
+                    <div class="col-md-2 paddingReduce">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Purchase</h3>
+                            </div>
+                            <div class="panel-body">
+                                <div class="row form-group">
+                                    @Html.HiddenFor(model => model.PurchaseId)
+                                    <div class="col-md-12 paddingReduce">
+                                        @Html.LabelFor(model => model.PurchaseDate, "Date", new { @class = "required-label control-label col-md-12 salesLabel" })
+                                        <div class="col-md-12 paddingReduce input-group " style="padding-left:5px">
+                                            @Html.TextBox("PurchaseDate", string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control rfwDatepicker", @Value = string.Format("{0:dd-MM-yyyy}", Model.PurchaseDate) })
+                                            <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12 paddingReduce">
+                                        @Html.LabelFor(model => model.TotalPurchasePrice, new { @class = "required-label control-label col-md-12 salesLabel" })
+                                        @Html.TextBoxFor(model => model.TotalPurchasePrice, new { @class = "form-control", @style = "font-weight:bold;color:Black;font-size:15px;text-align:center;", @readonly = true, })
+                                    </div>  <div class="col-md-12 paddingReduce">
+                                                @Html.LabelFor(model => model.PurchaseDiscount, "Discount", new { @class = " control-label col-md-12 salesLabel" })
+                                              
+                                                @Html.TextBoxFor(model => model.PurchaseDiscount, new { @class = "form-control", })
+
+                                                    
+                                                @*<div class="col-md-12 paddingReduce">
+                                                    <div class="radio radio-inline" style="padding-left: 15px;">
+
+                                                        <label>
+                                                            <input type="radio" name="DiscountType" checked value="Flat">Flat
+                                                        </label>
+                                                    </div>
+                                                    <div class="radio radio-inline" style="padding-left: 5px;">
+                                                        <label> <input type="radio" name="DiscountType" value="Percent">Percent</label>
+                                                    </div>
+                                                </div>*@
+                                            </div>    <div class="col-md-12 paddingReduce">
+                                                          
+                                                                @Html.Label("Grand Total", new { @class = "required-label control-label col-md-12 salesLabel" })
+                                                                @Html.TextBox("grandTotal", null, new { @class = "form-control", @style = "font-weight:bold;color:Black;font-size:15px;text-align:center;", @readonly = true, @Value = @Model.TotalPurchasePrice })
+                                                            </div>  <div class="col-md-12 paddingReduce">
+                                                                        @Html.LabelFor(model => model.TransactionMode, new { @class = "required-label control-label col-md-12 salesLabel" })
+                                                                        @Html.DropDownList("TransactionMode", null, new { @class = "form-control" })
+                                                                        @Html.ValidationMessageFor(model => model.TransactionMode)
+                                                                    </div>  <div class="col-md-12 paddingReduce hidden" id="transactionAccountId">
+    @Html.LabelFor(model => model.TransactionModeId, "Account", new { @class = "required-label control-label col-md-12 salesLabel" })
+    @Html.DropDownList("TransactionModeId", null, new { @class = "form-control" })
+    @Html.ValidationMessageFor(model => model.TransactionModeId)
+</div> <div class="col-md-12 paddingReduce">
+                                                                                       @Html.LabelFor(model => model.SupplierId, "Supplier", new { @class = "control-label col-md-8 salesLabel" })
+                                                                                       <div class="col-md-4" > <span class="btn btn-xs btn-primary"><i class="fa fa-plus"></i></span></div>
+                                                                                       @Html.DropDownList("SupplierId", null, "--Select--", new { @class = "form-control" })</div>
+                                                                <div class="col-md-12 paddingReduce">
+                                                                    @Html.LabelFor(model => model.PaidAmount, new { @class = " control-label col-md-12 salesLabel" })
+                                                                    @Html.TextBoxFor(model => model.PaidAmount, new { @class = "form-control"})
+                                                                </div><div class="col-md-12 paddingReduce">
+                                                                          @{ var dueAmount = Model.TotalPurchasePrice - Model.PaidAmount;}
+                                                                          @Html.Label("Due", new { @class = " control-label col-md-12 salesLabel" })
+                                                                          @Html.TextBox("DueAmount", null, new { @class = "form-control", @readonly = true, @Value = @dueAmount })
+                                                                      </div>
+                                    <div class="col-md-12 paddingReduce">
+                                        @Html.LabelFor(model => model.PurchaseCost, new { @class = " control-label col-md-12 salesLabel" })
+                                        @Html.TextBoxFor(model => model.PurchaseCost, new { @class = "form-control" })
+
+                                    </div>
+                                </div>
+                                  
+                                <div class="row form-group">
+                                    @Html.HiddenFor(model=>model.FormSubmitType,1)
+                                    <button type="button" class="btn btn-block btn-primary" title="Save Purchase" id="savePurchase"><i class="fa fa-save"></i> Update Purchase</button>
+                                </div>
+                                <div class="row form-group">
+                                    <a href='@Url.Action("Index","Purchase")' data-toggle="tooltip" title="Cancel" id="cancel" class="btn btn-block  btn-danger" data-original-title="Cancel"><i class="fa fa-reply"></i> Cancel</a>
+                                </div>
+                                    
+                             
+                            </div>
+                        </div>
+                    </div>
+                </div></div></div>
+   
+}
+
+@section Scripts {
+@Scripts.Render("~/bundles/jquery-ui")
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/ShopScript")
+@Scripts.Render("~/bundles/PurchaseScript")
+@Scripts.Render("~/bundles/barcode-scanner-detection")
+    <script>
+        
+        $(document).ready(function () {
+            $('#addProduct').on('click', function () {
+                purchaseAddProduct();
+            });
+            $('#ProductBarCode').scannerDetection({
+                timeBeforeScanTest: 200, // wait for the next character for upto 200ms
+                startChar: [120], // Prefix character for the cabled scanner (OPL6845R)
+                endChar: [13], // be sure the scan is complete if key 13 (enter) is detected
+                avgTimeByChar: 40, // it's not a barcode if a character takes longer than 40ms
+                onComplete: function(barcode, qty) {
+                  
+                    barcodeSearch(barcode);
+                    $(this).val('');
+                    //return false;
+                } // main callback function	
+            });
+            $('#ProductName').focus(function () {
+                var url = '@Url.Action("GetProuctForPurchase", "Product")';
+                AutoCompleteProductName('#ProductName', url);
+            });
+            $('#ProductCode').focus(function () {
+                var url = '@Url.Action("GetProuctbyCodeForPurchase", "Product")';
+                AutoCompleteProductName('#ProductCode', url);
+            });
+            $('#TransactionMode').change(function () {
+                $('#TransactionModeId').empty();
+                var value = $(this).val();
+                if (value == "Cash") {
+                    $('#transactionAccountId').addClass('hidden'); 
+                }
+                else{
+                    $('#transactionAccountId').removeClass('hidden');
+                }
+                
+                var paramData = { TransactionMode: value };
+                var url = '@Url.Action("GetAccountByMode", "BankAccount")';
+                getDataShop(url, paramData, 'getAccountNo');
+            });
+            $('#PcTransactionMode').change(function () {
+                $('#PcTransactionModeId').empty();
+                var value = $(this).val();
+                
+                var paramData = { TransactionMode: value };
+                var url = '@Url.Action("GetAccountByMode", "BankAccount")';
+                getDataShop(url, paramData, 'getAccountNoForPurchaseCost');
+            });
+
+            $('#Product').focus(function () {
+                var url = '@Url.Action("GetProuctForPurchase", "Product")';
+                AutoCompleteProductName('#Product', url);
+
+            });
+
+
+            $('#TotalQuantity').on('keyup', function () {
+                totalPriceProduct();
+            });
+
+
+            $('#UnitPrice').on('keyup', function () {
+                totalPriceProduct();
+            });
+            $('#PurchaseDiscount').on('keyup', function () {
+                CalculatePurchaseGrandTotal();
+                //purchaseDiscountChangeEffect();
+            });
+
+            $('#PurchaseCost').on('keyup', function () {
+                CalculatePurchaseGrandTotal()
+                // purchaseCostChangeEffect();
+            });
+            $('#PaidPurchaseCost').on('keyup', function () {
+                paidPurchaseCostChangeEffect();
+            });
+
+            $('#PaidAmount').on('keyup', function () {
+                paidAmountChangeEffect();
+            });
+
+            $('#savePurchase').on('click', function () {
+                submitPurchaseForm();
+           
+            });
+            $('#checkBarcode').on('click', function () {
+                var barCode = $('#ProductBarCode').val();
+                //console.log(barCode);
+                barcodeSearch(barCode);
+
+            });
+        });
+        function barcodeSearch(barcode) {
+            var url = '@Url.Action("GetProuctByBarcode", "Product")';
+            var paramData = { barCode: barcode };
+            getDataShop(url, paramData, 'renderBarcodeSearchForPurchase');
+        }
+        
+            
+        
+
+        function submitPurchaseForm() {
+            var count = 0;
+            $('#productTable tbody').find('tr').each(function () {
+                var suffix = $(this).find(':input:first').attr('name').match(/\d+/);
+                $.each($(this).find(':input'), function (i, val) {
+                    // Replaced Name
+                    var oldN = $(this).attr('name');
+                    var newN = oldN.replace('[' + suffix + ']', '[' + count + ']');
+                    $(this).attr('name', newN);
+
+                });
+
+                count++;
+            });
+            var PurchaseDate = $('#PurchaseDate').val();
+            var TransactionModeId = $('#TransactionModeId option:selected').val();
+            if (PurchaseDate == '' || count == 0 || TransactionModeId == '') {
+                $.alert("Please enter required field value", '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+            } else {
+
+                $.confirm({
+                    title: '<i class="fa fa-exclamation-circle"></i> Confirmation',
+                    content: 'Are you sure want update purchase? ',
+                    confirmButton: "Yes",
+                    cancelButton: "No",
+                    confirm: function () {
+
+                        DisplayProgressMessage('#savePurchase', 'Saving..');
+                        $('#cancel').prop("disabled", true);
+                        // SavePurchaseProduct(url, paramData, 'saveInvoice');
+                        $('#EditPurchaseForm').submit();
+                    },
+                    cancel: function () {
+
+                    }
+                });
+
+            }
+
+        }
+
+
+    </script>
+}
+    @*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

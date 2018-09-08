@@ -1,0 +1,30 @@
+﻿@model dynamic
+
+@{
+    ViewBag.Title = "Transaction Success";
+    string transactionSuccessMessage = ViewBag.TransactionSuccessMessage.ToString();
+}
+<div class="row">
+    <div class="col-md-8">
+        <div class="panel panel-success">
+            <div class="panel-heading">
+                <strong><i class="fa fa-check" aria-hidden="true"></i>  Transaction Success </strong>
+                @Html.ActionLink(" Go to home", "Index", "Home", null, new { @class = "btn btn-default fa fa-home  pull-right" })
+                @Html.ActionLink(" Back", "WithdrawDeposit", "BankAccount", null, new { @class = "btn btn-default fa fa-reply  pull-right" })
+            </div>
+            <div class="panel-body">
+                @if (!String.IsNullOrEmpty(transactionSuccessMessage)) { 
+                <div class="alert alert-success">
+                    <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                    <strong>@transactionSuccessMessage</strong>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@
