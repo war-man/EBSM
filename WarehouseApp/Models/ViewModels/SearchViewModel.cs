@@ -89,7 +89,7 @@ namespace WarehouseApp.Models.ViewModels
         [Display(Name = "Invoice No")]
         public String OrderNo { get; set; }
  
-        [Display(Name = "Customer")]
+        [Display(Name = "Porject")]
         public Int32? CustomerId { get; set; }
         public byte? Status { get; set; }
         public Int32 Page { get; set; }
@@ -151,7 +151,7 @@ namespace WarehouseApp.Models.ViewModels
         [Display(Name = "Invoice No")]
         public String InvoiceNo { get; set; }
 
-        [Display(Name = "Customer")]
+        [Display(Name = "Project")]
         public Int32? CustomerId { get; set; }
         public Int32 Page { get; set; }
         public Int32 PageSize { get; set; }
@@ -177,7 +177,7 @@ namespace WarehouseApp.Models.ViewModels
 
         public String BillDateTo { get; set; }
         public String BillNo { get; set; }
-
+         [Display(Name = "Project")]
         public Int32? Customer { get; set; }
 
         public Int32 Page { get; set; }

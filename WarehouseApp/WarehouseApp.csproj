@@ -686,6 +686,7 @@
     <None Include="Properties\PublishProfiles\ebsm-1-2.pubxml" />
     <None Include="Properties\PublishProfiles\ebsm-1-3.pubxml" />
     <None Include="Properties\PublishProfiles\ebsm-1-4.pubxml" />
+    <None Include="Properties\PublishProfiles\ebsm-1-5.pubxml" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
     <Content Include="Scripts\jquery.js" />
     <Content Include="Scripts\jquery.min.js" />

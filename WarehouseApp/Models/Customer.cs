@@ -14,7 +14,7 @@ namespace WarehouseApp.Models
         [Key]
         public int CustomerId { get; set; }
         [Required]
-        [Display(Name = "Full Name")]
+        [Display(Name = "Name")]
         public string FullName { get; set; }
         [Display(Name = "Address")]
         public string Address { get; set; }

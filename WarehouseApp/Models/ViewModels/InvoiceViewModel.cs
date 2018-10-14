@@ -16,10 +16,11 @@ namespace WarehouseApp.Models.ViewModels
         [DataType(DataType.Date)]
         [DisplayFormat(DataFormatString = "{0:dd-MM-yyyy}", ApplyFormatInEditMode = true)]
         public new string InvoiceDate { get; set; }
+         [Display(Name = "Project")]
         public new int CustomerId { get; set; }
         //[ForeignKey("CustomerId")]
         //public virtual Customer Customer { get; set; }
-        [Display(Name = "Customer Name")]
+        [Display(Name = "Project Name")]
         public string CustomerName { get; set; }
         [Display(Name = "Contact No")]
         [Phone(ErrorMessage = "Contact number is not valid")]
@@ -52,9 +53,9 @@ namespace WarehouseApp.Models.ViewModels
         [DisplayFormat(DataFormatString = "{0:dd-MM-yyyy}", ApplyFormatInEditMode = true)]
         public string PoDate { get; set; }
 
-        [Display(Name = "Customer")]
+        [Display(Name = "Project")]
         public int CustomerId { get; set; }
-        [Display(Name = "Customer Branch")]
+        [Display(Name = " Branch")]
         public int? CustomerBranchId { get; set; }
            [Display(Name = "File")]
         [Required]

@@ -20,10 +20,11 @@ namespace WarehouseApp.Models
         [DataType(DataType.Date)]
         [DisplayFormat(DataFormatString = "{0:dd-MM-yyyy}", ApplyFormatInEditMode = true)]
         public DateTime OrderDate { get; set; }
-
+        [Display(Name = "Project")]
         public int? CustomerId { get; set; }
         [ForeignKey("CustomerId")]
         public virtual Customer Customer { get; set; }
+        [Display(Name = "Project Branch")]
         public int? CustomerBranchId { get; set; }
         [ForeignKey("CustomerBranchId")]
         public virtual CustomerProject CustomerBranch { get; set; }

@@ -24,7 +24,7 @@
                             <li><a href='@Url.Action("Index","Product")'>Products</a></li>
                             <li><a href='@Url.Action("Index","Batch")'>Barcodes</a></li>
                             <li><a href='@Url.Action("Index","Stock")'>Stock</a></li>
-                            <li><a href='@Url.Action("Index","Customer")'>Customers</a></li>
+                            <li><a href='@Url.Action("Index","Customer")'>Projects</a></li>
                             <li><a href='@Url.Action("Index","Bill")'>Bills</a></li>
                             <li><a href='@Url.Action("PoImport","SalesOrder")'>PO Import From Excel</a></li>
                           
@@ -64,7 +64,7 @@
     </div>
 
     <div class="col-lg-2 paddingReduce">
-        @Html.DropDownList("CustomerId", null, "Select Customer..", new { @class = "form-control input-sm", })
+        @Html.DropDownList("CustomerId", null, "Select project..", new { @class = "form-control input-sm", })
 
     </div>
 
@@ -114,7 +114,7 @@
 
 
                                 <th>
-                                    @Html.DisplayName("Customer")
+                                   @Html.DisplayNameFor(model => model.SalesOrders.First().CustomerId)
                                 </th>
                                 <th>
                                     @Html.DisplayNameFor(model => model.SalesOrders.First().Status)
