@@ -410,3 +410,15 @@ padding: 3px 9px; }
 .badge-light,
 .label-light { color: #888!important }
 
+.input-sm {
+    padding: 1px 3px;
+}
+.input-xs {
+    height: 25px;
+    padding: 1px 3px;
+}
+.addon-xs {
+    line-height: 20px;
+    padding: 0px 8px;
+    min-width: 30px;
+}

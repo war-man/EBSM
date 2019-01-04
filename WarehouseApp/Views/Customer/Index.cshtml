@@ -9,7 +9,7 @@
     <div class="col-md-12 col-sm-12 col-xs-12">
         <div class="x_panel">
             <div class="x_title">
-                <i class="fa fa-list"></i> Project List
+                <i class="fa fa-list"></i> Customer List
                 <ul class="nav navbar-right panel_toolbox">
                     <li><a href='@Url.Action("Create", "Customer")' data-id="0" class="" title="Add New"><i class="fa fa-plus-square fa-lg"></i> </a></li>
 
@@ -60,7 +60,7 @@
                         <thead>
                             <tr>
                                 <th>
-                                    @Html.DisplayName("Project Id")
+                                    @Html.DisplayName("Id")
                                 </th> <th>
                                     @Html.DisplayNameFor(model => model.Customers.First().FullName)
                                 </th>

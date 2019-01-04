@@ -186,8 +186,10 @@ D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\bin\Microsoft.Owin.Security.OAut
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\bin\Microsoft.Owin.Security.Google.xml
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\bin\Microsoft.Owin.Security.Twitter.xml
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\bin\Microsoft.Owin.Security.MicrosoftAccount.xml
-D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.csprojResolveAssemblyReference.cache
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.Migrations.InitialCreate.resources
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.csproj.GenerateResource.Cache
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.dll
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.pdb
+D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.csprojAssemblyReference.cache
+D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.csproj.CoreCompileInputs.cache
+D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.csproj.CopyComplete
