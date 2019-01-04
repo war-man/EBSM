@@ -23,6 +23,7 @@ namespace WarehouseApp.Models
          public double BillAmount { get; set; }
          [Display(Name = "Bill Paid")]
          public double? BillPaid { get; set; }
+           [Display(Name = "Project")]
         public int CustomerId { get; set; }
         [ForeignKey("CustomerId")]
         public virtual Customer Customer { get; set; }

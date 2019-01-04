@@ -79,7 +79,7 @@ namespace WarehouseApp.Controllers
              foreach (var item in productsList.ProductBarcodes)
              {
                  //will call a recursive checking=============================================
-                 string uniqueBarcode = item.ProductId+DateTime.Now.ToString("dMyyHHmm");
+                 string uniqueBarcode = item.ProductId+DateTime.Now.ToString("yyMdHHmm");
                  item.Barcode = db.Stocks.Any(x => x.Barcode.ToLower() == uniqueBarcode.ToLower()) ? uniqueBarcode + "D" : uniqueBarcode;
                  Stock newStock = new Stock()
                  {

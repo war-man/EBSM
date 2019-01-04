@@ -1,9 +1,2 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<parameters>
-  <parameter name="WmsConnString-Web.config Connection String" description="WmsConnString Connection String used in web.config by the application to access the database." defaultValue="Data Source=.\SQLEXPRESS;Initial Catalog=WmsDb280218;User ID=sa;Password=p@ssword" tags="SqlConnectionString">
-    <parameterEntry kind="XmlFile" scope="D:\\Projects\\Welburg_warehouse\\WarehouseApp\\WarehouseApp\\obj\\Release\\Package\\PackageTmp\\Web\.config$" match="/configuration/connectionStrings/add[@name='WmsConnString']/@connectionString" />
-  </parameter>
-  <parameter name="DefaultConnection-Web.config Connection String" description="DefaultConnection Connection String used in web.config by the application to access the database." defaultValue="DefaultConnection_ConnectionString" tags="SqlConnectionString">
-    <parameterEntry kind="XmlFile" scope="D:\\Projects\\Welburg_warehouse\\WarehouseApp\\WarehouseApp\\obj\\Release\\Package\\PackageTmp\\Web\.config$" match="/configuration/connectionStrings/add[@name='DefaultConnection']/@connectionString" />
-  </parameter>
-</parameters>
+<parameters />

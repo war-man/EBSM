@@ -20,7 +20,7 @@
                             <li><a href='@Url.Action("Index","Invoice")'>All Sales</a></li>
                            
                             <li><a href='@Url.Action("Index","Stock")'>Stock</a></li>
-                            <li><a href='@Url.Action("Index","Customer")'>Customers</a></li>
+                            <li><a href='@Url.Action("Index","Customer")'>Projects</a></li>
                             <li><a href='@Url.Action("Index","Bill")'>Bills</a></li>
                          
                           
@@ -60,7 +60,7 @@
                                 </div>
 
                                 <div class="col-lg-2">
-                                        @Html.DropDownList("CustomerId", null, "Select Customer..", new { @class = "form-control input-sm", })
+                                        @Html.DropDownList("CustomerId", null, "Select projects..", new { @class = "form-control input-sm", })
 
                                     </div>
 
@@ -94,7 +94,7 @@
                                     @Html.DisplayName("Return Amount")
                                 </th>
                                 <th>
-                                    @Html.DisplayName("Customer")
+                                    @Html.DisplayNameFor(model => model.CustomerId)
                                 </th>
                                 <th class="col-md-1">Action</th>
                             </tr>

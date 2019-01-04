@@ -53,7 +53,7 @@
                     <!-- /.box-body -->
                 </div>
                 <div class="col-md-6">
-                    <div class="col-sm-5 col-xs-6 tital ">Customer:</div><div class="col-sm-7">
+                    <div class="col-sm-5 col-xs-6 tital ">@Html.DisplayNameFor(model=>model.CustomerId):</div><div class="col-sm-7">
                         @if (Model.Customer != null)
                         {
                             <a href='@Url.Action("Details","Customer", new{id=@Model.Customer.CustomerId})'>@Model.Customer.FullName</a>
@@ -65,7 +65,9 @@
                         string address = "";
                         if (Model.Customer != null)
                         {
-                            address = Model.CustomerBranchId != null ? Model.CustomerBranch.ProjectName + ", " + Model.CustomerBranch.ProjectAddress : Model.Customer.Address.Trim(',', ' ');
+                           
+                            address = Model.CustomerBranchId != null ? (Model.CustomerBranch.ProjectName + ", " + Model.CustomerBranch.ProjectAddress).Trim(',', ' ') : Model.Customer.Address;
+                        
                         }}
                     <div class="col-sm-5 col-xs-6 tital ">Address:</div><div class="col-sm-7">@address</div>
                     <div class="clearfix"></div>
