@@ -20,6 +20,8 @@
     <IISExpressAnonymousAuthentication />
     <IISExpressWindowsAuthentication />
     <IISExpressUseClassicPipelineMode />
+    <Use64BitIISExpress />
+    <UseGlobalApplicationHostFile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -218,46 +220,13 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\201802281423253_InitialCreate.cs" />
-    <Compile Include="Migrations\201802281423253_InitialCreate.Designer.cs">
-      <DependentUpon>201802281423253_InitialCreate.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
-    <Compile Include="Models\SalesOrder.cs" />
-    <Compile Include="Models\TransferProduct.cs" />
-    <Compile Include="Models\Attachment.cs" />
-    <Compile Include="Models\AuditLog.cs" />
-    <Compile Include="Models\BankAccount.cs" />
-    <Compile Include="Models\Bill.cs" />
-    <Compile Include="Models\CompanyProfile.cs" />
-    <Compile Include="Models\Customer.cs" />
-    <Compile Include="Models\Department.cs" />
+    <Compile Include="Models\AuthenticatedUser.cs" />
     <Compile Include="Models\ViewModels\BillInvoicesViewModel.cs" />
     <Compile Include="Models\ViewModels\CustomerDetailsViewModel.cs" />
     <Compile Include="Models\ViewModels\TransferProductsViewModel.cs" />
-    <Compile Include="Models\Warehouse.cs" />
     <Compile Include="Models\IdentityModels.cs" />
-    <Compile Include="Models\Notice.cs" />
     <Compile Include="Models\ViewModels\TicketViewModel.cs" />
-    <Compile Include="Models\WmsDbContext.cs" />
-    <Compile Include="Models\Role.cs" />
-    <Compile Include="Models\Settings.cs" />
-    <Compile Include="Models\AttributeSetAttribute.cs" />
-    <Compile Include="Models\Cash.cs" />
-    <Compile Include="Models\Category.cs" />
-    <Compile Include="Models\Damage.cs" />
-    <Compile Include="Models\Expense.cs" />
-    <Compile Include="Models\Group.cs" />
-    <Compile Include="Models\Invoice.cs" />
-    <Compile Include="Models\Product.cs" />
-    <Compile Include="Models\Purchase.cs" />
-    <Compile Include="Models\Return.cs" />
-    <Compile Include="Models\Salesman.cs" />
-    <Compile Include="Models\Stock.cs" />
-    <Compile Include="Models\Supplier.cs" />
-    <Compile Include="Models\Transaction.cs" />
-    <Compile Include="Models\User.cs" />
     <Compile Include="Models\ViewModels\AddProductViewModel.cs" />
     <Compile Include="Models\ViewModels\AttributeSetViewModel.cs" />
     <Compile Include="Models\ViewModels\BarcodeViewModel.cs" />
@@ -890,9 +859,14 @@
     <None Include="Project_Readme.html" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\201802281423253_InitialCreate.resx">
-      <DependentUpon>201802281423253_InitialCreate.cs</DependentUpon>
-    </EmbeddedResource>
+    <ProjectReference Include="..\ClassLibrary1\EBSM.Entities.csproj">
+      <Project>{4bec0d63-b914-42e4-a480-428512ca3914}</Project>
+      <Name>EBSM.Entities</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\EBSM.Services\EBSM.Services.csproj">
+      <Project>{f011fd0d-06bf-455b-ad36-380d248fe193}</Project>
+      <Name>EBSM.Services</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

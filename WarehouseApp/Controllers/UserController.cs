@@ -25,6 +25,8 @@ using Microsoft.Owin;
 using Microsoft.Owin.BuilderProperties;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
+using EBSM.Services;
+using EBSM.Entities;
 using LoginViewModel = WarehouseApp.Models.ViewModels.LoginViewModel;
 using RegisterViewModel = WarehouseApp.Models.ViewModels.RegisterViewModel;
 
@@ -33,13 +35,11 @@ namespace WarehouseApp.Controllers
 {
     public class UserController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private UserService _userService = new UserService();
         public UserManager<ApplicationUser> UserManager { get; private set; }
         #region user list view
         // GET: /User/
         [Roles("Global_SupAdmin,User_Creation")]
-       
- 
         public ActionResult Index()
         {
             var users = db.Users.Where(x=>x.Status!=2).Include(u => u.Role);
@@ -51,7 +51,7 @@ namespace WarehouseApp.Controllers
         public ActionResult UserProfile(int id)
         {
             
-            User userProfile = db.Users.Find(id);
+            User userProfile = _userService.GetUserById(id);
             if (userProfile == null)
             {
                 return HttpNotFound();

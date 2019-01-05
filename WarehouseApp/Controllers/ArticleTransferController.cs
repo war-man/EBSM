@@ -10,7 +10,7 @@ using PagedList;
 using System.Web.Security;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
-
+using EBSM.Services;
 
 namespace WarehouseApp.Controllers
 {
@@ -18,15 +18,12 @@ namespace WarehouseApp.Controllers
     [Authorize]
     public class ArticleTransferController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
-
-        
+        private ArticleTransferService _articleTransferService = new ArticleTransferService();
         [Roles("Global_SupAdmin,Article_Transfer")]
         public ActionResult Index(ArticleTransferSearchViewModel model)
         {
-            var fromDate = Convert.ToDateTime(model.TransferDateFrom);
-            var toDate = Convert.ToDateTime(model.TransferDateTo);
-            var articleTransferList = db.ArticleTransfers.ToList().Where(x => (model.SelectedProductId == null || x.StockFrom.ProductId == model.SelectedProductId) && (model.PName == null || (x.StockFrom.Product.ProductFullName.StartsWith(model.PName) || x.StockFrom.Product.ProductFullName.Contains(" " + model.PName))) && (model.TransferDateFrom == null || x.TransferDate.Date >= fromDate) && (model.TransferDateTo == null || x.TransferDate.Date <= toDate)).OrderByDescending(o => o.CreatedDate);
+
+            var articleTransferList = _articleTransferService.GetAll(model.SelectedProductId,model.PName,model.TransferDateFrom,model.TransferDateTo).ToList();
             model.ArticleTransfers = articleTransferList.ToPagedList(model.Page, model.PageSize);
            
             return View("../Shop/ArticleTransfer/ArticleTransferList", model);
@@ -36,7 +33,6 @@ namespace WarehouseApp.Controllers
         [Roles("Global_SupAdmin,Article_Transfer")]
         public ActionResult CreateArticleTransfer()
         {
-            
             return View("../Shop/ArticleTransfer/CreateArticleTransfer");
         }
 
