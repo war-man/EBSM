@@ -99,8 +99,7 @@ namespace WarehouseApp
         {
             int userId = Convert.ToInt32(username.Split('|')[0]);
             UserRepo userRep = new UserRepo();
-            var user = userRep.GetAllUsers().SingleOrDefault
-                (u => u.UserId == userId);
+            var user = userRep.GetAllUsers().SingleOrDefault(u => u.UserId == userId);
             if (user != null)
             {
                 MembershipUser memUser = new MembershipUser("CustomMembershipProvider",

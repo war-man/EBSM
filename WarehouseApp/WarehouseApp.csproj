@@ -188,6 +188,7 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\Startup.Auth.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\TransferProductsController.cs" />
     <Compile Include="Controllers\BankAccountController.cs" />
     <Compile Include="Controllers\BillController.cs" />
     <Compile Include="Controllers\ArticleTransferController.cs" />
@@ -859,7 +860,7 @@
     <None Include="Project_Readme.html" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ClassLibrary1\EBSM.Entities.csproj">
+    <ProjectReference Include="..\EBSM.Entities\EBSM.Entities.csproj">
       <Project>{4bec0d63-b914-42e4-a480-428512ca3914}</Project>
       <Name>EBSM.Entities</Name>
     </ProjectReference>

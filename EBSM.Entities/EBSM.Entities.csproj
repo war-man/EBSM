@@ -4,12 +4,12 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F011FD0D-06BF-455B-AD36-380D248FE193}</ProjectGuid>
+    <ProjectGuid>{4BEC0D63-B914-42E4-A480-428512CA3914}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>EBSM.Services</RootNamespace>
-    <AssemblyName>EBSM.Services</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <RootNamespace>EBSM.Entities</RootNamespace>
+    <AssemblyName>EBSM.Entities</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
@@ -32,6 +32,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -41,26 +42,36 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SalesService.cs" />
-    <Compile Include="CustomerService.cs" />
-    <Compile Include="BillService.cs" />
-    <Compile Include="ProductService.cs" />
-    <Compile Include="TransactionAccountService.cs" />
-    <Compile Include="WarehouseZoneService.cs" />
-    <Compile Include="StockService.cs" />
-    <Compile Include="ArticleTransferService.cs" />
-    <Compile Include="UserService.cs" />
+    <Compile Include="Attachment.cs" />
+    <Compile Include="AttributeSetAttribute.cs" />
+    <Compile Include="AuditLog.cs" />
+    <Compile Include="BankAccount.cs" />
+    <Compile Include="Bill.cs" />
+    <Compile Include="Cash.cs" />
+    <Compile Include="Category.cs" />
+    <Compile Include="CompanyProfile.cs" />
+    <Compile Include="Customer.cs" />
+    <Compile Include="Damage.cs" />
+    <Compile Include="Department.cs" />
+    <Compile Include="Expense.cs" />
+    <Compile Include="Group.cs" />
+    <Compile Include="Invoice.cs" />
+    <Compile Include="Notice.cs" />
+    <Compile Include="Product.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\EBSM.Entities\EBSM.Entities.csproj">
-      <Project>{4bec0d63-b914-42e4-a480-428512ca3914}</Project>
-      <Name>EBSM.Entities</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\EBSM.Repo\EBSM.Repo.csproj">
-      <Project>{f8bca28b-8eaa-40d9-9a44-a3c092634799}</Project>
-      <Name>EBSM.Repo</Name>
-    </ProjectReference>
+    <Compile Include="Purchase.cs" />
+    <Compile Include="Return.cs" />
+    <Compile Include="Role.cs" />
+    <Compile Include="Salesman.cs" />
+    <Compile Include="SalesOrder.cs" />
+    <Compile Include="Settings.cs" />
+    <Compile Include="Stock.cs" />
+    <Compile Include="Supplier.cs" />
+    <Compile Include="Transaction.cs" />
+    <Compile Include="ArticleTransfer.cs" />
+    <Compile Include="TransferProduct.cs" />
+    <Compile Include="User.cs" />
+    <Compile Include="Warehouse.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

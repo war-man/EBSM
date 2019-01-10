@@ -10,20 +10,22 @@ using System.Data.Entity;
 using NPOI.SS.Formula.Functions;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
+using EBSM.Services;
+using EBSM.Entities;
 
 namespace WarehouseApp.Controllers
 {
     [Authorize]
     public class BankAccountController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private TransactionAccountService _transactionAccountService = new TransactionAccountService();
         #region list view
         [Roles("Global_SupAdmin,Configuration,Account_Add")]
         public ActionResult Index()
         {
-            var cashAccounts = db.Cash.ToList();
-            var bankAccounts = db.BankAccounts.ToList();
-            var mobileBankings = db.MobileBangking.ToList();
+            var cashAccounts =_transactionAccountService.GetAllCashAccounts().ToList();
+            var bankAccounts = _transactionAccountService.GetAllBankAccounts().ToList();
+            var mobileBankings = _transactionAccountService.GetAllMobileBankingAccounts().ToList();
         var allPriceModels = new Tuple<List<Cash>,List<BankAccount>, List<MobileBanking>>(cashAccounts, bankAccounts,mobileBankings);
          return View("../BankAccount/Index", allPriceModels); 
         }
@@ -31,18 +33,18 @@ namespace WarehouseApp.Controllers
        // list of bank account 
         public ActionResult BankAccountList()
         {            
-            return View("../BankAccount/BankAccountList", db.BankAccounts.ToList());
+            return View("../BankAccount/BankAccountList", _transactionAccountService.GetAllCashAccounts());
         }
 
         // List of Mobile Account
         public ActionResult MobileAccountList()
         {
-            return View("../BankAccount/MobileAccountList", db.MobileBangking.ToList());
+            return View("../BankAccount/MobileAccountList", _transactionAccountService.GetAllBankAccounts().ToList());
         }
 
         public ActionResult CashAccount()
         {
-            return View("../BankAccount/CashAccount", db.Cash.ToList());
+            return View("../BankAccount/CashAccount", _transactionAccountService.GetAllBankAccounts().ToList());
         }
         #endregion
         #region acccount create
@@ -68,9 +70,8 @@ namespace WarehouseApp.Controllers
                 bankAccount.Balance = bankAccount.Balance ?? 0;
                 bankAccount.Status = 1;
                 bankAccount.CreatedDate = DateTime.Now;
-                bankAccount.CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
-                db.BankAccounts.Add(bankAccount);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                bankAccount.CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
+                _transactionAccountService.SaveBankaccount(bankAccount, AuthenticatedUser.GetUserFromIdentity().UserId);
                 return RedirectToAction("Index");
             }
 
@@ -94,9 +95,8 @@ namespace WarehouseApp.Controllers
                 mobileBanking.Balance = mobileBanking.Balance ?? 0;
                 mobileBanking.Status = 1;
                 mobileBanking.CreatedDate = DateTime.Now;
-                mobileBanking.CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
-                db.MobileBangking.Add(mobileBanking);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                mobileBanking.CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
+                _transactionAccountService.SaveMobileBankAccount(mobileBanking, AuthenticatedUser.GetUserFromIdentity().UserId);
                 return RedirectToAction("Index");
             }
 
@@ -113,7 +113,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            BankAccount bankAccount = db.BankAccounts.Find(id);
+            BankAccount bankAccount = _transactionAccountService.GetBankAccountById(id.Value);
             if (bankAccount == null)
             {
                 return HttpNotFound();
@@ -127,16 +127,16 @@ namespace WarehouseApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                BankAccount oldBankAcc = db.BankAccounts.Find(bankAccount.BankId);
+                BankAccount oldBankAcc = _transactionAccountService.GetBankAccountById(bankAccount.BankId); 
                 oldBankAcc.AccountName = bankAccount.AccountName;
                 oldBankAcc.AccountNo = bankAccount.AccountNo;
                 oldBankAcc.BankName = bankAccount.BankName;
                 oldBankAcc.Branch = bankAccount.Branch;
                 oldBankAcc.Status = bankAccount.Status;
                 oldBankAcc.UpdatedDate = DateTime.Now;
-                oldBankAcc.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
-                db.Entry(oldBankAcc).State = EntityState.Modified;
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                oldBankAcc.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
+               
+                _transactionAccountService.EditBankaccount(oldBankAcc, AuthenticatedUser.GetUserFromIdentity().UserId);
                 return RedirectToAction("Index");
             }
             return View("../bankAccount/EditBankAccount", bankAccount);
@@ -149,7 +149,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            MobileBanking mobileAccount = db.MobileBangking.Find(id);
+            MobileBanking mobileAccount = _transactionAccountService.GetMobileBankingAccountById(id.Value);
             if (mobileAccount == null)
             {
                 return HttpNotFound();
@@ -165,15 +165,15 @@ namespace WarehouseApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                MobileBanking oldMobileAcc = db.MobileBangking.Find(mobileBanking.AccountId);
+                MobileBanking oldMobileAcc = _transactionAccountService.GetMobileBankingAccountById(mobileBanking.AccountId);
                 oldMobileAcc.AccountName = mobileBanking.AccountName;
                 oldMobileAcc.AccountNumber = mobileBanking.AccountNumber;
                 oldMobileAcc.AccountOwner = mobileBanking.AccountOwner;
                 oldMobileAcc.Status = mobileBanking.Status;
                 oldMobileAcc.UpdatedDate = DateTime.Now;
-                oldMobileAcc.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
-                db.Entry(oldMobileAcc).State = EntityState.Modified;
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                oldMobileAcc.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
+                _transactionAccountService.EditMobileBankAccount(oldMobileAcc, AuthenticatedUser.GetUserFromIdentity().UserId);
+                
                 return RedirectToAction("Index");
             }
             return View("../bankAccount/EditMobileAccount", mobileBanking);
@@ -284,13 +284,11 @@ namespace WarehouseApp.Controllers
 
        public static List<AccountsView> AllAccountByMode(string transactionMode)
        {
-           var cx =new WmsDbContext();
+           var cx =new TransactionAccountService();
            List<AccountsView>accounts= new List<AccountsView>();
             if (transactionMode == "Cash")
             {
-                accounts =
-                    cx.Cash
-                        .Select(p => new AccountsView { Id = p.CashId, Name = p.CashName, Balance = p.Balance,Status = p.Status})
+                accounts = cx.GetAllCashAccounts().Select(p => new AccountsView { Id = p.CashId, Name = p.CashName, Balance = p.Balance,Status = p.Status})
                         .ToList();
 
                
@@ -298,13 +296,13 @@ namespace WarehouseApp.Controllers
             else if (transactionMode == "Bank")
             {
 
-                accounts = cx.BankAccounts.Select(p => new AccountsView { Id = p.BankId, Name = p.BankName + "-" + p.Branch + "-" + p.AccountNo, Balance = p.Balance, Status = p.Status }).ToList();
+                accounts = cx.GetAllBankAccounts().Select(p => new AccountsView { Id = p.BankId, Name = p.BankName + "-" + p.Branch + "-" + p.AccountNo, Balance = p.Balance, Status = p.Status }).ToList();
                
             }
             else if (transactionMode == "Mobile")
             {
 
-                accounts = cx.MobileBangking.Select(p => new AccountsView { Id = p.AccountId, Name = p.AccountName + "-" + p.AccountNumber, Balance = p.Balance, Status = p.Status }).ToList();
+                accounts = cx.GetAllMobileBankingAccounts().Select(p => new AccountsView { Id = p.AccountId, Name = p.AccountName + "-" + p.AccountNumber, Balance = p.Balance, Status = p.Status }).ToList();
                
             }
 
@@ -353,7 +351,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _transactionAccountService.Dispose();
             }
             base.Dispose(disposing);
         }

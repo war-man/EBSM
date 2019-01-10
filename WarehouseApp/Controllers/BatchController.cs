@@ -8,13 +8,15 @@ using PagedList;
 
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
-
+using EBSM.Services;
+using EBSM.Entities;
 namespace WarehouseApp.Controllers
 {
     [Authorize]
     public class BatchController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private StockService _stockService = new StockService();
+        private ProductService _productService = new ProductService();
 
         #region list view
         [Roles("Global_SupAdmin,Barcode_Generate")]
@@ -22,11 +24,11 @@ namespace WarehouseApp.Controllers
         public ActionResult Index(BarcodeSearchViewModel model)
         {
 
-            var barcodes = db.Stocks.ToList().Where(x => (x.Barcode != null) && (model.PName == null || (x.Product.ProductFullName.ToLower().StartsWith(model.PName.ToLower()) || x.Product.ProductFullName.ToLower().Contains(" " + model.PName.ToLower())))
+            var barcodes = _stockService.GetAll().ToList().Where(x => (x.Barcode != null) && (model.PName == null || (x.Product.ProductFullName.ToLower().StartsWith(model.PName.ToLower()) || x.Product.ProductFullName.ToLower().Contains(" " + model.PName.ToLower())))
                     && (model.PCode == null || x.Product.ProductCode.ToLower().StartsWith(model.PCode.ToLower())) && (model.BCode == null || x.Barcode.ToLower().Equals(model.BCode.ToLower()))).OrderBy(x => x.Product.ProductFullName).ThenByDescending(x => x.CreatedDate).Select(x => new BarcodeViewModel { ProductId = (Int32)x.ProductId,Product = x.Product,Barcode = x.Barcode,BatchNo =x.BatchNo, Exp = String.Format("{0:dd-MM-yyyy}",x.Exp),PurchasePrice = x.PurchasePrice}).ToList();
             model.Barcodes = barcodes.ToPagedList(model.Page, model.PageSize);
             model.BarcodeModel = new BarcodeViewModel();
-            ViewBag.ProductId = new SelectList(db.Products.Where(x => x.Status != 0).OrderBy(x => x.ProductFullName), "ProductId", "ProductFullName");
+            ViewBag.ProductId = new SelectList(_productService.GetActiveProducts(), "ProductId", "ProductFullName");
    
             return View("../Shop/Batch/Index", model);
         }
@@ -34,7 +36,7 @@ namespace WarehouseApp.Controllers
         #region save exist barcode
         public ActionResult SaveBarcode()
         {
-            ViewBag.ProductId = new SelectList(db.Products.Where(x => x.Status != 0).OrderBy(x => x.ProductFullName),"ProductId", "ProductFullName");
+            ViewBag.ProductId = new SelectList(_productService.GetActiveProducts(), "ProductId", "ProductFullName");
             return View("../Shop/Batch/SaveExistBarcode");
         }
 
@@ -53,15 +55,13 @@ namespace WarehouseApp.Controllers
                     Mfg = !String.IsNullOrEmpty(barcodeModel.Mfg) ? Convert.ToDateTime(barcodeModel.Mfg) : (DateTime?)null,
                     TotalQuantity = 0,
                     Status = 1,
-                    CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
+                    CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId,
                     CreatedDate = DateTime.Now,
                 };
-                
-                db.Stocks.Add(newStock);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _stockService.Save(newStock, AuthenticatedUser.GetUserFromIdentity().UserId);
                 return RedirectToAction("Index");
             }
-            ViewBag.ProductId = new SelectList(db.Products.Where(x => x.Status != 0).OrderBy(x => x.ProductFullName), "ProductId", "ProductFullName",barcodeModel.ProductId);
+            ViewBag.ProductId = new SelectList(_productService.GetActiveProducts(), "ProductId", "ProductFullName",barcodeModel.ProductId);
             return View("../Shop/Batch/SaveExistBarcode");
         }
         #endregion
@@ -80,7 +80,7 @@ namespace WarehouseApp.Controllers
              {
                  //will call a recursive checking=============================================
                  string uniqueBarcode = item.ProductId+DateTime.Now.ToString("yyMdHHmm");
-                 item.Barcode = db.Stocks.Any(x => x.Barcode.ToLower() == uniqueBarcode.ToLower()) ? uniqueBarcode + "D" : uniqueBarcode;
+                 item.Barcode = _stockService.IsBarcodeExist(uniqueBarcode) ? uniqueBarcode + "D" : uniqueBarcode;
                  Stock newStock = new Stock()
                  {
                      ProductId = item.ProductId,
@@ -91,14 +91,11 @@ namespace WarehouseApp.Controllers
                      Mfg =!String.IsNullOrEmpty(item.Mfg)? Convert.ToDateTime(item.Mfg): (DateTime?) null,
                      TotalQuantity = 0,
                      Status = 1,
-                     CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
+                     CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId,
                      CreatedDate = DateTime.Now,
                  };
-
-                 db.Stocks.Add(newStock);
-                 db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
-                
-                 item.Product = db.Products.Find(item.ProductId);
+                _stockService.Save(newStock, AuthenticatedUser.GetUserFromIdentity().UserId);
+                 item.Product = _productService.GetProductrById(item.ProductId);
              }
             
             return View("../Shop/Batch/PrintBarcode", productsList.ProductBarcodes);
@@ -120,23 +117,8 @@ namespace WarehouseApp.Controllers
          #region helper modules
          public JsonResult IsBarcodeExist(string Barcode, string InitialBarcode)
         {
-            bool isNotExist = true;
-            if (Barcode != string.Empty && InitialBarcode == "undefined")
-            {
-                var isExist = db.Stocks.Any(x => x.Barcode.ToLower().Equals(Barcode.ToLower()));
-                if (isExist)
-                {
-                    isNotExist = false;
-                }
-            }
-            if (Barcode != string.Empty && InitialBarcode != "undefined")
-            {
-                var isExist = db.Stocks.Any(x => x.Barcode.ToLower() == Barcode.ToLower() && x.Barcode.ToLower() != InitialBarcode.ToLower());
-                if (isExist)
-                {
-                    isNotExist = false;
-                }
-            }
+            bool isNotExist = _stockService.IsBarcodeExist(Barcode, InitialBarcode);
+           
             return Json(isNotExist, JsonRequestBehavior.AllowGet);
         }
 #endregion
@@ -145,7 +127,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _stockService.Dispose();
             }
             base.Dispose(disposing);
         }

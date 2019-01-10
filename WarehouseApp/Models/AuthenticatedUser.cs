@@ -6,7 +6,7 @@ using System.Web;
 using System.Web.Mvc;
 
 
-namespace SblCafeKiosk.WebAdmin.Models
+namespace WarehouseApp.Models
 {
     [Authorize]
     public static class AuthenticatedUser

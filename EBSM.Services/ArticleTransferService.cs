@@ -18,44 +18,31 @@ namespace EBSM.Services
             _context = new WmsDbContext();
             _articleTransferUnitOfWork = new ArticleTransferUnitOfWork(_context);
         }
+       
+        public ArticleTransfer GetUserById(int id)
+        {
+            return _articleTransferUnitOfWork.ArticleTransferRepository.GetById(id);
+        }
+       
+        public int Save(ArticleTransfer articleTransfer, int? loggedInUserId)
+        {
+            _articleTransferUnitOfWork.ArticleTransferRepository.Add(articleTransfer);
+            _articleTransferUnitOfWork.Save(loggedInUserId.ToString());
+            return articleTransfer.ArticleTransferId;
+        }
+        public void Edit(ArticleTransfer articleTransfer, int? loggedInUserId)
+        {
+            _articleTransferUnitOfWork.ArticleTransferRepository.Edit(articleTransfer);
+            _articleTransferUnitOfWork.Save(loggedInUserId.ToString());
+        }
+        public IEnumerable<ArticleTransfer> GetAll()
+        {
+            return _articleTransferUnitOfWork.ArticleTransferRepository.GetAll();
+        }
         public IEnumerable<ArticleTransfer> GetAll(int? SelectedProductId, string PName, string TransferDateFrom, string TransferDateTo)
         {
             return _articleTransferUnitOfWork.ArticleTransferRepository.GetAll(SelectedProductId, PName, TransferDateFrom, TransferDateTo);
         }
-           
-        public User GetUserById(int id)
-        {
-            return _userUnitOfWork.UserRepository.GetById(id);
-        }
-       
-        public void SaveUser(User user, int? loggedInUserId)
-        {
-            var newUser = new User
-            {
-                //CardNo = card.CardNo,
-                //CardAcc = card.CardAcc,
-                Status = 1,
-                CreatedBy = loggedInUserId,
-                CreatedDate = DateTime.Now,
-            };
-
-            _userUnitOfWork.UserRepository.Add(newUser);
-            _userUnitOfWork.Save(loggedInUserId.ToString());
-        }
-
-        //public IEnumerable<User> GetAllCardNotAssignedEmployee()
-        //{
-        //    return _employeeUnitOfWork.EmployeeRepository.GetAllCardNotAssignedEmployee();
-        //}
-        //public void DeleteCostCenter(int id)
-        //{
-        //    _costCenterUnitOfWork.CostCenterRepository.DeleteById(id);
-        //    _costCenterUnitOfWork.Save();
-        //}
-        //public bool IsCostCenterExist(string CostCenterName, string InitialCostCenterName)
-        //{
-        //    return _costCenterUnitOfWork.CostCenterRepository.IsCostCenterExist(CostCenterName, InitialCostCenterName);
-        //}
         public void Dispose()
         {
             _articleTransferUnitOfWork.Dispose();

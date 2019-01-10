@@ -9,22 +9,22 @@ namespace EBSM.Repo
 {
     public class UserRepository
     {
-        private WmsDbContext _context;
+        private WmsDbContext db;
         public UserRepository(WmsDbContext context)
         {
-            _context = context;
+            db = context;
         }
         public void Add(User user)
         {
-            _context.Users.Add(user);
+            db.Users.Add(user);
         }
         public User GetById(int id)
         {
-            return _context.Users.Find(id); ;
+            return db.Users.Find(id); ;
         }
         public IEnumerable<User> GetAll(string SearchString)
         {
-            return _context.Users.Where(x => x.Status != 0 && (SearchString == null || x.FullName.Contains(SearchString))).OrderBy(x => x.FullName);
+            return db.Users.Where(x => x.Status != 0 && (SearchString == null || x.FullName.Contains(SearchString))).OrderBy(x => x.FullName);
         } 
 
     
@@ -34,7 +34,7 @@ namespace EBSM.Repo
         //    bool isNotExist = true;
         //    if (CostCenterName != string.Empty && InitialCostCenterName == "undefined")
         //    {
-        //        var isExist = _context.CostCenters.Any(x => x.Status != 0 && x.CostCenterName.ToLower().Equals(CostCenterName.ToLower()));
+        //        var isExist = db.CostCenters.Any(x => x.Status != 0 && x.CostCenterName.ToLower().Equals(CostCenterName.ToLower()));
         //        if (isExist)
         //        {
         //            isNotExist = false;
@@ -42,7 +42,7 @@ namespace EBSM.Repo
         //    }
         //    if (CostCenterName != string.Empty && InitialCostCenterName != "undefined")
         //    {
-        //        var isExist = _context.CostCenters.Any(x => x.Status != 0 && x.CostCenterName.ToLower() == CostCenterName.ToLower() && x.CostCenterName.ToLower() != InitialCostCenterName.ToLower());
+        //        var isExist = db.CostCenters.Any(x => x.Status != 0 && x.CostCenterName.ToLower() == CostCenterName.ToLower() && x.CostCenterName.ToLower() != InitialCostCenterName.ToLower());
         //        if (isExist)
         //        {
         //            isNotExist = false;

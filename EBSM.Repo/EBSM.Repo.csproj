@@ -46,7 +46,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SalesRepository.cs" />
+    <Compile Include="SalesUnitOfWork.cs" />
+    <Compile Include="CustomerRepository.cs" />
+    <Compile Include="CustomerUnitOfWork.cs" />
+    <Compile Include="BillRepository.cs" />
+    <Compile Include="BillUnitOfWork.cs" />
+    <Compile Include="ProductRepository.cs" />
+    <Compile Include="ProductUnitOfWork.cs" />
+    <Compile Include="MobileBankingAccountRepository.cs" />
+    <Compile Include="CashAccountRepository.cs" />
+    <Compile Include="BankAccountRepository.cs" />
+    <Compile Include="TransactionAccountUnitOfWork.cs" />
+    <Compile Include="StockWarehouseRelationRepository.cs" />
+    <Compile Include="WarehouseZoneRepository.cs" />
+    <Compile Include="WarehouseZoneUnitOfWork.cs" />
+    <Compile Include="StockRepository.cs" />
     <Compile Include="ArticleTransferRepository.cs" />
+    <Compile Include="StockUnitOfWork.cs" />
     <Compile Include="UserRepository.cs" />
     <Compile Include="ArticleTransferUnitOfWork.cs" />
     <Compile Include="UserUnitOfWork.cs" />
@@ -64,7 +81,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ClassLibrary1\EBSM.Entities.csproj">
+    <ProjectReference Include="..\EBSM.Entities\EBSM.Entities.csproj">
       <Project>{4bec0d63-b914-42e4-a480-428512ca3914}</Project>
       <Name>EBSM.Entities</Name>
     </ProjectReference>

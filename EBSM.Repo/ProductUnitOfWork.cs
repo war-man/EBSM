@@ -1,22 +1,22 @@
 ﻿using System;
 namespace EBSM.Repo
 {
-    public class ArticleTransferUnitOfWork : IDisposable
+    public class ProductUnitOfWork : IDisposable
     {
         private WmsDbContext db { get; set; }
-        private ArticleTransferRepository _articleTransferRepository { get; set; }
+        private ProductRepository _productRepository { get; set; }
 
-        public ArticleTransferUnitOfWork(WmsDbContext context)
+        public ProductUnitOfWork(WmsDbContext context)
         {
             db = context;
-            _articleTransferRepository = new ArticleTransferRepository(db);
+            _productRepository = new ProductRepository(db);
         }
 
-        public ArticleTransferRepository ArticleTransferRepository
+        public ProductRepository ProductRepository
         {
             get
             {
-                return _articleTransferRepository;
+                return _productRepository;
             }
         }
         public void Save()

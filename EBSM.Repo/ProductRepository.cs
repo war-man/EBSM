@@ -8,28 +8,28 @@ using EBSM.Entities;
 
 namespace EBSM.Repo
 {
-    public class ArticleTransferRepository
+    public class ProductRepository
     {
         private WmsDbContext db;
-        public ArticleTransferRepository(WmsDbContext context)
+        public ProductRepository(WmsDbContext context)
         {
             db = context;
         }
-        public void Add(ArticleTransfer articleTransfer)
+        public void Add(Product product)
         {
-            db.ArticleTransfers.Add(articleTransfer);
+            db.Products.Add(product);
         }
-        public void Edit(ArticleTransfer articleTransfer)
+        public void Edit(Product product)
         {
-            db.Entry(articleTransfer).State = EntityState.Modified;
+            db.Entry(product).State = EntityState.Modified;
         }
-        public ArticleTransfer GetById(int id)
+        public Product GetById(int id)
         {
-            return db.ArticleTransfers.Find(id); 
+            return db.Products.Find(id); 
         }
-        public IEnumerable<ArticleTransfer> GetAll()
+        public IEnumerable<Product> GetActiveProducts()
         {
-            return db.ArticleTransfers;
+            return db.Products.Where(x => x.Status != 0).OrderBy(x => x.ProductFullName);
         }
         public IEnumerable<ArticleTransfer> GetAll(int? SelectedProductId, string PName, string TransferDateFrom, string TransferDateTo)
         {

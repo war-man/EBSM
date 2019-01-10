@@ -1,22 +1,22 @@
 ﻿using System;
 namespace EBSM.Repo
 {
-    public class UserUnitOfWork: IDisposable
+    public class WarehouseZoneUnitOfWork : IDisposable
     {
         private WmsDbContext db { get; set; }
-        private UserRepository _userRepository { get; set; }
+        private WarehouseZoneRepository _warehouseZoneRepository { get; set; }
 
-        public UserUnitOfWork(WmsDbContext context)
+        public WarehouseZoneUnitOfWork(WmsDbContext context)
         {
             db = context;
-            _userRepository = new UserRepository(db);
+            _warehouseZoneRepository = new WarehouseZoneRepository(db);
         }
 
-        public UserRepository UserRepository
+        public WarehouseZoneRepository WarehouseZoneRepository
         {
             get
             {
-                return _userRepository;
+                return _warehouseZoneRepository;
             }
         }
         public void Save(string loggedInUserId)

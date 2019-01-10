@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
-
+using EBSM.Entities;
 
 namespace WarehouseApp.Models.ViewModels
 {
