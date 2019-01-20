@@ -15,13 +15,13 @@ namespace EBSM.Repo
         {
             db = context;
         }
-        public void Add(ArticleTransfer articleTransfer)
+        public void Add(ArticleTransfer item)
         {
-            db.ArticleTransfers.Add(articleTransfer);
+            db.ArticleTransfers.Add(item);
         }
-        public void Edit(ArticleTransfer articleTransfer)
+        public void Edit(ArticleTransfer item)
         {
-            db.Entry(articleTransfer).State = EntityState.Modified;
+            db.Entry(item).State = EntityState.Modified;
         }
         public ArticleTransfer GetById(int id)
         {

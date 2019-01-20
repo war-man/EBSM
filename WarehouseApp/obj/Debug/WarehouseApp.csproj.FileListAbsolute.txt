@@ -122,5 +122,5 @@ D:\Projects\Welburg_warehouse\WarehouseApp\WarehouseApp\obj\Debug\WarehouseApp.c
 D:\Projects\Welburg_warehouse\WarehouseApp\WarehouseApp\obj\Debug\WarehouseApp.dll
 D:\Projects\Welburg_warehouse\WarehouseApp\WarehouseApp\obj\Debug\WarehouseApp.pdb
 D:\Projects\Welburg_warehouse\WarehouseApp\WarehouseApp\obj\Debug\WarehouseApp.csprojResolveAssemblyReference.cache
-D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.csproj.CoreCompileInputs.cache
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.csprojAssemblyReference.cache
+D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.csproj.CoreCompileInputs.cache

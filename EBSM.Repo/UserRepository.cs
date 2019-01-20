@@ -25,30 +25,30 @@ namespace EBSM.Repo
         public IEnumerable<User> GetAll(string SearchString)
         {
             return db.Users.Where(x => x.Status != 0 && (SearchString == null || x.FullName.Contains(SearchString))).OrderBy(x => x.FullName);
-        } 
+        }
 
-    
-       
-        //public bool IsCostCenterExist(string CostCenterName, string InitialCostCenterName)
-        //{
-        //    bool isNotExist = true;
-        //    if (CostCenterName != string.Empty && InitialCostCenterName == "undefined")
-        //    {
-        //        var isExist = db.CostCenters.Any(x => x.Status != 0 && x.CostCenterName.ToLower().Equals(CostCenterName.ToLower()));
-        //        if (isExist)
-        //        {
-        //            isNotExist = false;
-        //        }
-        //    }
-        //    if (CostCenterName != string.Empty && InitialCostCenterName != "undefined")
-        //    {
-        //        var isExist = db.CostCenters.Any(x => x.Status != 0 && x.CostCenterName.ToLower() == CostCenterName.ToLower() && x.CostCenterName.ToLower() != InitialCostCenterName.ToLower());
-        //        if (isExist)
-        //        {
-        //            isNotExist = false;
-        //        }
-        //    }
-        //    return isNotExist;
-        //}
+
+
+        public bool IsUserNameExist(string UserName, string InitialUserName)
+        {
+            bool isNotExist = true;
+            if (UserName != string.Empty && InitialUserName == "undefined")
+            {
+                var isExist = db.Users.Any(x => x.Status != 0 && x.UserName.ToLower().Equals(UserName.ToLower()));
+                if (isExist)
+                {
+                    isNotExist = false;
+                }
+            }
+            if (UserName != string.Empty && InitialUserName != "undefined")
+            {
+                var isExist = db.Users.Any(x => x.Status != 0 && x.UserName.ToLower() == UserName.ToLower() && x.UserName.ToLower() != InitialUserName.ToLower());
+                if (isExist)
+                {
+                    isNotExist = false;
+                }
+            }
+            return isNotExist;
+        }
     }
 }

@@ -28,15 +28,17 @@ namespace EBSM.Repo
             return db.Customers.Find(id); 
         }
         public IEnumerable<Customer> GetAll()
-        {            return db.Customers.OrderBy(x=>x.FullName);
+        {
+            return db.Customers.OrderBy(x=>x.FullName);
         }
-        //public IEnumerable<ArticleTransfer> GetAll(int? SelectedProductId, string PName, string TransferDateFrom, string TransferDateTo)
-        //{
-        //    var fromDate = string.IsNullOrEmpty(TransferDateFrom) ? DateTime.Now.Date : Convert.ToDateTime(TransferDateFrom);
-        //    var toDate = string.IsNullOrEmpty(TransferDateTo) ? DateTime.Now.Date : Convert.ToDateTime(TransferDateTo).AddDays(1);
-        //    return db.ArticleTransfers.ToList().Where(x => (SelectedProductId == null || x.StockFrom.ProductId == SelectedProductId) && (PName == null || (x.StockFrom.Product.ProductFullName.StartsWith(PName) || x.StockFrom.Product.ProductFullName.Contains(" " + PName))) && (TransferDateFrom == null || x.TransferDate.Date >= fromDate) && (TransferDateTo == null || x.TransferDate.Date < toDate)).OrderByDescending(o => o.CreatedDate);
-        //} 
+        public IEnumerable<Customer> GetAll(string CustomerName, string ContactNo)
+        {
+            return db.Customers.Where(x => (CustomerName == null || x.FullName.StartsWith(CustomerName)) && (ContactNo == null || x.ContactNo.StartsWith(ContactNo))).OrderBy(x => x.FullName);
+        }
+        public IEnumerable<Customer> GetCustomersByName(string term)
+        {
+            return db.Customers.Where(p => (p.FullName.StartsWith(term) || p.FullName.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.FullName);
+        }
 
-    
     }
 }

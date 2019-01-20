@@ -5,11 +5,13 @@ namespace EBSM.Repo
     {
         private WmsDbContext db { get; set; }
         private BillRepository _billRepository { get; set; }
+        private BillInvoicesRepository _billInvoicesRepository { get; set; }
 
         public BillUnitOfWork(WmsDbContext context)
         {
             db = context;
             _billRepository = new BillRepository(db);
+            _billInvoicesRepository = new BillInvoicesRepository(db);
         }
 
         public BillRepository BillRepository
@@ -17,6 +19,14 @@ namespace EBSM.Repo
             get
             {
                 return _billRepository;
+            }
+        }
+
+        public BillInvoicesRepository BillInvoicesRepository
+        {
+            get
+            {
+                return _billInvoicesRepository;
             }
         }
         public void Save()

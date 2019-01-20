@@ -61,7 +61,7 @@ namespace WarehouseApp.Controllers
             }
             ViewBag.ZoneWiseStockList = zoneWiseStockList;
             #endregion
-            ViewBag.StockZoneId = new SelectList(_warehouseZoneService.GetAll(), "ZoneId", "ZoneName");
+            ViewBag.StockZoneId = new SelectList(_warehouseZoneService.GetAllWarehouseZone(), "ZoneId", "ZoneName");
 
             return View("../Shop/Stock/Index", model);
        

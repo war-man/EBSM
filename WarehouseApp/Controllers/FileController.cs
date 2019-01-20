@@ -15,7 +15,7 @@ namespace WarehouseApp.Controllers
      [Authorize]
     public class FileController : Controller
     {
-         private WmsDbContext db = new WmsDbContext();
+         //private WmsDbContext db = new WmsDbContext();
         //
         // GET: /File/
         public FileResult Download(String p, String d)

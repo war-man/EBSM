@@ -13,6 +13,8 @@ using PagedList;
 using System.Web.Security;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
+using EBSM.Entities;
+using EBSM.Services;
 
 
 namespace WarehouseApp.Controllers
@@ -20,13 +22,13 @@ namespace WarehouseApp.Controllers
     [Authorize]
     public class GroupController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private GroupService _groupService = new GroupService();
 
         [Roles("Global_SupAdmin,Configuration")]
         public ActionResult Index(GroupSearchViewModel model)
         {
 
-            var groups = db.Groups.Where(x => (model.GrpName == null || x.GroupName.StartsWith(model.GrpName))).OrderBy(x => x.GroupName).ToList();
+            var groups = _groupService.GetAll(model.GrpName).ToList();
             model.Groups = groups.ToPagedList(model.Page, model.PageSize);
             return View("../Shop/Group/Index", model);
         } 
@@ -37,14 +39,14 @@ namespace WarehouseApp.Controllers
             if (ModelState.IsValid)
             {
                 var isExist = "No";
-                var allGroups = db.Groups.Any(e => e.GroupName == group.GroupName);
-                if (!allGroups)
+                var isExistGroup = _groupService.isExistGroup(group.GroupName); 
+                if (!isExistGroup)
                 {
                     group.Status = 1;
-                    group.CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                    group.CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                     group.CreatedDate = DateTime.Now;
-                    db.Groups.Add(group);
-                     db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                    group.GroupNameId=_groupService.Save(group,AuthenticatedUser.GetUserFromIdentity().UserId);
+                    
                      var data = new { group = group, isExist = isExist };
                     return Json(data, JsonRequestBehavior.AllowGet);
                 }
@@ -65,17 +67,17 @@ namespace WarehouseApp.Controllers
                 Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 return Json(new { Result = "Error" });
             }
-            Group groupName = db.Groups.Find(id);
+            Group groupName =_groupService.GetGroupById(id.Value);
             if (groupName == null)
             {
                 Response.StatusCode = (int)HttpStatusCode.NotFound;
                 return Json(new { Result = "Error" });
             }
             groupName.GroupName = name;
-            groupName.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+            groupName.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
             groupName.UpdatedDate = DateTime.Now;
-            db.Entry(groupName).State = EntityState.Modified;
-             db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+            _groupService.Edit(groupName, AuthenticatedUser.GetUserFromIdentity().UserId);
+            
             return Json(new { Result = "OK" });
         }
         public ActionResult UpdateGroupNameStatus(int? id, string tag)
@@ -85,7 +87,7 @@ namespace WarehouseApp.Controllers
                 Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 return Json(new { Result = "Error" });
             }
-            Group groupName = db.Groups.Find(id);
+            Group groupName = _groupService.GetGroupById(id.Value);
             if (groupName == null)
             {
                 Response.StatusCode = (int)HttpStatusCode.NotFound;
@@ -102,10 +104,10 @@ namespace WarehouseApp.Controllers
                
             }
 
-            groupName.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+            groupName.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
             groupName.UpdatedDate = DateTime.Now;
-            db.Entry(groupName).State = EntityState.Modified;
-             db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+            _groupService.Edit(groupName, AuthenticatedUser.GetUserFromIdentity().UserId);
+
             return Json(new { Result = "OK" });
         }
 
@@ -114,7 +116,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _groupService.Dispose();
             }
             base.Dispose(disposing);
         }

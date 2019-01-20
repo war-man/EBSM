@@ -10,21 +10,22 @@ using System.Web.Security;
 using PagedList;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
-
+using EBSM.Entities;
+using EBSM.Services;
 namespace WarehouseApp.Controllers
 {
     [Authorize]
     public class CustomerController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private CustomerService _customerService= new CustomerService();
+  
 
         // GET: /Customer/
         [Roles("Global_SupAdmin,Customer_View")]
         [OutputCache(Duration = 10)]
         public ActionResult Index(CustomerSearchViewModel model)
         {
-
-            var customers = db.Customers.Where(x => (model.CustomerName == null || x.FullName.StartsWith(model.CustomerName)) && (model.ContactNo == null || x.ContactNo.StartsWith(model.ContactNo))).OrderBy(x => x.FullName).ToList();
+            var customers = _customerService.GetAllCustomers(model.CustomerName,model.ContactNo).ToList();
             model.Customers = customers.ToPagedList(model.Page, model.PageSize);
             return View( model);
         } 
@@ -36,7 +37,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Customer customer = db.Customers.Find(id);
+            Customer customer = _customerService.GetCustomerById(id.Value);
             if (customer == null)
             {
                 return HttpNotFound();
@@ -67,9 +68,10 @@ namespace WarehouseApp.Controllers
             if (ModelState.IsValid)
             {
                 customer.CreatedDate = DateTime.Now;
+                customer.CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 customer.Status = 1;
-                db.Customers.Add(customer);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _customerService.Save(customer, AuthenticatedUser.GetUserFromIdentity().UserId);
+  
                 return RedirectToAction("Index");
             }
 
@@ -84,10 +86,10 @@ namespace WarehouseApp.Controllers
             if (ModelState.IsValid)
             {
                 customer.Status = 1;
-                customer.CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                customer.CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 customer.CreatedDate = DateTime.Now;
-                db.Customers.Add(customer);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _customerService.Save(customer, AuthenticatedUser.GetUserFromIdentity().UserId);
+               
                 inserted = true;
             }
             var data = new { inserted = inserted, customer = customer };
@@ -102,7 +104,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Customer customer = db.Customers.Find(id);
+            Customer customer = _customerService.GetCustomerById(id.Value);
             if (customer == null)
             {
                 return HttpNotFound();
@@ -116,15 +118,15 @@ namespace WarehouseApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                Customer oldCustomer = db.Customers.Find(customer.CustomerId);
+                Customer oldCustomer = _customerService.GetCustomerById(customer.CustomerId);
                 oldCustomer.FullName = customer.FullName;
                 oldCustomer.Address = customer.Address;
                 oldCustomer.ContactNo = customer.ContactNo;
                 oldCustomer.Email = customer.Email;
                 oldCustomer.UpdatedDate = DateTime.Now;
-                oldCustomer.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
-                db.Entry(oldCustomer).State = EntityState.Modified;
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                oldCustomer.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
+                _customerService.Edit(customer, AuthenticatedUser.GetUserFromIdentity().UserId);
+               
                 return RedirectToAction("Details", new { id = customer.CustomerId });
             }
             return View("../Customer/EditCustomerInfo", customer);
@@ -133,7 +135,7 @@ namespace WarehouseApp.Controllers
         public ActionResult CreateCustomerProject(int customerId)
         {
 
-            ViewBag.Customer = db.Customers.Find(customerId);
+            ViewBag.Customer = _customerService.GetCustomerById(customerId);
             var customerBranch = new CustomerProject
             {
                 CustomerId = customerId,
@@ -148,10 +150,10 @@ namespace WarehouseApp.Controllers
             if (ModelState.IsValid)
             {
                 customerProject.Status = 1;
-                customerProject.CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                customerProject.CreatedBy =AuthenticatedUser.GetUserFromIdentity().UserId;
                 customerProject.CreatedDate = DateTime.Now;
-                db.CustomerProjects.Add(customerProject);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _customerService.SaveProject(customerProject, AuthenticatedUser.GetUserFromIdentity().UserId);
+              
                 return RedirectToAction("Details", "Customer", new { id = customerProject .CustomerId});
             }
 
@@ -166,10 +168,9 @@ namespace WarehouseApp.Controllers
             if (ModelState.IsValid)
             {
                 customerBranch.Status = 1;
-                customerBranch.CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                customerBranch.CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 customerBranch.CreatedDate = DateTime.Now;
-                db.CustomerProjects.Add(customerBranch);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _customerService.SaveProject(customerBranch, AuthenticatedUser.GetUserFromIdentity().UserId);
                 inserted = true;
             }
             var data = new { inserted = inserted, customerBranch = customerBranch };
@@ -183,7 +184,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            CustomerProject customerProject = db.CustomerProjects.Find(id);
+            CustomerProject customerProject = _customerService.GetCustomerProjectById(id.Value);
             if (customerProject == null)
             {
                 return HttpNotFound();
@@ -197,14 +198,14 @@ namespace WarehouseApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                CustomerProject oldCustomerProject = db.CustomerProjects.Find(customerProject.CustomerProjectId);
+                CustomerProject oldCustomerProject = _customerService.GetCustomerProjectById(customerProject.CustomerProjectId);
                 oldCustomerProject.ProjectName = customerProject.ProjectName;
                 oldCustomerProject.ProjectAddress = customerProject.ProjectAddress;
                 oldCustomerProject.ProjectPhoneNo = customerProject.ProjectPhoneNo;
                 oldCustomerProject.ProjectDescription = customerProject.ProjectDescription;
-                oldCustomerProject.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
-                db.Entry(oldCustomerProject).State = EntityState.Modified;
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                oldCustomerProject.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
+                _customerService.EditProject(oldCustomerProject, AuthenticatedUser.GetUserFromIdentity().UserId);
+              
                 return RedirectToAction("Details", new { id = oldCustomerProject.CustomerId });
             }
             return View("../Customer/EditCustomerProject", customerProject);
@@ -212,7 +213,8 @@ namespace WarehouseApp.Controllers
         public JsonResult GetCustomerByContNum(string contNum)
         {
             bool hasValue = true;
-            var customer = db.Customers.Where(c => c.ContactNo == contNum).Select(c => new { c.CustomerId, c.FullName, c.ContactNo, c.Address, c.Email, c.Age, c.Gender, c.Status });
+            string customerName = string.Empty;
+            var customer =_customerService.GetAllCustomers(customerName,contNum).Select(c => new { c.CustomerId, c.FullName, c.ContactNo, c.Address, c.Email, c.Age, c.Gender, c.Status });
             if (!customer.Any())
             {
                 hasValue = false;
@@ -224,7 +226,8 @@ namespace WarehouseApp.Controllers
         public JsonResult GetCustomerInfoById(int? CustomerId)
         {
             bool hasValue = true;
-            var customer = db.Customers.Where(c => c.CustomerId == CustomerId).Select(c => new { c.CustomerId, c.FullName, c.ContactNo, c.Address, c.Email, c.Age, c.Gender, c.Status });
+       
+            var customer = _customerService.GetAllCustomers().Where(c => c.CustomerId == CustomerId).Select(c => new { c.CustomerId, c.FullName, c.ContactNo, c.Address, c.Email, c.Age, c.Gender, c.Status });
 
             if (!customer.Any())
             {
@@ -236,7 +239,7 @@ namespace WarehouseApp.Controllers
         public JsonResult GetCustomerProjectInfoLoadById(int? CustomerProjectId)
         {
             bool hasValue = true;
-            var customerProjects = db.CustomerProjects.Where(c => c.CustomerProjectId == CustomerProjectId).Select(c => new { c.CustomerId, c.ProjectName, c.ProjectAddress, c.ProjectPhoneNo, c.ProjectDescription });
+            var customerProjects = _customerService.GetAllCustomerProjects().Where(c => c.CustomerProjectId == CustomerProjectId).Select(c => new { c.CustomerId, c.ProjectName, c.ProjectAddress, c.ProjectPhoneNo, c.ProjectDescription });
 
             if (!customerProjects.Any())
             {
@@ -247,20 +250,20 @@ namespace WarehouseApp.Controllers
         }
         public JsonResult GetCustomerList(string term)
         {
-            var customers = db.Customers.Where(p => (p.FullName.StartsWith(term) || p.FullName.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.FullName).Select(x => new { CustomerId = x.CustomerId, CustomerName = x.FullName, CustomerContactNo = x.ContactNo, CustomerEmail = x.Email, CustomerAddress = x.Address }).ToList();
+            var customers = _customerService.GetCustomersByName(term).Select(x => new { CustomerId = x.CustomerId, CustomerName = x.FullName, CustomerContactNo = x.ContactNo, CustomerEmail = x.Email, CustomerAddress = x.Address }).ToList();
             return Json(customers, JsonRequestBehavior.AllowGet);
         }
 
         public JsonResult GetCustomerProjects(int? cid, string term)
         {
-            var customerProjects = db.CustomerProjects.Where(p => p.CustomerId == cid && (p.ProjectName.StartsWith(term) || p.ProjectName.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.ProjectName).Select(x => new { CustomerProjectId = x.CustomerProjectId, ProjectName = x.ProjectName, ProjectAddress = x.ProjectAddress, ProjectPhoneNo = x.ProjectPhoneNo, ProjectDescription = x.ProjectDescription }).ToList();
+            var customerProjects = _customerService.GetAllCustomerProjects(cid, term).Select(x => new { CustomerProjectId = x.CustomerProjectId, ProjectName = x.ProjectName, ProjectAddress = x.ProjectAddress, ProjectPhoneNo = x.ProjectPhoneNo, ProjectDescription = x.ProjectDescription }).ToList();
             return Json(customerProjects, JsonRequestBehavior.AllowGet);
         }
         public ActionResult GetCustomerProjectsByCustomerId(int? cid)
         {
             StringBuilder selectListString = new StringBuilder();
 
-            var customerProjects = db.CustomerProjects.Where(p => p.CustomerId == cid && p.Status != 0).OrderBy(p => p.ProjectName).ToList();
+            var customerProjects = _customerService.GetAllCustomerProjectsByCustomerId(cid).ToList();
             selectListString.Append("<option value=''>--Select--</option>");
             foreach (var item in customerProjects)
             {
@@ -273,7 +276,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _customerService.Dispose();
             }
             base.Dispose(disposing);
         }

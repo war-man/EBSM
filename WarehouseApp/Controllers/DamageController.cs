@@ -10,6 +10,8 @@ using PagedList;
 using System.Web.Security;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
+using EBSM.Entities;
+using EBSM.Services;
 
 
 namespace WarehouseApp.Controllers
@@ -17,23 +19,23 @@ namespace WarehouseApp.Controllers
     [Authorize]
     public class DamageController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private DamageService _damageService   = new DamageService();
+        private WarehouseZoneService _warehouseZoneService   = new WarehouseZoneService();
 
         // GET: /Damage/
         [Roles("Global_SupAdmin,Damage")]
         public ActionResult Index(DamageSearchViewModel model)
         {
 
-            var damages = db.Damages.Where(x => (model.SelectedProductId == null || x.Stock.ProductId == model.SelectedProductId) && (model.ProductNameFull == null || (x.Stock.Product.ProductFullName.StartsWith(model.ProductNameFull) || x.Stock.Product.ProductFullName.Contains(" " + model.ProductNameFull)))).OrderByDescending(o => o.CreatedDate).ThenBy(o => o.Stock.Product.ProductFullName).ToList();
+            var damages =_damageService.GetAll(model.SelectedProductId,model.ProductNameFull).ToList();
             model.Damages = damages.ToPagedList(model.Page, model.PageSize);
-            ViewBag.ZoneId = new SelectList(db.WarehouseZones, "ZoneId", "ZoneName");
+            ViewBag.ZoneId = new SelectList(_warehouseZoneService.GetAllWarehouseZone(), "ZoneId", "ZoneName");
             return View("../Shop/Damage/Index", model);
 
         }
         [Roles("Global_SupAdmin,Damage")]
         public ActionResult Create()
         {
-         
             return View("../Shop/Damage/NewDamage");
         }
 
@@ -51,11 +53,12 @@ namespace WarehouseApp.Controllers
                     StockId = damageItem.StockId,
                     Quantity = damageItem.Quantity,
                     Note = damageItem.Note,
-                    CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
+                    CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId,
                     CreatedDate = DateTime.Now
                 };
-                db.Damages.Add(damage);
-               db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                    _damageService.Save(damage, AuthenticatedUser.GetUserFromIdentity().UserId);
+               // db.Damages.Add(damage);
+               //db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
                     //====update stock==============================================
                     StockController updateStock = new StockController();
                     if (damageItem.DefaultZoneId == null)
@@ -153,7 +156,8 @@ namespace WarehouseApp.Controllers
                     DamageId = vmodel.DamageId,
                
                 };
-                db.DamageDismisses.Add(dismiss);
+                    _damageService.SaveDamageDismiss(dismiss,AuthenticatedUser.GetUserFromIdentity().UserId);
+                //db.DamageDismisses.Add(dismiss);
 
                 //Update damage stock quantity =============================================
                 RemoveFromDamageStock(Convert.ToInt32(vmodel.StockId), Convert.ToInt32(vmodel.Quantity), Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey));
@@ -166,7 +170,8 @@ namespace WarehouseApp.Controllers
                     Quantity = Convert.ToInt32(vmodel.Quantity),
                     DamageId = vmodel.DamageId,
                 };
-                db.DamageReturns.Add(returnInfo);
+                    _damageService.SaveDamageReturn(returnInfo, AuthenticatedUser.GetUserFromIdentity().UserId);
+                //db.DamageReturns.Add(returnInfo);
                 //Update damage stock quantity =============================================
                 RemoveFromDamageStock(Convert.ToInt32(vmodel.StockId), Convert.ToInt32(vmodel.Quantity), Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey));
                 //Update product stock quantity =============================================
@@ -179,12 +184,13 @@ namespace WarehouseApp.Controllers
                 updaStockController.AddToStockByStockId(Convert.ToInt32(vmodel.StockId), Convert.ToInt32(vmodel.Quantity),Convert.ToInt32(vmodel.ZoneId), Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey));
                  }
             }
-            db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+           // db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
                 //Update damage quantity =============================================
-            Damage damage = db.Damages.Find(vmodel.DamageId);
+            Damage damage =_damageService.GetDamageById(vmodel.DamageId.Value);
             damage.Quantity -= vmodel.Quantity;
-            db.Entry(damage).State = System.Data.Entity.EntityState.Modified;
-            db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _damageService.Edit(damage, AuthenticatedUser.GetUserFromIdentity().UserId);
+            //db.Entry(damage).State = System.Data.Entity.EntityState.Modified;
+            //db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
 
             return RedirectToAction("Index", "Damage");
             }
@@ -195,46 +201,46 @@ namespace WarehouseApp.Controllers
         //=====Update Damage Stock procedure ========================================================================================
         public void AddToDamageStock(int stockId, double? quantity, int? currentUserId)
         {
-            DamageStock damageSstock = db.DamageStocks.FirstOrDefault(x => x.StockId == stockId);
+            DamageStock damageStock = _damageService.GetDamageStockByStockId(stockId); 
 
-            if (damageSstock == null)
+            if (damageStock == null)
             {
                 DamageStock newDamageStock = new DamageStock();
                 newDamageStock.Quantity = quantity;
                 newDamageStock.StockId = Convert.ToInt32(stockId);
                 newDamageStock.Status = 1;
                 newDamageStock.CreatedBy = currentUserId;
-
                 newDamageStock.CreatedDate = DateTime.Now;
-                db.DamageStocks.Add(newDamageStock);
+                _damageService.SaveDamageStock(newDamageStock, currentUserId);
+       
             }
             else
             {
-                damageSstock.Quantity = damageSstock.Quantity + quantity;
-                damageSstock.UpdatedBy = currentUserId;
-                damageSstock.UpdatedDate = DateTime.Now;
-                db.Entry(damageSstock).State = System.Data.Entity.EntityState.Modified;
+                damageStock.Quantity = damageStock.Quantity + quantity;
+                damageStock.UpdatedBy = currentUserId;
+                damageStock.UpdatedDate = DateTime.Now;
+                _damageService.EditDamageStock(damageStock, currentUserId);
             }
-            db.SaveChanges(currentUserId.ToString());
+          
 
         }
         public void RemoveFromDamageStock(int stockId, int? quantity, int? currentUserId)
         {
-            DamageStock damageSstock = db.DamageStocks.FirstOrDefault(x => x.StockId == stockId);
-            if (damageSstock != null)
+            DamageStock damageStock = _damageService.GetDamageStockByStockId(stockId);
+            if (damageStock != null)
             {
-                damageSstock.Quantity = damageSstock.Quantity - quantity;
-                damageSstock.UpdatedBy = currentUserId;
-                damageSstock.CreatedDate = DateTime.Now;
-                db.Entry(damageSstock).State = System.Data.Entity.EntityState.Modified;
-                db.SaveChanges(currentUserId.ToString());
+                damageStock.Quantity = damageStock.Quantity - quantity;
+                damageStock.UpdatedBy = currentUserId;
+                damageStock.CreatedDate = DateTime.Now;
+                _damageService.EditDamageStock(damageStock, currentUserId);
+               
             }
         }
 
 
         public ActionResult GetDamage(int? damageId)
         {
-            Damage damage = db.Damages.FirstOrDefault(d => d.DamageId == damageId);
+            Damage damage =_damageService.GetDamageById(damageId.Value);
             var data = new { DamageId = damage.DamageId, StockId = damage.StockId, ProductName = damage.Stock.Product.ProductFullName, Quantity = damage.Quantity, DefaultZoneId = damage.Stock.Product.DefaultZoneId };
             return Json(data, JsonRequestBehavior.AllowGet);
         }
@@ -242,7 +248,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _damageService.Dispose();
             }
             base.Dispose(disposing);
         }

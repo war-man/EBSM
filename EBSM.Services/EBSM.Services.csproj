@@ -41,6 +41,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SupplierService.cs" />
+    <Compile Include="ProductAttributeService.cs" />
+    <Compile Include="SalesOrderService.cs" />
+    <Compile Include="SalesReturnService.cs" />
+    <Compile Include="SalesmanService.cs" />
+    <Compile Include="NoticeService.cs" />
+    <Compile Include="GroupService.cs" />
+    <Compile Include="ExpenseTypeService.cs" />
+    <Compile Include="ExpenseService.cs" />
+    <Compile Include="DamageService.cs" />
+    <Compile Include="CategoryService.cs" />
+    <Compile Include="CompanyProfileService.cs" />
     <Compile Include="SalesService.cs" />
     <Compile Include="CustomerService.cs" />
     <Compile Include="BillService.cs" />

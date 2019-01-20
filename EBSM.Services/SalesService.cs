@@ -40,13 +40,48 @@ namespace EBSM.Services
             return _salesUnitOfWork.SalesRepository.GetAll();
         }
 
-        //public IEnumerable<ArticleTransfer> GetAll(int? SelectedProductId, string PName, string TransferDateFrom, string TransferDateTo)
-        //{
-        //    return _articleTransferUnitOfWork.ArticleTransferRepository.GetAll(SelectedProductId, PName, TransferDateFrom, TransferDateTo);
-        //}
+        public IEnumerable<Invoice> GetAll(int? CustomerId, string InvoiceNo, string InvoiceDateFrom, string InvoiceDateTo, string TransactionMode, int? SalesmanId)
+        {
+            return _salesUnitOfWork.SalesRepository.GetAll(CustomerId, InvoiceNo, InvoiceDateFrom, InvoiceDateTo, TransactionMode, SalesmanId);
+        }
         public IEnumerable<Invoice> GetInvoicesWithoutAnyBill(int customerId)
         {
             return _salesUnitOfWork.SalesRepository.GetInvoicesWithoutAnyBill(customerId);
+        }
+        public int GetCount()
+        {
+            return _salesUnitOfWork.SalesRepository.GetCount();
+        }
+
+        //Invoice products
+        public InvoiceProduct GetByInvoiceAndProductId(int invoiceId, int productId)
+        {
+            return _salesUnitOfWork.SalesProductRepository.GetByInvoiceAndProductId(invoiceId, productId);
+        }
+        public IEnumerable<InvoiceProduct> GetProductsByInvoiceId(int invoiceId) {
+            return _salesUnitOfWork.SalesProductRepository.GetByInvoiceId(invoiceId);
+        }
+        public int SaveInvoiceProduct(InvoiceProduct item)
+        {
+            _salesUnitOfWork.SalesProductRepository.Add(item);
+            _salesUnitOfWork.Save();
+            return item.InvoiceProductId;
+        }
+        public void EditInvoiceProduct(InvoiceProduct item)
+        {
+            _salesUnitOfWork.SalesProductRepository.Edit(item);
+            _salesUnitOfWork.Save();
+        }
+        public void DeleteInvoiceProductFromDbById(int id, int? loggedInUserId)
+        {
+            _salesUnitOfWork.SalesProductRepository.DeleteFromDbById(id);
+            _salesUnitOfWork.Save(loggedInUserId.ToString());
+
+        }
+        public void DeleteInvoiceProductFromDbByItem(InvoiceProduct item)
+        {
+            _salesUnitOfWork.SalesProductRepository.DeleteFromDbByItem(item);
+            _salesUnitOfWork.Save();
         }
         public void Dispose()
         {

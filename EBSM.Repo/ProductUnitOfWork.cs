@@ -5,6 +5,9 @@ namespace EBSM.Repo
     {
         private WmsDbContext db { get; set; }
         private ProductRepository _productRepository { get; set; }
+        private ProductAttributeRelationRepository _productAttributeRelationRepository { get; set; }
+        private ProductCategoryRepository _productCategoryRepository { get; set; }
+        private ProductCustomerRalationRepository _productCustomerRalationRepository { get; set; }
 
         public ProductUnitOfWork(WmsDbContext context)
         {
@@ -17,6 +20,24 @@ namespace EBSM.Repo
             get
             {
                 return _productRepository;
+            }
+        } public ProductAttributeRelationRepository ProductAttributeRelationRepository
+        {
+            get
+            {
+                return _productAttributeRelationRepository;
+            }
+        } public ProductCategoryRepository ProductCategoryRepository
+        {
+            get
+            {
+                return _productCategoryRepository;
+            }
+        }public ProductCustomerRalationRepository ProductCustomerRalationRepository
+        {
+            get
+            {
+                return _productCustomerRalationRepository;
             }
         }
         public void Save()

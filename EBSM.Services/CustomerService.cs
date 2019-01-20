@@ -12,6 +12,8 @@ namespace EBSM.Services
     {
         private WmsDbContext _context;
         private CustomerUnitOfWork _customerUnitOfWork;
+  
+
 
         public CustomerService()
         {
@@ -39,10 +41,42 @@ namespace EBSM.Services
         {
             return _customerUnitOfWork.CustomerRepository.GetAll();
         }
-        //public IEnumerable<ArticleTransfer> GetAll(int? SelectedProductId, string PName, string TransferDateFrom, string TransferDateTo)
-        //{
-        //    return _articleTransferUnitOfWork.ArticleTransferRepository.GetAll(SelectedProductId, PName, TransferDateFrom, TransferDateTo);
-        //}
+        public IEnumerable<Customer> GetCustomersByName(string CustomerName)
+        {
+            return _customerUnitOfWork.CustomerRepository.GetCustomersByName(CustomerName);
+        }
+        public IEnumerable<Customer> GetAllCustomers(string CustomerName, string ContactNo)
+        {
+            return _customerUnitOfWork.CustomerRepository.GetAll(CustomerName, ContactNo);
+        }
+        public CustomerProject GetCustomerProjectById(int id)
+        {
+            return _customerUnitOfWork.CustomerProjectRepository.GetById(id);
+        }
+
+        public int SaveProject(CustomerProject customerProject, int? loggedInUserId)
+        {
+            _customerUnitOfWork.CustomerProjectRepository.Add(customerProject);
+            _customerUnitOfWork.Save(loggedInUserId.ToString());
+            return customerProject.CustomerProjectId;
+        }
+        public void EditProject(CustomerProject customerProject, int? loggedInUserId)
+        {
+            _customerUnitOfWork.CustomerProjectRepository.Edit(customerProject);
+            _customerUnitOfWork.Save(loggedInUserId.ToString());
+        }
+        public IEnumerable<CustomerProject> GetAllCustomerProjects()
+        {
+            return _customerUnitOfWork.CustomerProjectRepository.GetAll();
+        }
+        public IEnumerable<CustomerProject> GetAllCustomerProjectsByCustomerId(int? CustomerId)
+        {
+            return _customerUnitOfWork.CustomerProjectRepository.GetAll(CustomerId);
+        }
+        public IEnumerable<CustomerProject> GetAllCustomerProjects(int? CustomerId, string Name)
+        {
+            return _customerUnitOfWork.CustomerProjectRepository.GetAll(CustomerId, Name);
+        }
         public void Dispose()
         {
             _customerUnitOfWork.Dispose();

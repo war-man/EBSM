@@ -18,7 +18,7 @@ namespace EBSM.Services
             _context = new WmsDbContext();
             _warehouseZoneUnitOfWork = new WarehouseZoneUnitOfWork(_context);
         }
-        public IEnumerable<WarehouseZone> GetAll()
+        public IEnumerable<WarehouseZone> GetAllWarehouseZone()
         {
             return _warehouseZoneUnitOfWork.WarehouseZoneRepository.GetAll();
         }

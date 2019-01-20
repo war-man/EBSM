@@ -19,7 +19,7 @@ namespace EBSM.Services
             _articleTransferUnitOfWork = new ArticleTransferUnitOfWork(_context);
         }
        
-        public ArticleTransfer GetUserById(int id)
+        public ArticleTransfer GetArticleTransferById(int id)
         {
             return _articleTransferUnitOfWork.ArticleTransferRepository.GetById(id);
         }

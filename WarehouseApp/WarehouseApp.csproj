@@ -770,7 +770,7 @@
     <Content Include="Views\Shop\ProductAttribute\AttributeSetList.cshtml" />
     <Content Include="Views\Shop\ProductAttribute\EditAttributeSet.cshtml" />
     <Content Include="Views\Shop\ProductAttribute\EditProductAttribute.cshtml" />
-    <Content Include="Views\Shop\ProductAttribute\ListArrtibuteType.cshtml" />
+    <Content Include="Views\Shop\ProductAttribute\AttributeTypeList.cshtml" />
     <Content Include="Views\Shop\ProductAttribute\NewAttributeSet.cshtml" />
     <Content Include="Views\Shop\ProductAttribute\NewProductAttribute.cshtml" />
     <Content Include="Views\Shop\Product\AddAttributeSet.cshtml" />

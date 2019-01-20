@@ -11,14 +11,21 @@ using OfficeOpenXml;
 using PagedList;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
-
+using EBSM.Entities;
+using EBSM.Services;
 
 namespace WarehouseApp.Controllers
 {
     [Authorize]
     public class ProductController : Controller
     {
-        private  WmsDbContext db = new WmsDbContext();
+        private  ProductService _productService = new ProductService();
+        private  GroupService _groupService = new GroupService();
+        private  CustomerService _customerService = new CustomerService();
+        private  SupplierService _supplierService = new SupplierService();
+        private  CategoryService _categoryService = new CategoryService();
+        private  ProductAttributeService _productAttributeService = new ProductAttributeService();
+        private WarehouseZoneService _warehouseZoneService = new WarehouseZoneService();
 
         // GET: /Product/
         [Roles("Global_SupAdmin,Configuration")]
@@ -27,20 +34,14 @@ namespace WarehouseApp.Controllers
         {
             // To Bind the category drop down in search section
             ViewBag.CatId = new SelectList(CategoryController.CategoryTree().Where(x => x.Status != 0).OrderBy(x => x.CategoryName), "CategoryId", "CategoryName");
-            ViewBag.GroupNameId = new SelectList(db.Groups.Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName");
-            ViewBag.ManufacId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 2).OrderBy(x=>x.SupplierName), "SupplierId", "SupplierName");
+            ViewBag.GroupNameId = new SelectList(_groupService.GetAllGroups().Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName");
+            ViewBag.ManufacId = new SelectList(_supplierService.GetAllManufecturer(), "SupplierId", "SupplierName");
             
             // Get Products
-            var products = db.Products.Where(x => (model.PName == null || (x.ProductFullName.StartsWith(model.PName) || x.ProductFullName.Contains(" " + model.PName)))
-                    && (model.PCode == null || x.ProductCode.ToLower().StartsWith(model.PCode.ToLower()))
-                    && (model.GroupNameId == null || x.GroupNameId==model.GroupNameId)
-                    && (model.ManufacId == null || x.ManufacturerId == model.ManufacId)
-                     && (model.CatId == null || x.ProductCategories.Any(y=>y.CategoryId== model.CatId))
-                    &&(model.Status == null || x.Status==model.Status)
-                    && (model.Price == null || x.Tp < model.Price)).OrderBy(o => o.ProductName).ToList();
+            var products = _productService.GetAllProducts(model.PName, model.PCode, model.GroupNameId, model.ManufacId, model.CatId, model.Status, model.Price).ToList();
       
             model.Products = products.ToPagedList(model.Page, model.PageSize);
-            ViewBag.AttributeSetId = db.ProductAttributeSets.OrderBy(x => x.AttributeSetName).ToList();
+            ViewBag.AttributeSetId = _productAttributeService.GetAllAttributeSets().ToList();
             return View("../Shop/Product/Index",model);
         }
 
@@ -49,15 +50,15 @@ namespace WarehouseApp.Controllers
         [HttpGet]
         public ActionResult AddProduct(int attributeSetId)
         {
-            ViewBag.Attributes = db.AttributeSetAttributes.Where(x => x.AttributeSetId == attributeSetId).Select(x=>x.Attribute).ToList();
-            ViewBag.Categories=db.Categories.Where(x => !x.CategoryParentId.HasValue).ToList();
+            ViewBag.Attributes =_productAttributeService.GetAttributesByAttributeSetId(attributeSetId).Select(x=>x.Attribute).ToList();
+            ViewBag.Categories=_categoryService.GetAllRootCategories().ToList();
             ViewBag.CategoryIds = new MultiSelectList(CategoryController.CategoryTree().Where(x => x.Status != 0).OrderBy(x => x.CategoryName), "CategoryId", "CategoryName");
-            ViewBag.GroupNameId = new SelectList(db.Groups.Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName");
-            ViewBag.ManufacturerId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 2).OrderBy(x => x.SupplierName), "SupplierId", "SupplierName");
-            ViewBag.ZoneId = new SelectList(db.WarehouseZones.Where(x => x.Status != 0).OrderBy(x => x.ZoneName), "ZoneId", "ZoneName");
-            ViewBag.CustomerId = new SelectList(db.Customers.Where(x => x.Status != 0).OrderBy(x => x.CustomerId), "CustomerId", "FullName");
+            ViewBag.GroupNameId = new SelectList(_groupService.GetAllGroups().Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName");
+            ViewBag.ManufacturerId = new SelectList(_supplierService.GetAllManufecturer(), "SupplierId", "SupplierName");
+            ViewBag.ZoneId = new SelectList(_warehouseZoneService.GetAllWarehouseZone(), "ZoneId", "ZoneName");
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers().Where(x => x.Status != 0), "CustomerId", "FullName");
 
-            var attributeSet = db.ProductAttributeSets.Find(attributeSetId);
+            var attributeSet = _productAttributeService.GetProductAttributeSetById(attributeSetId);
             if (attributeSet == null)
             {
                 return HttpNotFound();
@@ -114,15 +115,17 @@ namespace WarehouseApp.Controllers
                     ProductImage = productModel.ProductImage,
                     AttributeSetId = productModel.AttributeSetId,
                     Status = productModel.Status,
-                    CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
+                    CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId,
                     CreatedDate = DateTime.Now,
                 };
-                db.Products.Add(product);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _productService.Save(product, AuthenticatedUser.GetUserFromIdentity().UserId);
+         
 
                 //add product attributes relationship===============================================
+
                 if (productModel.ProductAtts.Any())
                 {
+                    List<ProductAttributeRelation> ProductAttributeRelationList = new List<ProductAttributeRelation>();
                     foreach (var att in productModel.ProductAtts)
                     {
                         if (att.ProdAttCheckboxes != null)
@@ -148,25 +151,19 @@ namespace WarehouseApp.Controllers
                             AttributeId = att.AttributeId,
                             Value = att.Value
                         };
-                        db.ProductAttributeRelations.Add(productAtts);
+                        ProductAttributeRelationList.Add(productAtts);
                     }
+                    _productService.SaveProductAttributeRelationList(ProductAttributeRelationList);
                 }
                 //add product categories relationship===============================================
-                if (productModel.CategoryIds!=null) { 
-                foreach (var cat in productModel.CategoryIds)
-                {
-                    var productCat = new ProductCategory()
-                    {
-                        ProductId = product.ProductId,
-                        CategoryId = cat,
-                    };
-                    db.ProductCategories.Add(productCat);
-                }
+                if (productModel.CategoryIds!=null) {
+                    _productService.SaveProductCategoryRelationList(product.ProductId,productModel.CategoryIds.ToArray());
                 }
 
                 //add product customer options===============================================
                 if (productModel.CustomerOptionList != null)
                 {
+                    List<ProductCustomerRelation> ProductCustomerRelationList = new List<ProductCustomerRelation>();
                     foreach (var customerOption in productModel.CustomerOptionList)
                     {
                         if (customerOption.CustomerId != null)
@@ -180,24 +177,25 @@ namespace WarehouseApp.Controllers
                                 UnitPrice = customerOption.UnitPrice,
                                 Mrp = customerOption.Mrp,
                             };
-                            db.ProductCustomerRelations.Add(customerRelation);
+                            ProductCustomerRelationList.Add(customerRelation);
                         }
                        
                     }
+                    _productService.SaveProductCustomerRelationList(ProductCustomerRelationList);
                 }
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+               
                 return RedirectToAction("Index");
             }
 
-            ViewBag.Attributes = db.AttributeSetAttributes.Where(x => x.AttributeSetId == productModel.AttributeSetId).Select(x => x.Attribute).ToList();
-            ViewBag.Categories = db.Categories.Where(x => !x.CategoryParentId.HasValue).ToList();
+            ViewBag.Attributes = _productAttributeService.GetAttributesByAttributeSetId(productModel.AttributeSetId).Select(x => x.Attribute).ToList();
+            ViewBag.Categories = _categoryService.GetAllRootCategories().ToList();
             ViewBag.CategoryIds = new MultiSelectList(CategoryController.CategoryTree().Where(x => x.Status != 0).OrderBy(x => x.CategoryName), "CategoryId", "CategoryName", productModel.CategoryIds);
-            ViewBag.GroupNameId = new SelectList(db.Groups.Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName", productModel.GroupNameId);
-            ViewBag.ManufacturerId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 2).OrderBy(x => x.SupplierName), "SupplierId", "SupplierName", productModel.ManufacturerId);
-            ViewBag.ZoneId = new SelectList(db.WarehouseZones.Where(x => x.Status != 0).OrderBy(x => x.ZoneName), "ZoneId", "ZoneName", productModel.DefaultZoneId);
-            ViewBag.CustomerId = new SelectList(db.Customers.Where(x => x.Status != 0).OrderBy(x => x.CustomerId), "CustomerId", "FullName");
+            ViewBag.GroupNameId = new SelectList(_groupService.GetAllGroups().Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName", productModel.GroupNameId);
+            ViewBag.ManufacturerId = new SelectList(_supplierService.GetAllManufecturer(), "SupplierId", "SupplierName", productModel.ManufacturerId);
+            ViewBag.ZoneId = new SelectList(_warehouseZoneService.GetAllWarehouseZone(), "ZoneId", "ZoneName", productModel.DefaultZoneId);
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers().Where(x => x.Status != 0), "CustomerId", "FullName");
 
-            var attributeSet = db.ProductAttributeSets.Find(productModel.AttributeSetId);
+            var attributeSet = _productAttributeService.GetProductAttributeSetById(productModel.AttributeSetId);
             productModel.AttributeSet = attributeSet;
        
             return View("../Shop/Product/AddProduct", productModel);
@@ -211,7 +209,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Product product = db.Products.FirstOrDefault(x => x.ProductId == productId);
+            Product product =_productService.GetProductById(productId.Value);
             if (product == null)
             {
                 return HttpNotFound();
@@ -221,7 +219,7 @@ namespace WarehouseApp.Controllers
                 return RedirectToAction("EditProduct", "Product", new {productId =product.ProductId , attributeSetId =product.AttributeSetId });
                 //ViewBag.AttributeSetId = new SelectList(db.ProductAttributeSets.Where(x => x.Status !=0 &&x.AttributeSetId==product.AttributeSetId),"AttributeSetId", "AttributeSetName", product.AttributeSetId);
             }
-            ViewBag.AttributeSetId = new SelectList(db.ProductAttributeSets.Where(x => x.Status != 0).OrderBy(x=>x.AttributeSetName),"AttributeSetId", "AttributeSetName", product.AttributeSetId);
+            ViewBag.AttributeSetId = new SelectList(_productAttributeService.GetAllAttributeSets().Where(x => x.Status != 0),"AttributeSetId", "AttributeSetName", product.AttributeSetId);
             return View("../Shop/Product/AddAttributeSet", product);
         }
         [Roles("Global_SupAdmin,Configuration")]
@@ -232,9 +230,9 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            var attributeSet = db.ProductAttributeSets.Find(attributeSetId);
-            Product product = db.Products.FirstOrDefault(x => x.ProductId == productId);
-             var productAttributeRelations = db.ProductAttributeRelations.Where(x => x.ProductId == product.ProductId).ToList();
+            var attributeSet = _productAttributeService.GetProductAttributeSetById(attributeSetId.Value);
+            Product product =_productService.GetProductById(productId.Value);
+             var productAttributeRelations = _productService.GetAllAttributeByProductId(product.ProductId).ToList();
             List<ProductAttributeViewModel> productAtts=new List<ProductAttributeViewModel>();
             if (productAttributeRelations.Any()) { 
             foreach (var pa in productAttributeRelations)
@@ -248,7 +246,7 @@ namespace WarehouseApp.Controllers
                 productAtts.Add(prAttModel);
             }
             }
-             var productCategories = db.ProductCategories.Where(x => x.ProductId == product.ProductId);
+            var productCategories = _productService.GetAllCategoriesByProductId(product.ProductId); 
             List<int> catIds=new List<int>();
             foreach (var pc in productCategories)
             {
@@ -288,11 +286,11 @@ namespace WarehouseApp.Controllers
             };
             if (attributeSetId == product.AttributeSetId)
             {
-                ViewBag.Attributes = db.ProductAttributeRelations.Where(x => x.ProductId == product.ProductId).Select(x => new ProductAttributeValueViewModel { Attribute = x.Attribute, Value = String.IsNullOrEmpty(x.Value) ? "" : x.Value }).ToList();
+                ViewBag.Attributes = _productService.GetAllAttributeByProductId(product.ProductId).Select(x => new ProductAttributeValueViewModel { Attribute = x.Attribute, Value = String.IsNullOrEmpty(x.Value) ? "" : x.Value }).ToList();
             }
             else
             {
-                var atts = db.AttributeSetAttributes.Where(x => x.AttributeSetId == attributeSetId).Select(x => new ProductAttributeValueViewModel { Attribute = x.Attribute, Value = String.IsNullOrEmpty(x.Attribute.DefaultValue) ? "" : x.Attribute.DefaultValue }).ToList();
+                var atts =_productAttributeService.GetAttributesByAttributeSetId(attributeSetId.Value).Select(x => new ProductAttributeValueViewModel { Attribute = x.Attribute, Value = String.IsNullOrEmpty(x.Attribute.DefaultValue) ? "" : x.Attribute.DefaultValue }).ToList();
                 ViewBag.Attributes = atts;
                 List<ProductAttributeViewModel> productAttsDiff = new List<ProductAttributeViewModel>();
                 foreach (var pa in atts)
@@ -320,14 +318,14 @@ namespace WarehouseApp.Controllers
                 };
                 productModel.CustomerOptionList.Add(customerOption);
             }
-            ViewBag.GroupNameId = new SelectList(db.Groups.Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName", product.GroupNameId);
-            ViewBag.ManufacturerId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 2).OrderBy(x => x.SupplierName), "SupplierId", "SupplierName", product.ManufacturerId);
-            ViewBag.Categories = db.Categories.Where(x => !x.CategoryParentId.HasValue).ToList();
+            ViewBag.GroupNameId = new SelectList(_groupService.GetAllGroups().Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName", product.GroupNameId);
+            ViewBag.ManufacturerId = new SelectList(_supplierService.GetAllManufecturer(), "SupplierId", "SupplierName", product.ManufacturerId);
+            ViewBag.Categories =_categoryService.GetAllRootCategories().ToList();
             
             ViewBag.CategoryIds = new MultiSelectList(CategoryController.CategoryTree().Where(x => x.Status > 0).OrderBy(x => x.CategoryName), "CategoryId", "CategoryName", productModel.CategoryIds);
-            ViewBag.ZoneId = new SelectList(db.WarehouseZones.Where(x => x.Status != 0).OrderBy(x => x.ZoneName), "ZoneId", "ZoneName",product.DefaultZoneId);
-            ViewBag.CustomerId = new SelectList(db.Customers.Where(x => x.Status != 0).OrderBy(x => x.CustomerId), "CustomerId", "FullName");
-            ViewBag.Customers = db.Customers.Where(x => x.Status != 0).OrderBy(x => x.CustomerId).ToList();
+            ViewBag.ZoneId = new SelectList(_warehouseZoneService.GetAllWarehouseZone(), "ZoneId", "ZoneName",product.DefaultZoneId);
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers().Where(x => x.Status != 0), "CustomerId", "FullName");
+            ViewBag.Customers = _customerService.GetAllCustomers().Where(x => x.Status != 0).ToList();
 
             return View("../Shop/Product/EditProduct", productModel);
         }
@@ -352,7 +350,7 @@ namespace WarehouseApp.Controllers
                 }
 
                 // update product information=================================
-                Product product = db.Products.Find(productModel.ProductId);
+                Product product =_productService.GetProductById(productModel.ProductId.Value);
                 product.ProductCode = productModel.ProductCode;
                 product.ProductName = productModel.ProductName;
                 product.ProductFullName = productModel.ProductName + productAttributes;
@@ -371,21 +369,17 @@ namespace WarehouseApp.Controllers
                 product.AttributeSetId = productModel.AttributeSetId;
                 product.DefaultZoneId = productModel.DefaultZoneId;
                 product.Status = productModel.Status;
-                product.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                product.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 product.UpdatedDate = DateTime.Now;
-                
-                db.Entry(product).State = EntityState.Modified;
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
-
+                _productService.Edit(product, AuthenticatedUser.GetUserFromIdentity().UserId);
+               
                 // remove product attributes relationship==============================
-                var productAttributeRelations = db.ProductAttributeRelations.Where(x => x.ProductId == product.ProductId);
-                if (productAttributeRelations != null) { 
-                foreach (var item in productAttributeRelations)
-                {
-                    db.ProductAttributeRelations.Remove(item);
+                var productAttributeRelations =_productService.GetAllAttributeByProductId(product.ProductId);
+                if (productAttributeRelations != null) {
+                    _productService.DeleteProductAttributeRelationList(productAttributeRelations);
+               
                 }
-                }
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+               
 
                 // remove product categories relationship==============================
                 var productCategories = db.ProductCategories.Where(x => x.ProductId == product.ProductId);
@@ -1304,23 +1298,7 @@ namespace WarehouseApp.Controllers
         }
         public JsonResult IsProductCodeExist(string ProductCode, string InitialProductCode)
         {
-            bool isNotExist = true;
-            if (ProductCode != string.Empty && InitialProductCode == "undefined")
-            {
-                var isExist = db.Products.Any(x => x.ProductCode.ToLower().Equals(ProductCode.ToLower()));
-                if (isExist)
-                {
-                    isNotExist = false;
-                }
-            }
-            if (ProductCode != string.Empty && InitialProductCode != "undefined")
-            {
-                var isExist = db.Products.Any(x => x.ProductCode.ToLower() == ProductCode.ToLower() && x.ProductCode.ToLower() != InitialProductCode.ToLower());
-                if (isExist)
-                {
-                    isNotExist = false;
-                }
-            }
+            bool isNotExist = _productService.IsProductCodeExist(ProductCode, InitialProductCode);
             return Json(isNotExist, JsonRequestBehavior.AllowGet);
         }
 #endregion
@@ -1329,7 +1307,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _productService.Dispose();
             }
             base.Dispose(disposing);
         }

@@ -95,7 +95,7 @@ namespace WarehouseApp.Controllers
                      CreatedDate = DateTime.Now,
                  };
                 _stockService.Save(newStock, AuthenticatedUser.GetUserFromIdentity().UserId);
-                 item.Product = _productService.GetProductrById(item.ProductId);
+                 item.Product = _productService.GetProductById(item.ProductId);
              }
             
             return View("../Shop/Batch/PrintBarcode", productsList.ProductBarcodes);

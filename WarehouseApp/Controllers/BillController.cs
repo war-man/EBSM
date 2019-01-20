@@ -18,6 +18,7 @@ namespace WarehouseApp.Controllers
     public class BillController : Controller
     {
         private BillService _billService = new BillService();
+        private CompanyProfileService _companyProfileService = new CompanyProfileService();
         private CustomerService _customerService = new CustomerService();
         private SalesService _salesService = new SalesService();
         private const int InitialBillNo = 1;
@@ -128,7 +129,7 @@ namespace WarehouseApp.Controllers
          checkboxes.Add(invoiceCheckbox);
      }
      }
-     List<Invoice> invoicesWithoutBill = db.Invoices.Where(x => x.CustomerId == bill.CustomerId && !x.InvoiceBills.Any()).ToList();
+     List<Invoice> invoicesWithoutBill = _salesService.GetInvoicesWithoutAnyBill(billInvoices.Bill.Customer.CustomerId).ToList();
             if (invoicesWithoutBill.Any())
             {
                 foreach (var item in invoicesWithoutBill)
@@ -152,21 +153,16 @@ namespace WarehouseApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                Bill bill = db.Bills.Find(billInvoices.Bill.BillId);
+                Bill bill = _billService.GetBillById(billInvoices.Bill.BillId); 
                 //remove================================================
                 List<InvoiceBill> removeInvoiceBills = bill.InvoiceBills.ToList();
-                foreach (var removeItem in removeInvoiceBills)
-                {
-                    db.InvoiceBills.Remove(removeItem);
-                }
-                db.SaveChanges("");
+                _billService.DeleteBillInvoices(removeInvoiceBills, AuthenticatedUser.GetUserFromIdentity().UserId);
 
                 bill.BillDate = Convert.ToDateTime(billInvoices.BillDate);
                 bill.BillAmount = billInvoices.Bill.BillAmount;
-                bill.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                bill.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 bill.UpdatedDate = DateTime.Now;
 
-                
                 //addd==============================================
                 List<InvoiceBill> invoiceBillRelations=new List<InvoiceBill>();
                 foreach (var item in billInvoices.InvoiceCheckboxes.Where(x=>x.IsChecked))
@@ -174,22 +170,21 @@ namespace WarehouseApp.Controllers
                     InvoiceBill invoiceBillRelation=new InvoiceBill()
                     {
                         InvoiceId = item.InvoiceId,
-                        CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
+                        CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId,
                         CreatedDate = DateTime.Now
                     };
 
                     invoiceBillRelations.Add(invoiceBillRelation);
                 }
                 bill.InvoiceBills = invoiceBillRelations;
-
-                db.Entry(bill);
-                db.SaveChanges("");
+                _billService.Edit(bill, AuthenticatedUser.GetUserFromIdentity().UserId);
+               
                  return RedirectToAction("Index", "Bill");
             }
            
     
-            ViewBag.InvoiceWithoutBill = db.Invoices.Where(x => x.CustomerId == billInvoices.Bill.Customer.CustomerId && !x.InvoiceBills.Any()).ToList();
-            ViewBag.Customer = db.Customers.FirstOrDefault(x => x.CustomerId == billInvoices.Bill.Customer.CustomerId);
+            ViewBag.InvoiceWithoutBill =  _salesService.GetInvoicesWithoutAnyBill(billInvoices.Bill.Customer.CustomerId).ToList();
+            ViewBag.Customer = _customerService.GetCustomerById(billInvoices.Bill.Customer.CustomerId); 
             return View("../Shop/Bill/EditBill", billInvoices);
         }
         #endregion
@@ -197,7 +192,7 @@ namespace WarehouseApp.Controllers
         [HttpPost]
         public ActionResult CustomerBillPayment(CustomerDetailsViewModel customerDetails)
         {
-            Customer customer = db.Customers.FirstOrDefault(x => x.CustomerId == customerDetails.CustomerPayment.CustomerId);
+            Customer customer = _customerService.GetCustomerById(customerDetails.CustomerPayment.CustomerId); 
             customerDetails.Customer = customer;
             double customerPaid = customerDetails.CustomerPayment.PaidAmount;
             if (ModelState.IsValid)
@@ -217,8 +212,8 @@ namespace WarehouseApp.Controllers
                         customer.PreviousBalance -= customerPaid;
                         customerPaid -= customerPaid;
                     }
-                    db.Entry(customer).State = EntityState.Modified;
-                    db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                    _customerService.Edit(customer, AuthenticatedUser.GetUserFromIdentity().UserId);
+                   
                 }
                 if (customerPaid > 0 && dueInvoices.Any())
                 {
@@ -242,8 +237,8 @@ namespace WarehouseApp.Controllers
                                 dueInvoice.PaidAmount += customerPaid;
                                 customerPaid -= customerPaid;
                             }
-                            db.Entry(dueInvoice).State = EntityState.Modified;
-                            db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                            _salesService.Edit(dueInvoice, AuthenticatedUser.GetUserFromIdentity().UserId);
+                         
                         }
                     }
                 }
@@ -264,8 +259,8 @@ namespace WarehouseApp.Controllers
                             paidInvoice.PaidAmount -= paidInvoice.PaidAmount;
                             adjAmount -= Convert.ToDouble(paidInvoice.PaidAmount);
                         }
-                        db.Entry(paidInvoice).State = EntityState.Modified;
-                        db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                            _salesService.Edit(paidInvoice, AuthenticatedUser.GetUserFromIdentity().UserId);
+                          
                     }
                 } } 
                 //Transaction occurance===============================
@@ -293,7 +288,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Bill bill = db.Bills.Find(id);
+            Bill bill = _billService.GetBillById(id.Value);
             if (bill == null)
             {
                 return HttpNotFound();
@@ -326,8 +321,8 @@ namespace WarehouseApp.Controllers
                     }
                 }
             }
-            
-            ViewBag.CompanyInfo = db.CompanyProfiles.FirstOrDefault();
+
+            ViewBag.CompanyInfo = _companyProfileService.GetComapnyProfile();
             ViewBag.RefChalans = refChalans;
             ViewBag.ReqNo = req;
             ViewBag.PoNo = po;
@@ -343,7 +338,7 @@ namespace WarehouseApp.Controllers
             Bill bill = new Bill();
 
             bill.BillDate = Convert.ToDateTime(invoice.InvoiceDate);
-            bill.BillNo = "B/" + (BillController.InitialBillNo + db.Bills.Count()) + "/" +
+            bill.BillNo = "B/" + (BillController.InitialBillNo + _billService.GetCount()) + "/" +
                           DateTime.Now.ToString("yy");
             bill.BillAmount = Convert.ToDouble(invoice.TotalPrice);
             bill.BillAmount =
@@ -367,17 +362,17 @@ namespace WarehouseApp.Controllers
             invoiceBillRelations.Add(invoiceBillRelation);
 
             bill.InvoiceBills = invoiceBillRelations;
-            db.Bills.Add(bill);
-            db.SaveChanges(currentUserId.ToString());
+            _billService.Save(bill, AuthenticatedUser.GetUserFromIdentity().UserId);
+           
             return bill.BillId;
         }
         #endregion
-        #region di*spose
+        #region dispose
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                db.Dispose();
+                _billService.Dispose();
             }
             base.Dispose(disposing);
         }

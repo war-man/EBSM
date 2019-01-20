@@ -9,6 +9,8 @@ using System.Web.Mvc;
 using System.Web.Security;
 using PagedList;
 using WarehouseApp.Models;
+using EBSM.Entities;
+using EBSM.Services;
 using WarehouseApp.Models.ViewModels;
 
 
@@ -17,7 +19,7 @@ namespace WarehouseApp.Controllers
     [Authorize]
     public class CategoryController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private CategoryService _categoryService = new CategoryService();
 
         // GET: /Category/
 
@@ -41,10 +43,9 @@ namespace WarehouseApp.Controllers
             {
                 category.Count = 0;
                 category.Status = 1;
-                category.CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                category.CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 category.CreatedDate = DateTime.Now;
-                db.Categories.Add(category);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _categoryService.Save(category, AuthenticatedUser.GetUserFromIdentity().UserId);
                 return RedirectToAction("Index");
             }
             ViewBag.CategoryParentId = new SelectList(CategoryTree().Where(x => x.Status > 0).OrderBy(x => x.CategoryName), "CategoryId", "CategoryName", category.CategoryParentId);
@@ -59,7 +60,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Category category = db.Categories.Find(id);
+            Category category = _categoryService.GetCategoryById(id.Value);
             if (category == null)
             {
                 return HttpNotFound();
@@ -88,14 +89,13 @@ namespace WarehouseApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                Category cat = db.Categories.Find(category.CategoryId);
+                Category cat =_categoryService.GetCategoryById(category.CategoryId);
                 cat.CategoryName = category.CategoryName;
                 cat.CategoryParentId = category.CategoryParentId;
                 cat.Status = category.Status;
                 cat.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
                 cat.UpdatedDate = DateTime.Now;
-                db.Entry(cat).State = System.Data.Entity.EntityState.Modified;
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _categoryService.Edit(cat, AuthenticatedUser.GetUserFromIdentity().UserId);
                 return RedirectToAction("Index");
             }
 
@@ -112,22 +112,23 @@ namespace WarehouseApp.Controllers
                 Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 return Json(new { Result = "Error" });
             }
-            Category category = db.Categories.Find(id);
+            Category category = _categoryService.GetCategoryById(id.Value);
             if (category == null)
             {
                 Response.StatusCode = (int)HttpStatusCode.NotFound;
                 return Json(new { Result = "Error" });
             }
-            db.Categories.Remove(category);
-             db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+            _categoryService.DeleteFromDbByItem(category, AuthenticatedUser.GetUserFromIdentity().UserId);
+            //db.Categories.Remove(category);
+            // db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
             return Json(new { Result = "OK" });
         }
 
         public static List<Category> CategoryTree()
         {
-            var cx = new WmsDbContext();
+            var cx = new CategoryService();
             List<Category> categoryTree = new List<Category>();
-            var allRootCategories = cx.Categories.Where(x => !x.CategoryParentId.HasValue).ToList();
+            var allRootCategories = cx.GetAllRootCategories().ToList();
             if (allRootCategories.Count > 0) { 
             foreach (var cat in allRootCategories)
             {
@@ -159,23 +160,7 @@ namespace WarehouseApp.Controllers
 
         public JsonResult IsNameUsed(string CategoryName, string InitialCategoryName)
         {
-            bool isNotExist = true;
-            if (CategoryName != string.Empty && InitialCategoryName == "undefined")
-            {
-                var isExist = db.Categories.Any(x => x.CategoryName.ToLower().Equals(CategoryName.ToLower()));
-                if (isExist)
-                {
-                    isNotExist = false;
-                }
-            }
-            if (CategoryName != string.Empty && InitialCategoryName != "undefined")
-            {
-                var isExist = db.Categories.Any(x => x.CategoryName.ToLower() == CategoryName.ToLower() && x.CategoryName.ToLower() != InitialCategoryName.ToLower());
-                if (isExist)
-                {
-                    isNotExist = false;
-                }
-            }
+            bool isNotExist = _categoryService.IsCategoryNameExist(CategoryName, InitialCategoryName);
             return Json(isNotExist, JsonRequestBehavior.AllowGet);
         }
 
@@ -183,7 +168,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _categoryService.Dispose();
             }
             base.Dispose(disposing);
         }

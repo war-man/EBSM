@@ -5,14 +5,17 @@ using System.Linq;
 using System.Web.Mvc;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
-
+using EBSM.Entities;
+using EBSM.Services;
 
 namespace WarehouseApp.Controllers
 {
     [Authorize]
     public class HomeController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private NoticeService _noticeService = new NoticeService();
+        private SalesService _salesService = new SalesService();
+
 
         
         public ActionResult Index()

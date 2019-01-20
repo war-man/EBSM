@@ -12,7 +12,6 @@ namespace EBSM.Services
     {
         private WmsDbContext _context;
         private BillUnitOfWork _billUnitOfWork;
-
         public BillService()
         {
             _context = new WmsDbContext();
@@ -45,6 +44,14 @@ namespace EBSM.Services
         public int GetCount()
         {
             return _billUnitOfWork.BillRepository.GetCount();
+        }
+        public void DeleteBillInvoices(IEnumerable<InvoiceBill> removeInvoiceBills, int? loggedInUserId)
+        {
+            foreach (var removeItem in removeInvoiceBills)
+            {
+                _billUnitOfWork.BillInvoicesRepository.DeleteFromDbByItem(removeItem);
+            }
+            _billUnitOfWork.Save(loggedInUserId.ToString());
         }
         public void Dispose()
         {
