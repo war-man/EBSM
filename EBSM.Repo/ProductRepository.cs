@@ -26,10 +26,29 @@ namespace EBSM.Repo
         public Product GetById(int id)
         {
             return db.Products.Find(id); 
+          
         }
         public IEnumerable<Product> GetActiveProducts()
         {
             return db.Products.Where(x => x.Status != 0).OrderBy(x => x.ProductFullName);
+        }
+        public IEnumerable<Product> GetAllByProductName(string term)
+        {
+            return db.Products.Where(x => (x.ProductName.StartsWith(term) || x.ProductName.Contains(" " + term)) && x.Status != 0).OrderBy(x => x.ProductFullName);
+        }
+        public IEnumerable<Product> GetAllByProductFullName(string term)
+        {
+            return db.Products.Where(p => (p.ProductFullName.StartsWith(term) || p.ProductFullName.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.ProductFullName);
+        } public IEnumerable<Product> GetAllByProductFullNameIsInStock(string term)
+        {
+            return db.Products.Where(p => (p.ProductFullName.StartsWith(term) || p.ProductFullName.Contains(" " + term)) && p.Status != 0 && p.Stocks.Sum(y => y.TotalQuantity) > 0).OrderBy(p => p.ProductFullName);
+        }
+        public IEnumerable<Product> GetAllByProductCode(string term)
+        {
+            return db.Products.Where(p => (p.ProductCode.StartsWith(term) || p.ProductCode.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.ProductFullName);
+        }public IEnumerable<Product> GetAllByProductCodeIsInStock(string term)
+        {
+            return db.Products.Where(p => (p.ProductCode.StartsWith(term) || p.ProductCode.Contains(" " + term)) && p.Status != 0 && p.Stocks.Sum(y => y.TotalQuantity) > 0).OrderBy(p => p.ProductFullName);
         }
         public IEnumerable<Product> GetAll(string PName, string PCode, int? GroupNameId, int? ManufacId, int? CatId, byte? Status, double? Price)
         {
@@ -43,6 +62,10 @@ namespace EBSM.Repo
                     && (Status == null || x.Status == Status)
                     && (Price == null || x.Tp <= Price)).OrderBy(o => o.ProductName);
 
+        }
+        public bool CheckProductNameExist(string name)
+        {
+            return db.Products.Any(e => e.ProductName.ToLower() == name.ToLower());
         }
         public bool IsProductCodeExist(string ProductCode, string InitialProductCode)
         {

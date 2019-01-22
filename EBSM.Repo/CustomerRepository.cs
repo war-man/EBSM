@@ -27,6 +27,10 @@ namespace EBSM.Repo
         {
             return db.Customers.Find(id); 
         }
+        public Customer GetCustomerByName(string name)
+        {
+            return db.Customers.FirstOrDefault(x => x.FullName.ToLower().Contains(name.ToLower()));
+        }
         public IEnumerable<Customer> GetAll()
         {
             return db.Customers.OrderBy(x=>x.FullName);
@@ -35,7 +39,7 @@ namespace EBSM.Repo
         {
             return db.Customers.Where(x => (CustomerName == null || x.FullName.StartsWith(CustomerName)) && (ContactNo == null || x.ContactNo.StartsWith(ContactNo))).OrderBy(x => x.FullName);
         }
-        public IEnumerable<Customer> GetCustomersByName(string term)
+        public IEnumerable<Customer> GetAllCustomersByName(string term)
         {
             return db.Customers.Where(p => (p.FullName.StartsWith(term) || p.FullName.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.FullName);
         }

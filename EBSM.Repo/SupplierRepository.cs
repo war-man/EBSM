@@ -39,6 +39,10 @@ namespace EBSM.Repo
         {
             return db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 2).OrderBy(x => x.SupplierName);
         }
-
+        public IEnumerable<Supplier> GetAllDistributor()
+        {
+            return db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 1).OrderBy(x => x.SupplierName);
+      
+        }
     }
 }

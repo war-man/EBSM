@@ -42,6 +42,7 @@ namespace EBSM.Repo
         {
             return db.Stocks.Where(x => x.StockId != stockIdNotIn).ToList(); ;
         }
+       
         public Stock GetByProductId(int productId)
         {
             return db.Stocks.FirstOrDefault(x=>x.ProductId==productId);
@@ -49,6 +50,26 @@ namespace EBSM.Repo
         public Stock GetByProductIdAndBarcode(int productId,string barcode)
         {
             return db.Stocks.FirstOrDefault(x => x.ProductId == productId && x.Barcode.ToLower() == barcode.ToLower());
+        }
+        public IEnumerable<Stock> GetAllProuctByFullName(string term)
+        {
+            return db.Stocks.Where(p => p.Barcode != null && (p.Product.ProductFullName.StartsWith(term) || p.Product.ProductFullName.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate);
+        }
+        public IEnumerable<Stock> GetAllProuctByFullNameIsInStock(string term)
+        {
+            return db.Stocks.Where(p => p.Product.ProductFullName.StartsWith(term) || p.Product.ProductFullName.Contains(" " + term) && p.Status != 0 && p.TotalQuantity > 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate);
+
+        }
+        public IEnumerable<Stock> GetAllProuctByProductCode(string term)
+        {
+            return db.Stocks.Where(p => p.Barcode != null && (p.Product.ProductCode.StartsWith(term) || p.Product.ProductCode.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate);
+        }public IEnumerable<Stock> GetAllProuctByProductCodeIsInStock(string term)
+        {
+            return db.Stocks.Where(p => p.Product.ProductCode.StartsWith(term) || p.Product.ProductCode.Contains(" " + term) && p.Status != 0 && p.TotalQuantity > 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate);
+        }
+        public IEnumerable<Stock> GetAllProuctByBarcode(string barCode)
+        {
+            return db.Stocks.Where(p => p.Barcode.Equals(barCode)).OrderBy(p => p.Product.ProductFullName);
         }
         public bool IsBarcodeExist(string barcode)
         {

@@ -31,6 +31,19 @@ namespace EBSM.Repo
         {
             return db.ProductCustomerRelations;
         }
+        public IEnumerable<ProductCustomerRelation> GetAllByProductId(int productId)
+        {
+            return db.ProductCustomerRelations.Where(x => x.ProductId == productId).Include(x => x.Customer);
+        }
+        public void DeleteFromDbById(int id)
+        {
+            var item = GetById(id);
+            DeleteFromDbByItem(item);
+        }
+        public void DeleteFromDbByItem(ProductCustomerRelation item)
+        {
+            db.ProductCustomerRelations.Remove(item);
+        }
         //public IEnumerable<ArticleTransfer> GetAll(int? SelectedProductId, string PName, string TransferDateFrom, string TransferDateTo)
         //{
         //    var fromDate = string.IsNullOrEmpty(TransferDateFrom) ? DateTime.Now.Date : Convert.ToDateTime(TransferDateFrom);
@@ -38,6 +51,6 @@ namespace EBSM.Repo
         //    return db.ArticleTransfers.ToList().Where(x => (SelectedProductId == null || x.StockFrom.ProductId == SelectedProductId) && (PName == null || (x.StockFrom.Product.ProductFullName.StartsWith(PName) || x.StockFrom.Product.ProductFullName.Contains(" " + PName))) && (TransferDateFrom == null || x.TransferDate.Date >= fromDate) && (TransferDateTo == null || x.TransferDate.Date < toDate)).OrderByDescending(o => o.CreatedDate);
         //} 
 
-    
+
     }
 }

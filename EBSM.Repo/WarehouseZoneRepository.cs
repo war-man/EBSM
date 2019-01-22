@@ -22,12 +22,18 @@ namespace EBSM.Repo
         {
             return db.WarehouseZones.Find(id); 
         }
-
+        public WarehouseZone GetWarehouseZoneByName(string name)
+        {
+            return db.WarehouseZones.FirstOrDefault(x => x.ZoneName.ToLower().Contains(name.ToLower()));
+        }
         public IEnumerable<WarehouseZone> GetAll()
         {
             return db.WarehouseZones.Where(x => x.Status != 0).OrderBy(x => x.ZoneName);
-        } 
-
-    
+        }
+        //ware house
+        public Warehouse GetWarehouseByName(string name)
+        {
+            return db.Warehouses.FirstOrDefault(x => x.WarehouseName.ToLower().Contains(name.ToLower()));
+        }
     }
 }

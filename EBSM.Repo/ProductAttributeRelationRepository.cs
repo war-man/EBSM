@@ -33,7 +33,7 @@ namespace EBSM.Repo
         }
         public IEnumerable<ProductAttributeRelation> GetAllByProductId(int productId)
         {
-            return db.ProductAttributeRelations.Where(x => x.ProductId == productId);
+            return db.ProductAttributeRelations.Where(x => x.ProductId == productId).Include(x=>x.Attribute);
         }
         public void DeleteFromDbById(int id)
         {

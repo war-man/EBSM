@@ -250,7 +250,7 @@ namespace WarehouseApp.Controllers
         }
         public JsonResult GetCustomerList(string term)
         {
-            var customers = _customerService.GetCustomersByName(term).Select(x => new { CustomerId = x.CustomerId, CustomerName = x.FullName, CustomerContactNo = x.ContactNo, CustomerEmail = x.Email, CustomerAddress = x.Address }).ToList();
+            var customers = _customerService.GetAllCustomersByName(term).Select(x => new { CustomerId = x.CustomerId, CustomerName = x.FullName, CustomerContactNo = x.ContactNo, CustomerEmail = x.Email, CustomerAddress = x.Address }).ToList();
             return Json(customers, JsonRequestBehavior.AllowGet);
         }
 

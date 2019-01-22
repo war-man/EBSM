@@ -33,9 +33,17 @@ namespace EBSM.Repo
         }
         public IEnumerable<ProductCategory> GetAllByProductId(int producId)
         {
-            return db.ProductCategories.Where(x => x.ProductId == producId);
+            return db.ProductCategories.Where(x => x.ProductId == producId).Include(x => x.Category);
         }
-        
+        public void DeleteFromDbById(int id)
+        {
+            var item = GetById(id);
+            DeleteFromDbByItem(item);
+        }
+        public void DeleteFromDbByItem(ProductCategory item)
+        {
+            db.ProductCategories.Remove(item);
+        }
 
 
     }

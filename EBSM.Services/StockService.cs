@@ -55,6 +55,37 @@ namespace EBSM.Services
         {
             return _stockUnitOfWork.StockRepository.GetByProductIdAndBarcode(productId, barcode);
         }
+        public IEnumerable<Stock> GetAllProuctByFullName(string term)
+        {
+            return _stockUnitOfWork.StockRepository.GetAllProuctByFullName(term);
+        } public IEnumerable<Stock> GetAllProuctByFullNameIsInStock(string term)
+        {
+            return _stockUnitOfWork.StockRepository.GetAllProuctByFullNameIsInStock(term);
+        }
+        public IEnumerable<Stock> GetAllProuctByProductCode(string productCode)
+        {
+            return _stockUnitOfWork.StockRepository.GetAllProuctByProductCode(productCode);
+        }
+         public IEnumerable<Stock> GetAllProuctByProductCodeIsInStock(string productCode)
+        {
+            return _stockUnitOfWork.StockRepository.GetAllProuctByProductCodeIsInStock(productCode);
+        }
+
+        public IEnumerable<Stock> GetAllProuctByBarcode(string barCode)
+        {
+            return _stockUnitOfWork.StockRepository.GetAllProuctByBarcode(barCode);
+        }
+        
+        public bool IsBarcodeExist(string barcode)
+        {
+           return  _stockUnitOfWork.StockRepository.IsBarcodeExist(barcode);
+        }
+        public bool IsBarcodeExist(string Barcode, string InitialBarcode)
+        {
+           return  _stockUnitOfWork.StockRepository.IsBarcodeExist(Barcode, InitialBarcode);
+        }
+
+        //Stock Warehouse Relation=================
         public StockWarehouseRelation GetStockWarehouseRelation(int stockId, int zoneId)
         {
             return _stockUnitOfWork.StockWarehouseRelationRepository.GetStockWarehouseRelation(stockId, zoneId);
@@ -70,14 +101,7 @@ namespace EBSM.Services
             _stockUnitOfWork.StockWarehouseRelationRepository.Edit(stockWarehouse);
             _stockUnitOfWork.Save();
         }
-        public bool IsBarcodeExist(string barcode)
-        {
-           return  _stockUnitOfWork.StockRepository.IsBarcodeExist(barcode);
-        }
-        public bool IsBarcodeExist(string Barcode, string InitialBarcode)
-        {
-           return  _stockUnitOfWork.StockRepository.IsBarcodeExist(Barcode, InitialBarcode);
-        }
+
         public void Dispose()
         {
             _stockUnitOfWork.Dispose();

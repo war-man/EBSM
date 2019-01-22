@@ -27,6 +27,10 @@ namespace EBSM.Repo
         {
             return db.ProductAttributes.Find(id); 
         }
+        public ProductAttribute GetProductAttributeByName(string name)
+        {
+            return db.ProductAttributes.FirstOrDefault(x => x.AttributeName.ToLower() == name.ToLower());
+        }
         public IEnumerable<ProductAttribute> GetAll()
         {
             return db.ProductAttributes.OrderBy(x => x.AttributeName);

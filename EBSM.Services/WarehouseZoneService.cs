@@ -22,18 +22,21 @@ namespace EBSM.Services
         {
             return _warehouseZoneUnitOfWork.WarehouseZoneRepository.GetAll();
         }
-           
-        //public ArticleTransfer GetUserById(int id)
-        //{
-        //    return _articleTransferUnitOfWork.ArticleTransferRepository.GetById(id);
-        //}
-       
-        //public int Save(ArticleTransfer articleTransfer, int? loggedInUserId)
-        //{
-        //    _articleTransferUnitOfWork.ArticleTransferRepository.Add(articleTransfer);
-        //    _articleTransferUnitOfWork.Save(loggedInUserId.ToString());
-        //    return articleTransfer.ArticleTransferId;
-        //}
+        public WarehouseZone GetWarehouseZoneByName(string name)
+        {
+            return _warehouseZoneUnitOfWork.WarehouseZoneRepository.GetWarehouseZoneByName(name);
+        }
+        public WarehouseZone GetUserById(int id)
+        {
+            return _warehouseZoneUnitOfWork.WarehouseZoneRepository.GetById(id);
+        }
+
+        public int Save(WarehouseZone warehouseZone, int? loggedInUserId)
+        {
+            _warehouseZoneUnitOfWork.WarehouseZoneRepository.Add(warehouseZone);
+            _warehouseZoneUnitOfWork.Save(loggedInUserId.ToString());
+            return warehouseZone.ZoneId;
+        }
 
         //public IEnumerable<User> GetAllCardNotAssignedEmployee()
         //{
@@ -48,6 +51,12 @@ namespace EBSM.Services
         //{
         //    return _costCenterUnitOfWork.CostCenterRepository.IsCostCenterExist(CostCenterName, InitialCostCenterName);
         //}
+
+        //ware house=============
+        public Warehouse GetWarehouseByName(string name)
+        {
+            return _warehouseZoneUnitOfWork.WarehouseZoneRepository.GetWarehouseByName(name);
+        }
         public void Dispose()
         {
             _warehouseZoneUnitOfWork.Dispose();

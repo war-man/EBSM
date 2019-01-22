@@ -8,11 +8,15 @@ namespace EBSM.Repo
         private ProductAttributeRelationRepository _productAttributeRelationRepository { get; set; }
         private ProductCategoryRepository _productCategoryRepository { get; set; }
         private ProductCustomerRalationRepository _productCustomerRalationRepository { get; set; }
+       
 
         public ProductUnitOfWork(WmsDbContext context)
         {
             db = context;
             _productRepository = new ProductRepository(db);
+            _productAttributeRelationRepository = new ProductAttributeRelationRepository(db);
+            _productCategoryRepository = new ProductCategoryRepository(db);
+            _productCustomerRalationRepository = new ProductCustomerRalationRepository(db);
         }
 
         public ProductRepository ProductRepository

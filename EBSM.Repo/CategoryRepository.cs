@@ -27,6 +27,10 @@ namespace EBSM.Repo
         {
             return db.Categories.Find(id); 
         }
+        public Category GetCategoryByName(string name)
+        {
+            return db.Categories.FirstOrDefault(x => x.CategoryName.ToLower().Equals(name.ToLower()));
+        }
         public IEnumerable<Category> GetAll()
         {
             return db.Categories;

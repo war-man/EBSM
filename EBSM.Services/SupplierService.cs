@@ -46,6 +46,9 @@ namespace EBSM.Services
         public IEnumerable<Supplier> GetAllManufecturer()
         {
             return _supplierUnitOfWork.SupplierRepository.GetAllManufecturer();
+        }public IEnumerable<Supplier> GetAllDistributor()
+        {
+            return _supplierUnitOfWork.SupplierRepository.GetAllDistributor();
         }
         public void Dispose()
         {

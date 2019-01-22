@@ -23,6 +23,10 @@ namespace EBSM.Services
         {
             return _productAttributeUnitOfWork.ProductAttributeRepository.GetById(id);
         }
+        public ProductAttribute GetProductAttributeByName(string AttName)
+        {
+            return _productAttributeUnitOfWork.ProductAttributeRepository.GetProductAttributeByName(AttName);
+        }
        
         public int SaveAttribute(ProductAttribute productAttribute, int? loggedInUserId)
         {
@@ -62,6 +66,10 @@ namespace EBSM.Services
             public ProductAttributeSet GetProductAttributeSetById(int id)
         {
             return _productAttributeUnitOfWork.ProductAttributeSetRepository.GetById(id);
+        }
+        public ProductAttributeSet GetProductAttributeSetByName(string AttSetName)
+        {
+            return _productAttributeUnitOfWork.ProductAttributeSetRepository.GetProductAttributeSetByName(AttSetName);
         }
 
         public int SaveAttributeSet(ProductAttributeSet productAttributeSet, int? loggedInUserId)

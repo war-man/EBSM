@@ -25,7 +25,7 @@ namespace EBSM.Services
         {
             return _customerUnitOfWork.CustomerRepository.GetById(id);
         }
-       
+        
         public int Save(Customer customer, int? loggedInUserId)
         {
             _customerUnitOfWork.CustomerRepository.Add(customer);
@@ -37,13 +37,18 @@ namespace EBSM.Services
             _customerUnitOfWork.CustomerRepository.Edit(customer);
             _customerUnitOfWork.Save(loggedInUserId.ToString());
         }
+        public Customer GetCustomerByName(string name)
+        {
+            return _customerUnitOfWork.CustomerRepository.GetCustomerByName(name);
+        }
+
         public IEnumerable<Customer> GetAllCustomers()
         {
             return _customerUnitOfWork.CustomerRepository.GetAll();
         }
-        public IEnumerable<Customer> GetCustomersByName(string CustomerName)
+        public IEnumerable<Customer> GetAllCustomersByName(string CustomerName)
         {
-            return _customerUnitOfWork.CustomerRepository.GetCustomersByName(CustomerName);
+            return _customerUnitOfWork.CustomerRepository.GetAllCustomersByName(CustomerName);
         }
         public IEnumerable<Customer> GetAllCustomers(string CustomerName, string ContactNo)
         {

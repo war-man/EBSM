@@ -23,7 +23,10 @@ namespace EBSM.Services
         {
             return _categoryUnitOfWork.CategoryRepository.GetById(id);
         }
-       
+        public Category GetCategoryByName(string name)
+        {
+            return _categoryUnitOfWork.CategoryRepository.GetCategoryByName(name);
+        }
         public int Save(Category category, int? loggedInUserId)
         {
             _categoryUnitOfWork.CategoryRepository.Add(category);

@@ -46,6 +46,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PurchasePaymentRepository.cs" />
+    <Compile Include="PurchaseProductRepository.cs" />
+    <Compile Include="PurchaseCostRepository.cs" />
+    <Compile Include="PurchaseRepository.cs" />
+    <Compile Include="PurchaseUnitOfWork.cs" />
     <Compile Include="ProductCustomerRalationRepository.cs" />
     <Compile Include="ProductCategoryRepository.cs" />
     <Compile Include="ProductAttributeRelationRepository.cs" />
