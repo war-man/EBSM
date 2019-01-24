@@ -1,8 +1,8 @@
-﻿@model IEnumerable<WarehouseApp.Models.ExpenseType>
-@using WarehouseApp.Models
+﻿@model IEnumerable<EBSM.Entities.ExpenseType>
+@using EBSM.Entities;
 @{
     ViewBag.Title = "Expense Types";
-    var cx = new WmsDbContext();
+    //var cx = new WmsDbContext();
 }
 
 
@@ -30,81 +30,83 @@
             </div>
             <div class="x_content">
 
-                    <p id="addExpense"></p>
-                    <table class="table table-condensed table-responsivec" id="expenseHeadDataTable">
+                <p id="addExpense"></p>
+                <table class="table table-condensed table-responsivec" id="expenseHeadDataTable">
 
-                        <thead>
+                    <thead>
+                        <tr>
+                            <th class="col-md-1"></th>
+                            <th class="col-md-2">
+                                @Html.DisplayNameFor(model => model.TypeName)
+                            </th>
+
+                            <th class="col-md-1">Action</th>
+                            <th class="col-md-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Where(e => !e.ParentId.HasValue))
+                        {
                             <tr>
-                                <th class="col-md-1"></th>
-                                <th class="col-md-2">
-                                    @Html.DisplayNameFor(model => model.TypeName)
-                                </th>
+                                <td class="col-md-1 jstree-wholerowcx"><span class="glyphicon" onclick=" subRow(this); "><i class="fa fa-caret-square-o-down"></i></span></td>
+                                <td class="expType col-md-2 @(@item.Status==0 ? "text-solid-red" : " ")">
+                                    @Html.DisplayFor(modelItem => item.TypeName)
+                                    @Html.Hidden("parent_" + item.ExpenseTypeId, null, new { @class = "expenseTypeId", @Value = item.ExpenseTypeId })
+                                </td>
 
-                                <th class="col-md-1">Action</th>
-                                <th class="col-md-1"></th>
+                                <td class="col-md-1">
+                                    <a href="javascript:void(0);" data-id="@item.ExpenseTypeId" class="editType"><span class="btn btn-xs btn-default fa fa-pencil fa-lg" title="Edit"></span></a>
+                                    @if (item.Status == 0)
+                                    {
+                                        <a href="javascript:void(0);" onclick="statusUpdate(@item.ExpenseTypeId, 'active')" data-id="@item.ExpenseTypeId"><span class="btn btn-xs btn-default">Active</span></a>
+                                    }
+                                    else
+                                    {
+                                        <a href="javascript:void(0);" onclick="statusUpdate(@item.ExpenseTypeId, 'inactive')" data-id="@item.ExpenseTypeId"><span class="btn btn-xs btn-danger">Inactive</span></a>
+                                    }
+
+                                </td>
+                                <td class="col-md-1"><a href="javascript:void(0);" data-id="@item.ExpenseTypeId" class="newChild"><span class="btn btn-primary btn-sm glyphicon glyphicon-plus" title="Add New Child"></span> </a></td>
+
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in Model.Where(e => !e.ParentId.HasValue))
-                            {
-                                <tr>
-                                    <td class="col-md-1 jstree-wholerowcx"><span class="glyphicon" onclick=" subRow(this); "><i class="fa fa-caret-square-o-down"></i></span></td>
-                                    <td class="expType col-md-2 @(@item.Status==0 ? "text-solid-red" : " ")">
-                                        @Html.DisplayFor(modelItem => item.TypeName)
-                                        @Html.Hidden("parent_" + item.ExpenseTypeId, null, new { @class = "expenseTypeId", @Value = item.ExpenseTypeId })
-                                    </td>
+                            <tr>
+                                <td></td>
 
-                                    <td class="col-md-1">
-                                        <a href="javascript:void(0);" data-id="@item.ExpenseTypeId" class="editType"><span class="btn btn-xs btn-default fa fa-pencil fa-lg" title="Edit"></span></a>
-                                        @if (item.Status == 0)
+                                <td colspan="3">
+                                    <table class="table table-responsive tableData" id="childTable">
+                                        @foreach (var i in Model.Where(e => e.ParentId == item.ExpenseTypeId))
                                         {
-                                            <a href="javascript:void(0);" onclick="statusUpdate(@item.ExpenseTypeId, 'active')" data-id="@item.ExpenseTypeId"><span class="btn btn-xs btn-default">Active</span></a>
+                                            <tr>
+                                                <td class="expType col-md-2 @(@item.Status==0 ? "text-solid-red" : " ") ">@Html.DisplayFor(modelItem => i.TypeName)</td>
+                                                <td class="col-md-1">
+                                                    <a href="javascript:void(0);" data-id="@i.ExpenseTypeId" class="editType"><span class="btn btn-xs btn-default fa fa-pencil fa-lg" title="Edit"></span></a>
+                                                    @if (i.Status == 0)
+                                                    {
+                                                        <a href="javascript:void(0);" onclick="statusUpdate(@i.ExpenseTypeId,'active')"><span class="btn btn-xs btn-default">Active</span></a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <a href="javascript:void(0);" onclick="statusUpdate(@i.ExpenseTypeId,'inactive')"><span class="btn btn-xs btn-danger">Inactive</span></a>
+                                                    }
+                                                </td>
+                                                <td class="col-md-1"></td>
+                                            </tr>
                                         }
-                                        else
-                                        {
-                                            <a href="javascript:void(0);" onclick="statusUpdate(@item.ExpenseTypeId, 'inactive')" data-id="@item.ExpenseTypeId"><span class="btn btn-xs btn-danger">Inactive</span></a>
-                                        }
-
-                                    </td>
-                                    <td class="col-md-1"><a href="javascript:void(0);" data-id="@item.ExpenseTypeId" class="newChild"><span class="btn btn-primary btn-sm glyphicon glyphicon-plus" title="Add New Child"></span> </a></td>
-
-                                </tr>
-                                <tr>
-                                    <td></td>
-
-                                    <td colspan="3">
-                                        <table class="table table-responsive tableData" id="childTable">
-                                            @foreach (var i in Model.Where(e => e.ParentId == item.ExpenseTypeId))
-                                            {
-                                                <tr>
-                                                    <td class="expType col-md-2 @(@item.Status==0 ? "text-solid-red" : " ") ">@Html.DisplayFor(modelItem => i.TypeName)</td>
-                                                    <td class="col-md-1">
-                                                        <a href="javascript:void(0);" data-id="@i.ExpenseTypeId" class="editType"><span class="btn btn-xs btn-default fa fa-pencil fa-lg" title="Edit"></span></a>
-                                                        @if (i.Status == 0)
-                                                        {
-                                                            <a href="javascript:void(0);" onclick="statusUpdate(@i.ExpenseTypeId,'active')"><span class="btn btn-xs btn-default">Active</span></a>
-                                                        }
-                                                        else
-                                                        {
-                                                            <a href="javascript:void(0);" onclick="statusUpdate(@i.ExpenseTypeId,'inactive')"><span class="btn btn-xs btn-danger">Inactive</span></a>
-                                                        }
-                                                    </td>
-                                                    <td class="col-md-1"></td>
-                                                </tr>
-                                            }
-                                            <tr class="childRow_@item.ExpenseTypeId"></tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>  </div>  </div>
+                                        <tr class="childRow_@item.ExpenseTypeId"></tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
-            @section Scripts {
-                @Scripts.Render("~/bundles/jqueryval")
-                <script src="~/Scripts/ProjectJs/Shop/ShopScript.js"></script>
-                <script>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script src="~/Scripts/ProjectJs/Shop/ShopScript.js"></script>
+    <script>
                     function statusUpdate(id, val) {
                         var url = '@Url.Action("UpdateExpenseTypeStatus", "Expense")';
                         var paramData = { id: id, tag: val };
@@ -196,9 +198,9 @@
                     function cancelExpenseType() {
                         $("#addExpense").html('');
                     }
-                </script>
-            }
-            @*//=======================================================================================//
-                //Author : Al Monsur
-                //Creation Date : January 2017
-                //=======================================================================================//*@
+    </script>
+}
+@*//=======================================================================================//
+    //Author : Al Monsur
+    //Creation Date : January 2017
+    //=======================================================================================//*@

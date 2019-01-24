@@ -15,13 +15,18 @@ using PagedList;
 using System.Web.Security;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
-
+using EBSM.Entities;
+using EBSM.Services;
 namespace WarehouseApp.Controllers
 {
     [Authorize]
     public class SalesOrderController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private SalesOrderService _salesOrderService = new SalesOrderService();
+        private CustomerService _customerService = new CustomerService();
+        private SalesmanService _salesmanService = new SalesmanService();
+        private ProductService _productService = new ProductService();
+        private TransactionAccountService _transactionAccountService = new TransactionAccountService();
         private const int InitialInvoiceNo = 1;
         #region list view
         [Roles("Global_SupAdmin,SalesOrder_Create,SalesOrder_Edit")]
@@ -30,11 +35,9 @@ namespace WarehouseApp.Controllers
         {
             var fromDate = Convert.ToDateTime(model.OrderDateFrom);
             var toDate = Convert.ToDateTime(model.OrderDateTo);
-            var salesOrders = db.SalesOrders.Where(x => (model.OrderNo == null || x.OrderNumber.StartsWith(model.OrderNo))
-                && (model.OrderDateFrom == null || x.OrderDate >= fromDate) && (model.OrderDateTo == null || x.OrderDate <= toDate)
-                 && (model.CustomerId == null || x.CustomerId == model.CustomerId) && (model.Status == null || x.Status == model.Status)).OrderByDescending(o => o.OrderDate).ThenByDescending(o => o.CreatedDate);
+            var salesOrders = _salesOrderService.GetAllSalesOrders(model.OrderNo, model.OrderDateFrom, model.OrderDateTo, model.CustomerId, model.Status);
             model.SalesOrders = salesOrders.ToPagedList(model.Page, model.PageSize);
-            ViewBag.CustomerId = new SelectList(db.Customers.Where(x => x.Status != 0).OrderBy(x => x.FullName), "CustomerId", "FullName");
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers(), "CustomerId", "FullName");
             return View("../Shop/SalesOrder/Index", model);
         }
         #endregion
@@ -45,8 +48,8 @@ namespace WarehouseApp.Controllers
         {
             ViewBag.TransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text", "Cash");
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode("Cash"), "Id", "Name");
-            ViewBag.SalesmanId = new SelectList(db.Salesman.OrderBy(x => x.FullName), "SalesmanId", "FullName");
-            ViewBag.CustomerId = new SelectList(db.Customers.OrderBy(x => x.FullName), "CustomerId", "FullName");
+            ViewBag.SalesmanId = new SelectList(_customerService.GetAllCustomers(), "SalesmanId", "FullName");
+            ViewBag.CustomerId = new SelectList(_salesmanService.GetAllSalesman(), "CustomerId", "FullName");
             return View("../Shop/SalesOrder/NewSalesOrder");
 
         }
@@ -58,12 +61,8 @@ namespace WarehouseApp.Controllers
             if (ModelState.IsValid)
             {
                 string fmt = "0000000.##";
-                int lastInvoiceId = 0;
-                var invoices = db.SalesOrders.ToList();
-                if (invoices.Count > 0)
-                {
-                    lastInvoiceId = invoices.OrderByDescending(x => x.SalesOrderId).FirstOrDefault().SalesOrderId;
-                }
+                int lastInvoiceId = _salesOrderService.GetCount();
+                
                 #region Invoice save
                 SalesOrder invoice = new SalesOrder()
                 {
@@ -83,11 +82,11 @@ namespace WarehouseApp.Controllers
                     CashPaid = data.CashPaid ?? 0,
                     Note = data.Note,
                     Status = 1,
-                    CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
+                    CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId,
                     CreatedDate = DateTime.Now
                 };
-                db.SalesOrders.Add(invoice);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _salesOrderService.SaveSalesOrder(invoice, AuthenticatedUser.GetUserFromIdentity().UserId);
+             
                 #endregion
                 #region order products
                 var sl = 1;
@@ -105,9 +104,8 @@ namespace WarehouseApp.Controllers
                         Quantity = item.Quantity,
                         Status = 1
                     };
-                    db.OrderProducts.Add(invoiceProduct);
-                    db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
-
+                    _salesOrderService.SaveOrderProduct(invoiceProduct);
+                    
                 }
                 #endregion
                 #region transaction chanel
@@ -134,7 +132,7 @@ namespace WarehouseApp.Controllers
             }
             ViewBag.TransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text", "Cash");
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode("Cash"), "Id", "Name");
-            ViewBag.CustomerId = new SelectList(db.Customers.OrderBy(x => x.FullName), "CustomerId", "FullName", data.CustomerId);
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers(), "CustomerId", "FullName", data.CustomerId);
             return View("../Shop/SalesOrder/NewSalesOrder");
         }
 
@@ -147,7 +145,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            SalesOrder invoice = db.SalesOrders.Find(id);
+            SalesOrder invoice =_salesOrderService.GetSalesOrderById(id.Value);
             if (invoice == null)
             {
                 return HttpNotFound();
@@ -164,7 +162,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            SalesOrder invoice = db.SalesOrders.Find(id);
+            SalesOrder invoice = _salesOrderService.GetSalesOrderById(id.Value);
             if (invoice == null)
             {
                 return HttpNotFound();
@@ -217,8 +215,8 @@ namespace WarehouseApp.Controllers
             ViewBag.TransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text", invoice.TransactionMode);
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode(invoice.TransactionMode), "Id", "Name", invoice.TransactionModeId);
 
-            ViewBag.CustomerId = new SelectList(db.Customers.OrderBy(x => x.FullName), "CustomerId", "FullName", invoice.CustomerId);
-            ViewBag.CustomerBranchId = new SelectList(db.CustomerProjects.Where(x => x.CustomerId == invoice.CustomerId).OrderBy(x => x.ProjectName), "CustomerProjectId", "ProjectName", invoice.CustomerBranchId);
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers(), "CustomerId", "FullName", invoice.CustomerId);
+            ViewBag.CustomerBranchId = new SelectList(_customerService.GetAllCustomerProjectsByCustomerId(invoice.CustomerId).OrderBy(x => x.ProjectName), "CustomerProjectId", "ProjectName", invoice.CustomerBranchId);
             return View("../Shop/SalesOrder/EditSalesOrder", invoiceViewModel);
         }
         [HttpPost]
@@ -228,7 +226,7 @@ namespace WarehouseApp.Controllers
             //string result = "Error";
             if (ModelState.IsValid)
             {
-                var invoice = db.SalesOrders.Find(data.OrderId);
+                var invoice = _salesOrderService.GetSalesOrderById(data.OrderId.Value); 
                 if (invoice == null)
                 {
                     return HttpNotFound();
@@ -256,28 +254,21 @@ namespace WarehouseApp.Controllers
                 invoice.AdvancePaid = data.PaidAmount ?? 0;
                 invoice.Note = data.Note;
                 invoice.Status = 1;
-                invoice.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                invoice.UpdatedBy =AuthenticatedUser.GetUserFromIdentity().UserId;
                 invoice.UpdatedDate = DateTime.Now;
 
                 if (customer.FullName != null)
                 {
                     invoice.CustomerId = customer.CustomerId;
                 }
-
-                db.Entry(invoice).State = System.Data.Entity.EntityState.Modified;
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
-
-
-
+                _salesOrderService.EditSalesOrder(invoice, AuthenticatedUser.GetUserFromIdentity().UserId);
+               
                 //====remove previous invoice products=======================
-                var invoicePrdcts = db.OrderProducts.Where(x => x.OrderId == invoice.SalesOrderId).ToList();
+                var invoicePrdcts =_salesOrderService.GetAllOrderProductsByOrderId(invoice.SalesOrderId).ToList();
                 if (invoicePrdcts.Count > 0)
                 {
-                    foreach (var removeItem in invoicePrdcts)
-                    {
-                        db.OrderProducts.Remove(removeItem);
-                    }
-                    db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                    _salesOrderService.DeleteOrderProductList(invoicePrdcts);
+                   
                 }
                 //====Add new invoice products=======================
                 var sl = 1;
@@ -293,9 +284,8 @@ namespace WarehouseApp.Controllers
                         Quantity = item.Quantity,
                         Status = 1
                     };
-                    db.OrderProducts.Add(orderProduct);
-                    db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
-
+                    _salesOrderService.SaveOrderProduct(orderProduct);
+                   
 
                 }
                 //========add to account transaction as format DepositToAccount(transactionMode, accountId, amount, transactionDate, tableName, primaryKeyName, primaryKeyValue,currentUserId);============================================================================================================================
@@ -318,8 +308,8 @@ namespace WarehouseApp.Controllers
             ViewBag.TransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text", data.TransactionMode);
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode(data.TransactionMode), "Id", "Name", data.TransactionModeId);
 
-            ViewBag.CustomerId = new SelectList(db.Customers.OrderBy(x => x.FullName), "CustomerId", "FullName", data.CustomerId);
-            ViewBag.CustomerBranchId = new SelectList(db.CustomerProjects.Where(x => x.CustomerId == data.CustomerId).OrderBy(x => x.ProjectName), "CustomerProjectId", "ProjectName", data.CustomerBranchId);
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers(), "CustomerId", "FullName", data.CustomerId);
+            ViewBag.CustomerBranchId = new SelectList(_customerService.GetAllCustomerProjectsByCustomerId(data.CustomerId), "CustomerProjectId", "ProjectName", data.CustomerBranchId);
             return View("../Shop/SalesOrder/EditSalesOrder", data);
 
         }
@@ -329,7 +319,7 @@ namespace WarehouseApp.Controllers
         public ActionResult OrderToSales(int orderId)
         {
 
-            SalesOrder invoice = db.SalesOrders.Find(orderId);
+            SalesOrder invoice = _salesOrderService.GetSalesOrderById(orderId);
             if (invoice == null)
             {
                 return HttpNotFound();
@@ -384,8 +374,8 @@ namespace WarehouseApp.Controllers
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode(invoice.TransactionMode), "Id", "Name", invoice.TransactionModeId);
 
 
-            ViewBag.CustomerId = new SelectList(db.Customers.OrderBy(x => x.FullName), "CustomerId", "FullName", invoice.CustomerId);
-            ViewBag.CustomerBranchId = new SelectList(db.CustomerProjects.Where(x => x.CustomerId == invoice.CustomerId).OrderBy(x => x.ProjectName), "CustomerProjectId", "ProjectName", invoice.CustomerBranchId);
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers(), "CustomerId", "FullName", invoice.CustomerId);
+            ViewBag.CustomerBranchId = new SelectList(_customerService.GetAllCustomerProjectsByCustomerId(invoice.CustomerId), "CustomerProjectId", "ProjectName", invoice.CustomerBranchId);
             return View("../Shop/Invoice/OrderToSales", invoiceViewModel);
 
         }
@@ -394,7 +384,7 @@ namespace WarehouseApp.Controllers
         public void ExportOrderChalanExcel(int id)
         {
 
-            var invoice = db.SalesOrders.FirstOrDefault(x => x.SalesOrderId == id);
+            var invoice =_salesOrderService.GetSalesOrderById(id);
             var companyProfile = SettingsController.CompanyInfo();
 
             ExcelPackage excel = new ExcelPackage();
@@ -524,7 +514,7 @@ namespace WarehouseApp.Controllers
         [OutputCache(Duration = 120)]
         public ActionResult PoImport()
         {
-            ViewBag.CustomerId = new SelectList(db.Customers.OrderBy(x => x.FullName), "CustomerId", "FullName");
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers(), "CustomerId", "FullName");
             return View("../Shop/SalesOrder/PoImport");
         }
 
@@ -587,11 +577,7 @@ namespace WarehouseApp.Controllers
 
 
                                     };
-                                    if (productImport.ProductCode != null && productImport.Quantity != null &&
-                                        db.ProductCustomerRelations.Any(
-                                            x =>
-                                                x.CustomerId == model.CustomerId &&
-                                                x.ProductCode == productImport.ProductCode))
+                                    if (productImport.ProductCode != null && productImport.Quantity != null && _productService.GetAllByProductByCodeAndCustomer(model.CustomerId, productImport.ProductCode).Any())
                                     {
                                         poProductImportList.Add(productImport);
                                     }
@@ -605,15 +591,7 @@ namespace WarehouseApp.Controllers
                             if (poProductImportList.Count > 0)
                             {
                                 string fmt = "000000000.##";
-                                int lastInvoiceId = 0;
-                                var invoices = db.SalesOrders.ToList();
-                                if (invoices.Count > 0)
-                                {
-                                    lastInvoiceId =
-                                        invoices.OrderByDescending(x => x.SalesOrderId)
-                                            .FirstOrDefault()
-                                            .SalesOrderId;
-                                }
+                                int lastInvoiceId = _salesOrderService.GetCount();
 
                                 #region Invoice save
 
@@ -631,25 +609,20 @@ namespace WarehouseApp.Controllers
                                     CustomerId = model.CustomerId,
                                     CustomerBranchId = model.CustomerBranchId,
                                     TransactionMode = "Cash",
-                                    TransactionModeId = db.Cash.Any() ? db.Cash.FirstOrDefault().CashId : (int?)null,
+                                    TransactionModeId = _transactionAccountService.GetAllCashAccounts().Any() ? _transactionAccountService.GetAllCashAccounts().FirstOrDefault().CashId : (int?)null,
                                     AdvancePaid = 0,
                                     CashPaid = 0,
                                     Status = 1,
-                                    CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
+                                    CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId,
                                     CreatedDate = DateTime.Now
                                 };
-                                db.SalesOrders.Add(salesOrder);
-                                db.SaveChanges(
-                                    Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
-
+                            _salesOrderService.SaveSalesOrder(salesOrder, AuthenticatedUser.GetUserFromIdentity().UserId);
+                               
                                 #endregion
                                 foreach (var item in poProductImportList)
                                 {
-                                    var customerProduct =
-                                        db.ProductCustomerRelations.FirstOrDefault(
-                                            x =>
-                                                x.CustomerId == salesOrder.CustomerId &&
-                                                x.ProductCode == item.ProductCode);
+                                    var customerProduct = _productService.GetAllByProductByCodeAndCustomer(salesOrder.CustomerId.Value, item.ProductCode).FirstOrDefault();
+                                        
                                     OrderProduct orderProduct = new OrderProduct
                                     {
                                         ProductId = customerProduct.ProductId,
@@ -658,13 +631,13 @@ namespace WarehouseApp.Controllers
                                         Dp = item.RetailPrice ?? 0,
                                         TotalPrice = item.Quantity * item.RetailPrice,
                                         Status = 1,
-                                        CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
+                                        CreatedBy =AuthenticatedUser.GetUserFromIdentity().UserId,
                                         CreatedDate = DateTime.Now,
                                     };
-                                    db.OrderProducts.Add(orderProduct);
-
+                                    _salesOrderService.SaveOrderProduct(orderProduct);
+                                    
                                 }
-                                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                            
                                 //if (db.OrderProducts.Any(x => x.OrderId == salesOrder.SalesOrderId))
                                 //{
                                 //    salesOrder.TotalQuantity =
@@ -695,7 +668,7 @@ namespace WarehouseApp.Controllers
                 }
                 ViewBag.ExcuteMsg = ExcuteMsg;
             }
-            ViewBag.CustomerId = new SelectList(db.Customers.OrderBy(x => x.FullName), "CustomerId", "FullName", model.CustomerId);
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers(), "CustomerId", "FullName", model.CustomerId);
             return View("../Shop/SalesOrder/PoImport", model);
         }
         #endregion
@@ -704,7 +677,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _salesOrderService.Dispose();
             }
 
             base.Dispose(disposing);

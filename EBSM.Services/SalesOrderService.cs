@@ -24,32 +24,58 @@ namespace EBSM.Services
             return _salesOrderUnitOfWork.SalesOrderRepository.GetById(id);
         }
        
-        public int Save(SalesOrder salesOrder, int? loggedInUserId)
+        public int SaveSalesOrder(SalesOrder salesOrder, int? loggedInUserId)
         {
             _salesOrderUnitOfWork.SalesOrderRepository.Add(salesOrder);
             _salesOrderUnitOfWork.Save(loggedInUserId.ToString());
             return salesOrder.SalesOrderId;
         }
-        public void Edit(SalesOrder salesOrder, int? loggedInUserId)
+        public void EditSalesOrder(SalesOrder salesOrder, int? loggedInUserId)
         {
             _salesOrderUnitOfWork.SalesOrderRepository.Edit(salesOrder);
             _salesOrderUnitOfWork.Save(loggedInUserId.ToString());
         }
-        public IEnumerable<SalesOrder> GetAll()
+        public IEnumerable<SalesOrder> GetAllSalesOrders()
         {
             return _salesOrderUnitOfWork.SalesOrderRepository.GetAll();
         }
-        //public IEnumerable<SalesOrder> GetAll(int? SelectedProductId, string PName, string TransferDateFrom, string TransferDateTo)
-        //{
-        //    return _articleTransferUnitOfWork.ArticleTransferRepository.GetAll(SelectedProductId, PName, TransferDateFrom, TransferDateTo);
-        //}
-
+        public IEnumerable<SalesOrder> GetAllSalesOrders(string OrderNo, string OrderDateFrom, string OrderDateTo, int? CustomerId, byte? Status)
+        {
+            return _salesOrderUnitOfWork.SalesOrderRepository.GetAll( OrderNo,  OrderDateFrom,  OrderDateTo,  CustomerId,  Status);
+        }
+        public int GetCount()
+        {
+            return _salesOrderUnitOfWork.SalesOrderRepository.GetCount();
+        }public int GetPendingOrdersCount()
+        {
+            return _salesOrderUnitOfWork.SalesOrderRepository.GetPendingOrdersCount();
+        }
         public int SaveOrderInvoice(InvoiceOrder orderInvoice, int? loggedInUserId)
         {
             _salesOrderUnitOfWork.OrderInvoiceRelationRepository.Add(orderInvoice);
             _salesOrderUnitOfWork.Save(loggedInUserId.ToString());
             return orderInvoice.InvoiceOrderId;
         }
+        public void SaveOrderProduct(OrderProduct orderProduct)
+        {
+            _salesOrderUnitOfWork.OrderProductRepository.Add(orderProduct);
+            _salesOrderUnitOfWork.Save();
+
+        }
+        public IEnumerable<OrderProduct> GetAllOrderProductsByOrderId(int orderId)
+        {
+            return _salesOrderUnitOfWork.OrderProductRepository.GetAllOrderProductsByOrderId(orderId);
+        }
+        public void DeleteOrderProductList(IEnumerable<OrderProduct> orderProductList)
+        {
+            foreach(var item in orderProductList)
+            {
+                _salesOrderUnitOfWork.OrderProductRepository.DeleteFromDbByItem(item);
+            }
+            _salesOrderUnitOfWork.Save();
+
+        }
+
         public void Dispose()
         {
             _salesOrderUnitOfWork.Dispose();

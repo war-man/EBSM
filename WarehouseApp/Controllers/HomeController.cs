@@ -14,40 +14,46 @@ namespace WarehouseApp.Controllers
     public class HomeController : Controller
     {
         private NoticeService _noticeService = new NoticeService();
+        private ProductService _productService = new ProductService();
         private SalesService _salesService = new SalesService();
+        private StockService _stockService = new StockService();
+        private CustomerService _customerService = new CustomerService();
+        private PurchaseService _purchaseService = new PurchaseService();
+        private SalesOrderService _salesOrderService = new SalesOrderService();
+        private ProductAttributeService _productAttributeService = new ProductAttributeService();
 
 
         
         public ActionResult Index()
         {
-            List<Notice> allNotices = db.Notices.Where(x => x.Status != 0).OrderByDescending(t => t.CreatedDate).ToList();
-            ViewBag.NewNoticesCount = allNotices.Count > 0 ? allNotices.GroupBy(t => t.CreatedDate.Date).First().ToList().Count : 0;
-            ViewBag.NewNoticesTimeAgo = allNotices.Count > 0 ? SettingsController.TimeAgo(allNotices.GroupBy(t => t.CreatedDate.Date).First().ToList().First().CreatedDate) : "No time";
+            //List<Notice> allNotices = db.Notices.Where(x => x.Status != 0).OrderByDescending(t => t.CreatedDate).ToList();
+            ViewBag.NewNoticesCount = _noticeService.GetCount()> 0 ?_noticeService.LastDateNoticeCount() : 0;
+            ViewBag.NewNoticesTimeAgo = _noticeService.GetCount() > 0 ? SettingsController.TimeAgo(_noticeService.LastDateOfNoticePublished()) : "No time";
 
 
-            List<Invoice> todaySales = db.Invoices.Include(t => t.Customer).ToList().Where(t => t.InvoiceDate.Date == DateTime.Now.Date).OrderByDescending(t => t.InvoiceDate).ToList();
-            ViewBag.todaySoldItems = todaySales.Count > 0 ? todaySales.Sum(x => x.TotalPrice) : 0;
-            var top = db.InvoiceProducts.Where(x => x.Invoice.InvoiceDate.Year == DateTime.Now.Year && x.Invoice.InvoiceDate.Month == DateTime.Now.Month).GroupBy(x => x.ProductId).Select(x => new TopSellsMonthly { Product = x.FirstOrDefault().Product, TotalSoldQuantity = x.Sum(y => y.Quantity), TotalSoldAmount = x.Sum(y => y.TotalPrice) }).ToList().OrderByDescending(x => x.TotalSoldQuantity).Take(10);
+            //List<Invoice> todaySales = db.Invoices.Include(t => t.Customer).ToList().Where(t => t.InvoiceDate.Date == DateTime.Now.Date).OrderByDescending(t => t.InvoiceDate).ToList();
+            ViewBag.todaySoldItems = _salesService.GetTodaysSalesAmount();
+            var top = _salesService.GetTopSalesProduct().GroupBy(x => x.ProductId).Select(x => new TopSellsMonthly { Product = x.FirstOrDefault().Product, TotalSoldQuantity = x.Sum(y => y.Quantity), TotalSoldAmount = x.Sum(y => y.TotalPrice) }).ToList().OrderByDescending(x => x.TotalSoldQuantity).Take(10);
             ViewBag.topSellingProducts = top;
 
             //Purchase related--------------------------------------
-            List<Purchase> allPurchase = db.Purchases.OrderByDescending(t => t.PurchaseDate).ToList();
+            List<Purchase> allPurchase = _purchaseService.GetAllPurchases().ToList();
             ViewBag.latestPurchasedItems = allPurchase.Count > 0 ? allPurchase.GroupBy(t => t.PurchaseDate.Date).First().ToList().Sum(x => x.TotalQuantity) : 0;
             ViewBag.latestPurchaseDate = allPurchase.Count > 0 ? allPurchase.GroupBy(t => t.PurchaseDate.Date).First().ToList().First().PurchaseDate : DateTime.Now;
 
             //Products Related------------------------------------------
             //List<Product>allProducts= db.Products.Where(t => t.Status != 0).OrderByDescending(t => t.ProductFullName).ToList();
-            ViewBag.totalProducts = db.Products.Count(t => t.Status != 0);
-            ViewBag.totalCustomers = db.Customers.Count(t => t.Status != 0);
+            ViewBag.totalProducts =_productService.GetCount();
+            ViewBag.totalCustomers =_customerService.GetCount();
 
             //ViewBag.topSellingProducts = allProducts.ToList().OrderByDescending(x => x.InvoiceProducts.Sum(y => y.TotalQuantity)).Take(10);
 
             //Stock related---------------------------------
-            List<Stock> stocks = db.Stocks.ToList();
-            ViewBag.Inventory = stocks.Count > 0 ? stocks.Sum(x => x.TotalQuantity) : 0;
-            ViewBag.quickStocksProducts = stocks.GroupBy(x => x.ProductId).ToList().Where(x => x.Sum(y => y.TotalQuantity) <= x.First().Product.MinStockLimit).OrderBy(x => x.Sum(y => y.TotalQuantity)).Select(x => new Stock { StockId = x.First().StockId, ProductId = x.First().ProductId, Product = x.First().Product, PurchasePrice = x.First().PurchasePrice, SalePrice = x.First().SalePrice, TotalQuantity = x.Sum(y => y.TotalQuantity) }).Take(10);
-            ViewBag.AttributeSetId = db.ProductAttributeSets.ToList();
-            ViewBag.PendingOrders = db.SalesOrders.Count(t => t.Status == 1);
+            //List<Stock> stocks = db.Stocks.ToList();
+            ViewBag.Inventory = _stockService.GetTotalRemainingStock();
+            ViewBag.quickStocksProducts = _stockService.LimitedStockProducts().Take(10);
+            ViewBag.AttributeSetId = _productAttributeService.GetAllAttributeSets().ToList();
+            ViewBag.PendingOrders = _salesOrderService.GetPendingOrdersCount();
             if (User.IsInRole("Global_Manager"))
             {
                 return View("../Home/DashboardManager");
@@ -87,34 +93,31 @@ namespace WarehouseApp.Controllers
          [Roles("Global_SupAdmin", "Global_Manager")]
         public ActionResult ShopDashBoard()
         {
-            List<Notice> allNotices = db.Notices.Where(x => x.Status != 0).OrderByDescending(t => t.CreatedDate).ToList();
-            ViewBag.NewNoticesCount = allNotices.Count > 0 ? allNotices.GroupBy(t => t.CreatedDate.Date).First().ToList().Count : 0;
-            ViewBag.NewNoticesTimeAgo = allNotices.Count > 0 ? SettingsController.TimeAgo(allNotices.GroupBy(t => t.CreatedDate.Date).First().ToList().First().CreatedDate) : "No time";
+          
+            ViewBag.NewNoticesCount = _noticeService.GetCount() > 0 ? _noticeService.LastDateNoticeCount() : 0;
+            ViewBag.NewNoticesTimeAgo = _noticeService.GetCount() > 0 ? SettingsController.TimeAgo(_noticeService.LastDateOfNoticePublished()) : "No time";
 
             //Sales Related---------------------------------
 
-            List<Invoice> todaySales = db.Invoices.Include(t => t.Customer).ToList().Where(t => t.InvoiceDate.Date == DateTime.Now.Date).OrderByDescending(t => t.InvoiceDate).ToList();
-            ViewBag.todaySoldItems = todaySales.Count > 0 ? todaySales.Sum(x => x.TotalQuantity) : 0;
-            var top = db.InvoiceProducts.Where(x => x.Invoice.InvoiceDate.Year == DateTime.Now.Year && x.Invoice.InvoiceDate.Month == DateTime.Now.Month).GroupBy(x => x.ProductId).Select(x => new TopSellsMonthly { Product = x.FirstOrDefault().Product, TotalSoldQuantity = x.Sum(y => y.Quantity), TotalSoldAmount = x.Sum(y => y.TotalPrice) }).ToList().OrderByDescending(x => x.TotalSoldQuantity).Take(10);
+            ViewBag.todaySoldItems = _salesService.GetTodaysSalesAmount();
+            var top = _salesService.GetTopSalesProduct().GroupBy(x => x.ProductId).Select(x => new TopSellsMonthly { Product = x.FirstOrDefault().Product, TotalSoldQuantity = x.Sum(y => y.Quantity), TotalSoldAmount = x.Sum(y => y.TotalPrice) }).ToList().OrderByDescending(x => x.TotalSoldQuantity).Take(10);
             ViewBag.topSellingProducts = top;
-
             //Purchase related--------------------------------------
-            List<Purchase> allPurchase = db.Purchases.OrderByDescending(t => t.PurchaseDate).ToList();
+            List<Purchase> allPurchase = _purchaseService.GetAllPurchases().ToList();
             ViewBag.latestPurchasedItems = allPurchase.Count > 0 ? allPurchase.GroupBy(t => t.PurchaseDate.Date).First().ToList().Sum(x => x.TotalQuantity) : 0;
             ViewBag.latestPurchaseDate = allPurchase.Count > 0 ? allPurchase.GroupBy(t => t.PurchaseDate.Date).First().ToList().First().PurchaseDate : DateTime.Now;
 
             //Products Related------------------------------------------
             //List<Product>allProducts= db.Products.Where(t => t.Status != 0).OrderByDescending(t => t.ProductFullName).ToList();
-            ViewBag.totalProducts = db.Products.Count(t => t.Status != 0);
-
+            ViewBag.totalProducts = _productService.GetCount();
+            ViewBag.totalCustomers = _customerService.GetCount();
             //ViewBag.topSellingProducts = allProducts.ToList().OrderByDescending(x => x.InvoiceProducts.Sum(y => y.TotalQuantity)).Take(10);
 
             //Stock related---------------------------------
-            List<Stock> stocks = db.Stocks.ToList();
-            ViewBag.Inventory = stocks.Count > 0 ? stocks.Sum(x => x.TotalQuantity) : 0;
-            //ViewBag.quickStocksProducts = stocks.Where(x => x.TotalQuantity <= x.Product.MinStockLimit).OrderBy(x => x.TotalQuantity).Take(10);
-            ViewBag.quickStocksProducts = stocks.GroupBy(x => x.ProductId).ToList().Where(x => x.Sum(y => y.TotalQuantity) <= x.First().Product.MinStockLimit).OrderBy(x => x.Sum(y => y.TotalQuantity)).Select(x => new Stock { StockId = x.First().StockId, ProductId = x.First().ProductId, Product = x.First().Product, PurchasePrice = x.First().PurchasePrice, SalePrice = x.First().SalePrice, TotalQuantity = x.Sum(y => y.TotalQuantity) }).Take(10);
-             ViewBag.AttributeSetId = db.ProductAttributeSets.OrderBy(x => x.AttributeSetName).ToList();
+            ViewBag.Inventory = _stockService.GetTotalRemainingStock();
+            ViewBag.quickStocksProducts = _stockService.LimitedStockProducts().Take(10);
+            ViewBag.AttributeSetId = _productAttributeService.GetAllAttributeSets().ToList();
+            ViewBag.PendingOrders = _salesOrderService.GetPendingOrdersCount();
             return View("../Home/DashboardShopAdmin");
 
         } 
@@ -147,7 +150,7 @@ namespace WarehouseApp.Controllers
             List<string> ykeys = new List<string>();
             List<string> labels = new List<string>();
 
-            var sales = db.Invoices.ToList().Where(g => g.InvoiceDate.Year == DateTime.Now.Year && g.InvoiceDate.Month == DateTime.Now.Month).GroupBy(g => g.InvoiceDate.Day).Select(g => new { year = g.FirstOrDefault().InvoiceDate.Year, month = g.FirstOrDefault().InvoiceDate.Month, day = g.FirstOrDefault().InvoiceDate.Day, saleAmount = g.Sum(x => ((x.TotalPrice - BankAccountController.DiscountCalculator(x.DiscountAmount, x.DiscountType, x.TotalPrice).DiscountValue) + x.TotalVat)) });
+            var sales =_salesService.GetAllSalesByCurrentMonth().GroupBy(g => g.InvoiceDate.Day).Select(g => new { year = g.FirstOrDefault().InvoiceDate.Year, month = g.FirstOrDefault().InvoiceDate.Month, day = g.FirstOrDefault().InvoiceDate.Day, saleAmount = g.Sum(x => ((x.TotalPrice - BankAccountController.DiscountCalculator(x.DiscountAmount, x.DiscountType, x.TotalPrice).DiscountValue) + x.TotalVat)) });
             for (int i = 1; i <= DateTime.Now.Day; i++)
             {
                 double currentSale = 0.0;
@@ -175,8 +178,8 @@ namespace WarehouseApp.Controllers
             List<string> ykeys = new List<string>();
             List<string> labels = new List<string>();
 
-            var sales = db.Invoices.ToList().Where(g => g.InvoiceDate.Year == DateTime.Now.Year).GroupBy(g => g.InvoiceDate.Month).Select(g => new { year = g.FirstOrDefault().InvoiceDate.Year, month = g.FirstOrDefault().InvoiceDate.Month, saleAmount = g.Sum(x => ((x.TotalPrice - BankAccountController.DiscountCalculator(x.DiscountAmount, x.DiscountType, x.TotalPrice).DiscountValue) + x.TotalVat)) });
-            var purchase = db.Purchases.ToList().Where(g => g.PurchaseDate.Year == DateTime.Now.Year).GroupBy(g => g.PurchaseDate.Month).Select(g => new { year = g.FirstOrDefault().PurchaseDate.Year, month = g.FirstOrDefault().PurchaseDate.Month, purchaseAmount = g.Sum(x => x.TotalPrice), purchaseCost = g.Sum(x => x.PurchaseCosts.Sum(a => a.Amount)) });
+            var sales =_salesService.GetAllSalesByCurrentYear().GroupBy(g => g.InvoiceDate.Month).Select(g => new { year = g.FirstOrDefault().InvoiceDate.Year, month = g.FirstOrDefault().InvoiceDate.Month, saleAmount = g.Sum(x => ((x.TotalPrice - BankAccountController.DiscountCalculator(x.DiscountAmount, x.DiscountType, x.TotalPrice).DiscountValue) + x.TotalVat)) });
+            var purchase = _purchaseService.GetAllPurchasesByCurrentYear().GroupBy(g => g.PurchaseDate.Month).Select(g => new { year = g.FirstOrDefault().PurchaseDate.Year, month = g.FirstOrDefault().PurchaseDate.Month, purchaseAmount = g.Sum(x => x.TotalPrice), purchaseCost = g.Sum(x => x.PurchaseCosts.Sum(a => a.Amount)) });
             for (int i = 1; i <= DateTime.Now.Month; i++)
             {
                 double currentSale = 0.0;
@@ -211,8 +214,8 @@ namespace WarehouseApp.Controllers
             char xkey = 'y';
             List<string> ykeys = new List<string>();
             List<string> labels = new List<string>();
-            var sales = db.Invoices.ToList().GroupBy(g => g.InvoiceDate.Year).Select(g => new { year = g.FirstOrDefault().InvoiceDate.Year, saleAmount = g.Sum(x => ((x.TotalPrice - BankAccountController.DiscountCalculator(x.DiscountAmount, x.DiscountType, x.TotalPrice).DiscountValue) + x.TotalVat)) });
-            var purchase = db.Purchases.ToList().GroupBy(g => g.PurchaseDate.Year).Select(g => new { year = g.FirstOrDefault().PurchaseDate.Year, purchaseAmount = g.Sum(x => x.TotalPrice), purchaseCost = g.Sum(x => x.PurchaseCosts.Sum(a => a.Amount)) });
+            var sales = _salesService.GetAllSales().ToList().GroupBy(g => g.InvoiceDate.Year).Select(g => new { year = g.FirstOrDefault().InvoiceDate.Year, saleAmount = g.Sum(x => ((x.TotalPrice - BankAccountController.DiscountCalculator(x.DiscountAmount, x.DiscountType, x.TotalPrice).DiscountValue) + x.TotalVat)) });
+            var purchase = _purchaseService.GetAllPurchases().ToList().GroupBy(g => g.PurchaseDate.Year).Select(g => new { year = g.FirstOrDefault().PurchaseDate.Year, purchaseAmount = g.Sum(x => x.TotalPrice), purchaseCost = g.Sum(x => x.PurchaseCosts.Sum(a => a.Amount)) });
             var years = ProjectGlobalProperties.DeploymentYear;
 
             for (int i = years; i <= DateTime.Now.Year; i++)
@@ -248,7 +251,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _stockService.Dispose();
             }
             base.Dispose(disposing);
         }

@@ -83,9 +83,17 @@ namespace EBSM.Services
         public bool IsBarcodeExist(string Barcode, string InitialBarcode)
         {
            return  _stockUnitOfWork.StockRepository.IsBarcodeExist(Barcode, InitialBarcode);
+        }public double GetTotalRemainingStock()
+        {
+           return  _stockUnitOfWork.StockRepository.GetTotalRemainingStock();
         }
-
-        //Stock Warehouse Relation=================
+        public IEnumerable<Stock> LimitedStockProducts()
+        {return _stockUnitOfWork.StockRepository.LimitedStockProducts(); }
+            //Stock Warehouse Relation=================
+            public IEnumerable<StockWarehouseRelation> GetStockWarehouseRelationByStockId(int stockId)
+        {
+            return _stockUnitOfWork.StockWarehouseRelationRepository.GetStockWarehouseRelationByStockId(stockId);
+        }
         public StockWarehouseRelation GetStockWarehouseRelation(int stockId, int zoneId)
         {
             return _stockUnitOfWork.StockWarehouseRelationRepository.GetStockWarehouseRelation(stockId, zoneId);

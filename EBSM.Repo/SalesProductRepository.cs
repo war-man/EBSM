@@ -56,14 +56,16 @@ namespace EBSM.Repo
         //{
         //    return db.Invoices.Count();
         //}
-        //public IEnumerable<Invoice> GetAll(int? CustomerId, string InvoiceNo, string InvoiceDateFrom, string InvoiceDateTo,string TransactionMode,int? SalesmanId)
-        //{
-        //    var fromDate = string.IsNullOrEmpty(InvoiceDateFrom) ? DateTime.Now.Date : Convert.ToDateTime(InvoiceDateFrom);
-        //    var toDate = string.IsNullOrEmpty(InvoiceDateTo) ? DateTime.Now.Date : Convert.ToDateTime(InvoiceDateTo).AddDays(1);
-        //    return db.Invoices.Where(x => (TransactionMode == null || x.TransactionMode.Equals(TransactionMode)) && (InvoiceNo == null || x.InvoiceNumber.StartsWith(InvoiceNo))
-        //       && (InvoiceDateFrom == null || x.InvoiceDate >= fromDate) && (InvoiceDateTo == null || x.InvoiceDate < toDate)
-        //        && (CustomerId == null || x.CustomerId == CustomerId) && (SalesmanId == null || x.SalesmanId == SalesmanId)).Include(o => o.Salesman).OrderByDescending(o => o.InvoiceDate).ThenByDescending(o => o.CreatedDate);
-        //}
+        public IEnumerable<InvoiceProduct> GetAll(string fromDate2, string toDate2, int? SelectedProductId)
+        {
+            var fromDate = string.IsNullOrEmpty(fromDate2) ? DateTime.Now.Date : Convert.ToDateTime(fromDate2);
+            var toDate = string.IsNullOrEmpty(toDate2) ? DateTime.Now.Date : Convert.ToDateTime(toDate2).AddDays(1);
+            return db.InvoiceProducts.Where(x => (fromDate2 == null||x.ProductId == SelectedProductId) && (fromDate2 == null || x.Invoice.InvoiceDate >= fromDate) && (toDate2 == null || x.Invoice.InvoiceDate < toDate)).OrderByDescending(x => x.Invoice.InvoiceDate);
+        }
+        public IEnumerable<InvoiceProduct> GetAllByMonth(DateTime date)
+        {
+            return db.InvoiceProducts.Where(x => x.Invoice.InvoiceDate.Year == date.Year && x.Invoice.InvoiceDate.Month == date.Month);
+        }
 
 
     }

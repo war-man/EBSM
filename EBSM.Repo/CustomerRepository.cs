@@ -43,6 +43,6 @@ namespace EBSM.Repo
         {
             return db.Customers.Where(p => (p.FullName.StartsWith(term) || p.FullName.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.FullName);
         }
-
+        public int GetCount() { return db.Customers.Count(t => t.Status != 0); }
     }
 }

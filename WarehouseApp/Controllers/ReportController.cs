@@ -22,14 +22,20 @@ using NPOI.XSSF.UserModel;
 using PagedList;
 using Microsoft.Owin.Security.Provider;
 using WarehouseApp.Models;
-
+using EBSM.Entities;
+using EBSM.Services;
 
 namespace WarehouseApp.Controllers
 {
     //================================Shop reporting Controller=====================================================================
     public class ShopReportController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private SalesService _salesService = new SalesService();
+        private CompanyProfileService _companyProfileService = new CompanyProfileService();
+        private SupplierService _supplierService = new SupplierService();
+        private PurchaseService _purchaseService = new PurchaseService();
+        private ProductService _productService = new ProductService();
+        private TransactionService _transactionService = new TransactionService();
         [Roles("Global_SupAdmin,Report_View")]
         public ActionResult SalesReport()
         {
@@ -50,7 +56,7 @@ namespace WarehouseApp.Controllers
             //   && (model.PurchaseDateFrom == null || x.InvoiceDate >= fromDate) && (model.PurchaseDateTo == null || x.InvoiceDate <= toDate)
             //    && (model.SalesmanId == null || x.SalesmanId == model.SalesmanId)).Include(o => o.Salesman).OrderByDescending(o => o.InvoiceDate).ThenByDescending(o => o.CreatedDate);
 
-            var sales = db.Invoices.Include(x => x.Salesman).OrderByDescending(a => a.InvoiceDate).ThenByDescending(o => o.CreatedDate);
+            var sales =_salesService.GetAllSales().AsQueryable();
             if (!String.IsNullOrEmpty(date.ToString()))
             {
                 var selectedDate = Convert.ToDateTime(date);
@@ -58,7 +64,7 @@ namespace WarehouseApp.Controllers
             }
             TempData["SalesReportByDate"] = sales.ToList();
 
-            ViewBag.CompanyInfo = db.CompanyProfiles.FirstOrDefault();
+            ViewBag.CompanyInfo = _companyProfileService.GetComapnyProfile();
             return View("../Report/Shop/SalesReportByDate", sales);
         }
 
@@ -69,7 +75,7 @@ namespace WarehouseApp.Controllers
 
             ViewBag.currentFrom = Convert.ToDateTime(fromDate);
             ViewBag.currentTo = Convert.ToDateTime(toDate);
-            var sales = db.Invoices.Include(x => x.Salesman).OrderByDescending(a => a.InvoiceDate).ThenByDescending(o => o.CreatedDate);
+            var sales = _salesService.GetAllSales().AsQueryable();
             if (!String.IsNullOrEmpty(fromDate.ToString()) && !String.IsNullOrEmpty(toDate.ToString()))
             {
                 var dateFrom = Convert.ToDateTime(fromDate);
@@ -79,7 +85,7 @@ namespace WarehouseApp.Controllers
             }
             TempData["SalesReportByDateRange"] = sales.ToList();
 
-            ViewBag.CompanyInfo = db.CompanyProfiles.FirstOrDefault();
+            ViewBag.CompanyInfo = _companyProfileService.GetComapnyProfile();
             return View("../Report/Shop/SalesReportByDateRange", sales);
         }
 
@@ -91,26 +97,25 @@ namespace WarehouseApp.Controllers
             if (SelectedProductId != null)
             //if (product != null)
             {
-                ViewBag.currentFrom = Convert.ToDateTime(fromDate2);
-                ViewBag.currentTo = Convert.ToDateTime(toDate2);
-                 var invoiceProducts = db.InvoiceProducts.ToList().Where(x => (x.ProductId == SelectedProductId) && (fromDate2 == null || x.Invoice.InvoiceDate >= Convert.ToDateTime(fromDate2)) && (toDate2 == null || x.Invoice.InvoiceDate <= Convert.ToDateTime(toDate2))).OrderByDescending(x => x.Invoice.InvoiceDate).ToList();
+           
+                var invoiceProducts =_salesService.GetAllInvoiceProducts(fromDate2, toDate2, SelectedProductId);
 
                 //var invoiceProducts = db.InvoiceProducts.ToList().Where(x =>  (x.Product.ProductFullName.ToLower().StartsWith(product.ToLower()) || x.Product.ProductFullName.ToLower().Contains(" " + product.ToLower())) && (fromDate2 == null || x.Invoice.InvoiceDate >= Convert.ToDateTime(fromDate2)) && (toDate2 == null || x.Invoice.InvoiceDate <= Convert.ToDateTime(toDate2))).OrderByDescending(x => x.Invoice.InvoiceDate).ToList();
                 TempData["SalesProductReportByDateRange"] = invoiceProducts;
-                ViewBag.CompanyInfo = db.CompanyProfiles.FirstOrDefault();
+                ViewBag.CompanyInfo = _companyProfileService.GetComapnyProfile();
                 return View("../Report/Shop/SalesProductReportByDateRange", invoiceProducts);
             }
 
             ViewBag.ProductIdNullError = "Please Select Product.";
             return View("../Report/Shop/SalesReport");
         }
-         [Roles("Global_SupAdmin,Report_View")]
+        [Roles("Global_SupAdmin,Report_View")]
         public ActionResult PurchaseReport()
         {
             ViewBag.ControllerName = "ShopReport";
             ViewBag.FormHeading = "Purchase Report";
             ViewBag.ProductIdNullError = "";
-            ViewBag.SupplierId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 1).OrderBy(x => x.SupplierName), "SupplierId", "SupplierName");
+            ViewBag.SupplierId = new SelectList(_supplierService.GetAllDistributor(), "SupplierId", "SupplierName");
             return View("../Report/Shop/PurchaseReport");
         }
 
@@ -124,7 +129,7 @@ namespace WarehouseApp.Controllers
             //   && (model.PurchaseDateFrom == null || x.InvoiceDate >= fromDate) && (model.PurchaseDateTo == null || x.InvoiceDate <= toDate)
             //    && (model.SalesmanId == null || x.SalesmanId == model.SalesmanId)).Include(o => o.Salesman).OrderByDescending(o => o.InvoiceDate).ThenByDescending(o => o.CreatedDate);
             ViewBag.SupplierName = "";
-            var purchases = db.Purchases.Include(x => x.Supplier).OrderByDescending(a => a.PurchaseDate).ThenByDescending(o => o.CreatedDate);
+            var purchases = _purchaseService.GetAllPurchases().AsQueryable();
             if (!String.IsNullOrEmpty(date.ToString()))
             {
                 var selectedDate = Convert.ToDateTime(date);
@@ -134,11 +139,11 @@ namespace WarehouseApp.Controllers
             {
 
                 purchases = (IOrderedQueryable<Purchase>)purchases.Where(x => x.SupplierId == SupplierId);
-                ViewBag.SupplierName = db.Suppliers.FirstOrDefault(x => x.SupplierId == SupplierId).SupplierName;
+                ViewBag.SupplierName =_supplierService.GetSupplierById(SupplierId.Value).SupplierName;
             }
             TempData["PurchaseReportByDate"] = purchases.ToList();
 
-            ViewBag.CompanyInfo = db.CompanyProfiles.FirstOrDefault();
+            ViewBag.CompanyInfo =_companyProfileService.GetComapnyProfile();
             return View("../Report/Shop/PurchaseReportByDate", purchases);
         }
 
@@ -150,7 +155,7 @@ namespace WarehouseApp.Controllers
             ViewBag.currentFrom = Convert.ToDateTime(fromDate);
             ViewBag.currentTo = Convert.ToDateTime(toDate);
             ViewBag.SupplierName = "";
-            var purchases = db.Purchases.Include(x => x.Supplier).OrderByDescending(a => a.PurchaseDate).ThenByDescending(o => o.CreatedDate);
+            var purchases = _purchaseService.GetAllPurchases().AsQueryable();
             if (!String.IsNullOrEmpty(fromDate.ToString()) && !String.IsNullOrEmpty(toDate.ToString()))
             {
                 var dateFrom = Convert.ToDateTime(fromDate);
@@ -162,12 +167,12 @@ namespace WarehouseApp.Controllers
             {
 
                 purchases = (IOrderedQueryable<Purchase>)purchases.Where(x => x.SupplierId == SupplierId);
-                ViewBag.SupplierName = db.Suppliers.FirstOrDefault(x => x.SupplierId == SupplierId).SupplierName;
+                ViewBag.SupplierName = _supplierService.GetSupplierById(SupplierId.Value).SupplierName;
             }
             var purlist = purchases.ToList();
             TempData["PurchaseReportByDateRange"] = purlist;
 
-            ViewBag.CompanyInfo = db.CompanyProfiles.FirstOrDefault();
+            ViewBag.CompanyInfo = _companyProfileService.GetComapnyProfile();
             return View("../Report/Shop/PurchaseReportByDateRange", purchases);
         }
 
@@ -181,15 +186,15 @@ namespace WarehouseApp.Controllers
             {
                 ViewBag.currentFrom = Convert.ToDateTime(fromDate2);
                 ViewBag.currentTo = Convert.ToDateTime(toDate2);
-               // var purchaseProducts = db.PurchaseProducts.ToList().Where(x => (x.ProductId == SelectedProductId) && (fromDate2 == null || x.Purchase.PurchaseDate >= Convert.ToDateTime(fromDate2)) && (toDate2 == null || x.Purchase.PurchaseDate <= Convert.ToDateTime(toDate2))).OrderByDescending(x => x.Purchase.PurchaseDate).ToList();
-                var purchaseProducts = db.PurchaseProducts.ToList().Where(x => (x.Product.ProductFullName.ToLower().StartsWith(product.ToLower()) || x.Product.ProductFullName.ToLower().Contains(" " + product.ToLower())) && (fromDate2 == null || x.Purchase.PurchaseDate >= Convert.ToDateTime(fromDate2)) && (toDate2 == null || x.Purchase.PurchaseDate <= Convert.ToDateTime(toDate2))).OrderByDescending(x => x.Purchase.PurchaseDate).ToList();
+                // var purchaseProducts = db.PurchaseProducts.ToList().Where(x => (x.ProductId == SelectedProductId) && (fromDate2 == null || x.Purchase.PurchaseDate >= Convert.ToDateTime(fromDate2)) && (toDate2 == null || x.Purchase.PurchaseDate <= Convert.ToDateTime(toDate2))).OrderByDescending(x => x.Purchase.PurchaseDate).ToList();
+                var purchaseProducts =_purchaseService.GetAllPurchaseProducts( fromDate2,  toDate2,  product).ToList();
                 TempData["PurchaseProductReportByDateRange"] = purchaseProducts;
-                ViewBag.CompanyInfo = db.CompanyProfiles.FirstOrDefault();
+                ViewBag.CompanyInfo = _companyProfileService.GetComapnyProfile();
                 return View("../Report/Shop/PurchaseProductReportByDateRange", purchaseProducts);
             }
 
             ViewBag.ProductIdNullError = "Please Select Product.";
-            ViewBag.SupplierId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 1).OrderBy(x => x.SupplierName), "SupplierId", "SupplierName");
+            ViewBag.SupplierId = new SelectList(_supplierService.GetAllDistributor(), "SupplierId", "SupplierName");
             return View("../Report/Shop/PurchaseReport");
         }
         public ActionResult ExpiryRange()
@@ -208,7 +213,7 @@ namespace WarehouseApp.Controllers
             //   && (model.PurchaseDateFrom == null || x.InvoiceDate >= fromDate) && (model.PurchaseDateTo == null || x.InvoiceDate <= toDate)
             //    && (model.SalesmanId == null || x.SalesmanId == model.SalesmanId)).Include(o => o.Salesman).OrderByDescending(o => o.InvoiceDate).ThenByDescending(o => o.CreatedDate);
 
-            var products = db.Products.Where(x => x.Status != 0 && x.ExpiryDate != null).OrderBy(a => a.ExpiryDate);
+            var products = _productService.GetAllNotExpiredProducts();
             if (!String.IsNullOrEmpty(date.ToString()))
             {
                 var selectedDate = Convert.ToDateTime(date);
@@ -216,10 +221,10 @@ namespace WarehouseApp.Controllers
             }
             TempData["ExpiryWithinReportByDate"] = products.ToList();
 
-            ViewBag.CompanyInfo = db.CompanyProfiles.FirstOrDefault();
+            ViewBag.CompanyInfo = _companyProfileService.GetComapnyProfile();
             return View("../Report/Shop/ExpiryWithinReportByDate", products);
         }
-         [Roles("Global_SupAdmin,Report_View")]
+        [Roles("Global_SupAdmin,Report_View")]
         public ActionResult DepositWithdrawReport()
         {
             ViewBag.ControllerName = "ShopReport";
@@ -236,13 +241,12 @@ namespace WarehouseApp.Controllers
 
             ViewBag.currentFrom = Convert.ToDateTime(fromDate);
             ViewBag.currentTo = Convert.ToDateTime(toDate);
-            var transactions = db.Transactions.ToList().Where(x => (x.TableName == "Cash" || x.TableName == "BankAccounts" || x.TableName == "MobileBangking") && (TransactionType == null || x.TypeOfTransaction == TransactionType) && (fromDate == null || x.TransactionDate.Date >= Convert.ToDateTime(fromDate).Date) && (toDate == null || x.TransactionDate.Date <= Convert.ToDateTime(toDate).Date)
-                && (String.IsNullOrEmpty(TransactionMode) || x.TransactionMode == TransactionMode)).OrderByDescending(x => x.CreatedDate).ToList();
+            var transactions = _transactionService.GetAllTransactions( fromDate,  toDate,  TransactionType,  TransactionMode).ToList();
 
             TempData["DepositWithdrawReportByDateRange"] = transactions.ToList();
 
             ViewBag.TransacionType = TransactionType;
-            ViewBag.CompanyInfo = db.CompanyProfiles.FirstOrDefault();
+            ViewBag.CompanyInfo = _companyProfileService.GetComapnyProfile();
             return View("../Report/Shop/DepositWithdrawReportByDateRange", transactions);
         }
     }
@@ -250,8 +254,8 @@ namespace WarehouseApp.Controllers
     //================================Controller for exporting=====================================================================
     public class ExportController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
-
+        // private WmsDbContext db = new WmsDbContext();
+        private ProductService _productService = new ProductService();
         public void ExportDailySalesReport()
         {
 
@@ -382,11 +386,11 @@ namespace WarehouseApp.Controllers
             dt.Columns.Add("Minimum Stock Warning", typeof(double));
 
             DateTime createdDate = Convert.ToDateTime("9/04/2017");
-            List<Product> products = db.Products.OrderBy(x => x.ProductName).ToList();
+            List<Product> products = _productService.GetActiveProducts().ToList();
             foreach (var item in products)
             {
-                var prAtt = db.ProductAttributeRelations.Where(x => x.ProductId == item.ProductId).ToList();
-                var prCat = db.ProductCategories.Where(x => x.ProductId == item.ProductId).ToList();
+                var prAtt = _productService.GetAllAttributeByProductId(item.ProductId).ToList();
+                var prCat = _productService.GetAllCategoriesByProductId(item.ProductId).ToList();
                 dt.Rows.Add(String.IsNullOrEmpty(item.ProductCode) ? "" : item.ProductCode, String.IsNullOrEmpty(item.ProductName) ? "" : item.ProductName, prAtt.Count > 0 ? prAtt.First().Value : "", item.Group != null ? item.Group.GroupName : "", prCat.Count > 0 ? prCat.First().Category.CategoryName : "", item.Supplier != null ? item.Supplier.SupplierName : "", item.Tp != null ? item.Tp : 0, item.Dp != null ? item.Dp : 0, item.MinStockLimit != null ? item.MinStockLimit : 0);
             }
             //Export export = new Export();
@@ -460,7 +464,7 @@ namespace WarehouseApp.Controllers
     }
 }
 
-//=======================================================================================//
-//Author : Md. Mahid Choudhury
-//Creation Date : January 2017
-//=======================================================================================//
+////=======================================================================================//
+////Author : Md. Mahid Choudhury
+////Creation Date : January 2017
+////=======================================================================================//

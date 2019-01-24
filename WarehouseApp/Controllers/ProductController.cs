@@ -43,6 +43,8 @@ namespace WarehouseApp.Controllers
       
             model.Products = products.ToPagedList(model.Page, model.PageSize);
             ViewBag.AttributeSetId = _productAttributeService.GetAllAttributeSets().ToList();
+            ViewBag.MedicineAttributeSetExist = _productAttributeService.IsAttributeSetNameExist("medicine");
+       
             return View("../Shop/Product/Index",model);
         }
 
@@ -328,6 +330,7 @@ namespace WarehouseApp.Controllers
             ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers().Where(x => x.Status != 0), "CustomerId", "FullName");
             ViewBag.Customers = _customerService.GetAllCustomers().Where(x => x.Status != 0).ToList();
 
+            ViewBag.AllAttributesOfThisProduct = _productService.GetAllAttributeByProductId(productId.Value).Select(x => new ProductAttributeRelation{ Attribute = x.Attribute, Value = x.Value }).ToList();
             return View("../Shop/Product/EditProduct", productModel);
         }
 

@@ -1,5 +1,5 @@
 ﻿
-@using WarehouseApp.Models
+@using EBSM.Entities
 @model WarehouseApp.Models.ViewModels.InvoiceViewModel
 
 @{
@@ -16,8 +16,8 @@
 @using (Html.BeginForm("SaveSalesOrder", "SalesOrder", null, FormMethod.Post, new { @id = "createInvoiceForm" }))
 {
     @Html.AntiForgeryToken()
-     
-        <div class="row">
+
+    <div class="row">
         <div class="col-md-12 col-xs-12">
             <div class="x_panel">
                 <div class="x_title">
@@ -44,7 +44,7 @@
                 <div class="x_content">
                     @Html.ValidationSummary(true)
                     <div class="col-md-3 paddingReduce">
-                   
+
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Item Search</h3>
@@ -53,9 +53,9 @@
                                 <div class="form-horizontal">
                                     <div class="form-group">
                                         @Html.TextBox("ProductBarCode", null, new { @class = "form-control", placeholder = "Scan Bar Code" })
-                                   
+
                                         @Html.TextBox("ProductName", null, new { @class = "form-control", placeholder = "Product Name" })
-                                    
+
                                         @Html.TextBox("ProductCode", null, new { @class = "form-control", placeholder = "Product Code" })
                                     </div>
                                     @*<input type="button" id="checkBarcode" value="check">*@
@@ -97,16 +97,14 @@
                                         <th></th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                       
-                                </tbody>
+                                <tbody></tbody>
                                 <tfoot>
                                     <tr>
                                         <td colspan="5" style="text-align:center; font:bold 20px bold;color:black;">Total: <span id="footerTotal">0</span></td>
                                     </tr>
                                 </tfoot>
                             </table>
-                         
+
                         </div>
                     </div>
                     <div class="col-md-2 paddingReduce">
@@ -117,9 +115,9 @@
                             <div class="panel-body">
                                 <div class="row form-group">
                                     @*<div class="col-md-12 paddingReduce">
-                                        @Html.LabelFor(model => model.InvoiceNumber, new { @class = "required-label control-label col-md-12" })
-                                        @Html.TextBoxFor(model => model.InvoiceNumber, new { @class = "form-control", @disabled = true, @Value = ViewBag.InvoiceNumber })
-                                    </div>*@ 
+                                            @Html.LabelFor(model => model.InvoiceNumber, new { @class = "required-label control-label col-md-12" })
+                                            @Html.TextBoxFor(model => model.InvoiceNumber, new { @class = "form-control", @disabled = true, @Value = ViewBag.InvoiceNumber })
+                                        </div>*@
                                     <div class="col-md-12 paddingReduce">
                                         @Html.LabelFor(model => model.InvoiceDate, "Date", new { @class = "required-label control-label col-md-12 salesLabel" })
                                         <div class="col-md-12 paddingReduce input-group " style="padding-left:5px">
@@ -130,31 +128,31 @@
                                     <div class="col-md-12 paddingReduce">
                                         @Html.LabelFor(model => model.TotalPrice, new { @class = "required-label control-label col-md-12 salesLabel" })
                                         @Html.TextBoxFor(model => model.TotalPrice, new { @class = "form-control", @style = "font-weight:bold;color:Black;font-size:15px;text-align:center;", @readonly = true, })
-                                    </div>  
+                                    </div>
                                     <div class="col-md-12 paddingReduce">
-                                                @Html.LabelFor(model => model.DiscountAmount, "Discount", new { @class = " control-label col-md-12 salesLabel" })
-                                              
-                                                @Html.TextBoxFor(model => model.DiscountAmount, new { @class = "form-control", @Value = 0 })
+                                        @Html.LabelFor(model => model.DiscountAmount, "Discount", new { @class = " control-label col-md-12 salesLabel" })
 
-                                                    
-                                                <div class="col-md-12 paddingReduce">
-                                                    <div class="radio radio-inline" style="padding-left: 15px;">
-                                                            <label>@Html.RadioButtonFor(model => model.DiscountType, "Flat",new{@checked=true}) Flat</label>
-                                                    </div>
-                                                    <div class="radio radio-inline" style="padding-left: 5px;">
-                                                        <label> @Html.RadioButtonFor(model => model.DiscountType, "Percent") Percent</label>
-                                                    </div>
-                                                </div>
-                                            </div>  
+                                        @Html.TextBoxFor(model => model.DiscountAmount, new { @class = "form-control", @Value = 0 })
+
+
+                                        <div class="col-md-12 paddingReduce">
+                                            <div class="radio radio-inline" style="padding-left: 15px;">
+                                                <label>@Html.RadioButtonFor(model => model.DiscountType, "Flat", new { @checked = true }) Flat</label>
+                                            </div>
+                                            <div class="radio radio-inline" style="padding-left: 5px;">
+                                                <label> @Html.RadioButtonFor(model => model.DiscountType, "Percent") Percent</label>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="col-md-12 paddingReduce">
-                                                        @Html.LabelFor(model => model.TotalVat, "VAT", new { @class = " control-label col-md-12 salesLabel" })
-                                                        @Html.TextBoxFor(model => model.TotalVat, new { @class = "form-control", @readonly = true, @Value = 0 })
-                                                
-                                    </div> 
-                                     <div class="col-md-12 paddingReduce">
-                                                                @Html.Label("Grand Total", new { @class = "required-label control-label col-md-12 salesLabel" })
-                                                                @Html.TextBox("grandTotal", null, new { @class = "form-control", @style = "font-weight:bold;color:Black;font-size:15px;text-align:center;", @readonly = true, })
-                                     </div>  
+                                        @Html.LabelFor(model => model.TotalVat, "VAT", new { @class = " control-label col-md-12 salesLabel" })
+                                        @Html.TextBoxFor(model => model.TotalVat, new { @class = "form-control", @readonly = true, @Value = 0 })
+
+                                    </div>
+                                    <div class="col-md-12 paddingReduce">
+                                        @Html.Label("Grand Total", new { @class = "required-label control-label col-md-12 salesLabel" })
+                                        @Html.TextBox("grandTotal", null, new { @class = "form-control", @style = "font-weight:bold;color:Black;font-size:15px;text-align:center;", @readonly = true, })
+                                    </div>
                                     <div class="transactionSection hidden">
                                         <div class="col-md-12 paddingReduce">
                                             @Html.LabelFor(model => model.TransactionMode, new { @class = "required-label control-label col-md-12 salesLabel" })
@@ -186,37 +184,40 @@
                                         </div>
                                     </div>
                                 </div>
-                                  
+
                                 <div class="row form-group">
-                                    @Html.HiddenFor(model=>model.FormSubmitType,1)
+                                    @Html.HiddenFor(model => model.FormSubmitType, 1)
                                     <button type="button" class="btn btn-block btn-primary" data-id=1 title="Save Sales Order Only" id="saveSales"><i class="fa fa-save"></i> Save Order Only</button>
                                 </div>
                                 @*<div class="row form-group">
-                                    <button type="button" class="btn btn-block  btn-primary" data-id=2 title="Save & Print" id="savePrintSales"><i class="fa fa-print"></i> Save & Print</button>
-                                </div>*@
+                                        <button type="button" class="btn btn-block  btn-primary" data-id=2 title="Save & Print" id="savePrintSales"><i class="fa fa-print"></i> Save & Print</button>
+                                    </div>*@
                                 @*<div class="row form-group">
-                                    <button type="button" class="btn btn-block  btn-primary" data-id=3 title="Save & Export Order" id="savePrintChalan"><i class="fa fa-download"></i> Save & Export</button>
-                                </div>*@ 
+                                        <button type="button" class="btn btn-block  btn-primary" data-id=3 title="Save & Export Order" id="savePrintChalan"><i class="fa fa-download"></i> Save & Export</button>
+                                    </div>*@
                                 <div class="row form-group">
                                     <a href='@Url.Action("NewSalesOrder", "SalesOrder")' data-toggle="tooltip" title="Reset" id="reset" class="btn btn-block  btn-default" data-original-title="Reset"><i class="fa fa-refresh"></i> Reset</a>
                                 </div>
                                 <div class="row form-group">
                                     <a href='@Url.Action("Index", "SalesOrder")' data-toggle="tooltip" title="Cancel" id="cancel" class="btn btn-block  btn-danger" data-original-title="Cancel"><i class="fa fa-reply"></i> Cancel</a>
                                 </div>
-                                    
-                             
+
+
                             </div>
                         </div>
                     </div>
-                </div></div></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
 }
 <div class="modal" id="customerAddModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
     <div class="modal-dialog modal-sm" role="document">
 
         <div class="modal-content">
-           
+
             @{ var newCustomer = new Customer();}
-            @Html.Partial("../Customer/_SaveCustomerModalPartial",newCustomer)
+            @Html.Partial("../Customer/_SaveCustomerModalPartial", newCustomer)
         </div>
     </div>
 </div>
@@ -311,7 +312,7 @@
         });
 
 
-      
+
         $('#TransactionMode').change(function () {
             $('#TransactionModeId').empty();
             var value = $(this).val();
@@ -368,7 +369,7 @@
             } else {
                 $.alert("Please select customer", '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
             }
-          
+
 
         });
         $('#newCustomerBranchModalFormSubmit').click(function () {
@@ -383,7 +384,7 @@
                 return false;
             }
         });
-  
+
         //for save only===============================================
         $('#saveSales').on('click', function () {
             $('#FormSubmitType').val($(this).data('id'));
@@ -463,9 +464,9 @@
 
     }
 
-            </script>
-    }
-    @*//=======================================================================================//
+    </script>
+}
+@*//=======================================================================================//
     //Author : Md. Mahid Choudhury
     //Creation Date : January 2017
     //=======================================================================================//*@

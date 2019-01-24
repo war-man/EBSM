@@ -71,6 +71,15 @@ namespace EBSM.Repo
         {
             return db.Stocks.Where(p => p.Barcode.Equals(barCode)).OrderBy(p => p.Product.ProductFullName);
         }
+        public double GetTotalRemainingStock()
+        {
+            return (double)db.Stocks.Sum(x => x.TotalQuantity);
+        }
+        public IEnumerable<Stock> LimitedStockProducts()
+        {
+           var limitedStock= db.Stocks.GroupBy(x => x.ProductId).ToList().Where(x => x.Sum(y => y.TotalQuantity) <= x.First().Product.MinStockLimit).OrderBy(x => x.Sum(y => y.TotalQuantity)).Select(x => new Stock { StockId = x.First().StockId, ProductId = x.First().ProductId, Product = x.First().Product, PurchasePrice = x.First().PurchasePrice, SalePrice = x.First().SalePrice, TotalQuantity = x.Sum(y => y.TotalQuantity) });
+            return limitedStock;
+        }
         public bool IsBarcodeExist(string barcode)
         {
             return db.Stocks.Any(x => x.Barcode.ToLower() == barcode.ToLower());

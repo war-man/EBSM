@@ -29,7 +29,18 @@ namespace EBSM.Repo
         }
         public IEnumerable<Notice> GetAll()
         {
-            return db.Notices.OrderByDescending(x => x.CreatedDate);
+            return db.Notices.Where(x => x.Status != 0).OrderByDescending(x => x.CreatedDate);
+        }
+        public int GetCount()
+        {
+            return db.Notices.Count(x => x.Status != 0);
+        } public int LastDateNoticeCount()
+        {
+            return db.Notices.Where(x => x.Status != 0).GroupBy(t => t.CreatedDate.Date).First().ToList().Count;
+        }
+        public DateTime LastDateOfNoticePublished()
+        {
+            return db.Notices.Where(x => x.Status != 0).GroupBy(t => t.CreatedDate.Date).First().ToList().First().CreatedDate;
         }
         //public IEnumerable<Notice> GetAll(int? SelectedProductId, string PName, string TransferDateFrom, string TransferDateTo)
         //{

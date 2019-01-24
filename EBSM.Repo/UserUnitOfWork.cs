@@ -19,6 +19,10 @@ namespace EBSM.Repo
                 return _userRepository;
             }
         }
+        public void Save()
+        {
+            db.SaveChanges("");
+        }
         public void Save(string loggedInUserId)
         {
             db.SaveChanges(loggedInUserId);

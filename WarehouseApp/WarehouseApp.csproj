@@ -765,7 +765,6 @@
     <Content Include="Views\Shop\Invoice\EditSales.cshtml" />
     <Content Include="Views\Shop\Invoice\Index.cshtml" />
     <Content Include="Views\Shop\SalesOrder\OrderDetails.cshtml" />
-    <Content Include="Views\Shop\Invoice\NewSales%40old.cshtml" />
     <Content Include="Views\Shop\Invoice\NewSales.cshtml" />
     <Content Include="Views\Shop\ProductAttribute\AttributeSetList.cshtml" />
     <Content Include="Views\Shop\ProductAttribute\EditAttributeSet.cshtml" />
@@ -860,8 +859,12 @@
     <None Include="Project_Readme.html" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\EBSM.CommonUtility\EBSM.CommonUtility.csproj">
+      <Project>{3fda332f-d50e-41d9-8783-98f066a0ce4e}</Project>
+      <Name>EBSM.CommonUtility</Name>
+    </ProjectReference>
     <ProjectReference Include="..\EBSM.Entities\EBSM.Entities.csproj">
-      <Project>{4bec0d63-b914-42e4-a480-428512ca3914}</Project>
+      <Project>{5f679d50-9885-4890-873c-b6be8594f02d}</Project>
       <Name>EBSM.Entities</Name>
     </ProjectReference>
     <ProjectReference Include="..\EBSM.Services\EBSM.Services.csproj">

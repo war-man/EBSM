@@ -19,7 +19,10 @@ namespace EBSM.Services
             _userUnitOfWork = new UserUnitOfWork(_context);
         }
 
-        public IEnumerable<User> GetAllUsers(string SearchString)
+        public IEnumerable<User> GetAllUsers()
+        {
+            return _userUnitOfWork.UserRepository.GetAll();
+        }public IEnumerable<User> GetAllUsers(string SearchString)
         {
             return _userUnitOfWork.UserRepository.GetAll(SearchString);
         }
@@ -27,43 +30,86 @@ namespace EBSM.Services
         {
             return _userUnitOfWork.UserRepository.GetById(id);
         }
-       
-        public void SaveUser(User user, int? loggedInUserId)
+        public int SaveUser(User user)
         {
-            var newUser = new User
-            {
-                //CardNo = card.CardNo,
-                //CardAcc = card.CardAcc,
-                Status = 1,
-                CreatedBy = loggedInUserId,
-                CreatedDate = DateTime.Now,
-            };
-
-            _userUnitOfWork.UserRepository.Add(newUser);
+            _userUnitOfWork.UserRepository.Add(user);
+            _userUnitOfWork.Save();
+            return user.UserId;
+        }
+        public int SaveUser(User user, int? loggedInUserId)
+        {
+            _userUnitOfWork.UserRepository.Add(user);
             _userUnitOfWork.Save(loggedInUserId.ToString());
+            return user.UserId;
+        }
+        public void EditUser(User user)
+        {
+            _userUnitOfWork.UserRepository.Edit(user);
+            _userUnitOfWork.Save();
         }
         public void EditUser(User user, int? loggedInUserId)
         {
-            //var costcenter = GetCostCenter(costCenter.Id);
-            //costcenter.CostCenterName = costCenter.CostCenterName;
-            //costcenter.DepartmentId = costCenter.DepartmentId;
-            //costcenter.UpdatedAt = costCenter.UpdatedAt;
-            //costcenter.UpdatedBy = costCenter.UpdatedBy;
-            //_costCenterUnitOfWork.Save();
+            _userUnitOfWork.UserRepository.Edit(user);
+            _userUnitOfWork.Save(loggedInUserId.ToString());
         }
-        //public IEnumerable<User> GetAllCardNotAssignedEmployee()
-        //{
-        //    return _employeeUnitOfWork.EmployeeRepository.GetAllCardNotAssignedEmployee();
-        //}
+       
         //public void DeleteCostCenter(int id)
         //{
         //    _costCenterUnitOfWork.CostCenterRepository.DeleteById(id);
         //    _costCenterUnitOfWork.Save();
         //}
-        //public bool IsCostCenterExist(string CostCenterName, string InitialCostCenterName)
+       
+        //public IEnumerable<User> GetAllUser()
         //{
-        //    return _costCenterUnitOfWork.CostCenterRepository.IsCostCenterExist(CostCenterName, InitialCostCenterName);
+        //    return _userUnitOfWork.UserRepository.GetAll();
         //}
+
+      
+        public User GetUserByUsername(string username)
+        {
+            return _userUnitOfWork.UserRepository.GetUserByUsername(username);
+        }
+        public bool CheckUsernameIsValid(string username)
+        {
+            return _userUnitOfWork.UserRepository.CheckUsernameIsValid(username);
+        }
+        public User GetValidUserByPassword(string username, string password)
+        {
+            return _userUnitOfWork.UserRepository.GetValidUserByPassword(username, password);
+        }
+        public bool IsUserNameExist(string UserName, string InitialUserName)
+        {
+            return _userUnitOfWork.UserRepository.IsUserNameExist(UserName, InitialUserName);
+        }
+        public bool IsEmailExist(string Email, string InitialEmail)
+        {
+            return _userUnitOfWork.UserRepository.IsEmailExist(Email, InitialEmail);
+        }
+      
+            //logins record
+            public void SaveUserLoginRecord(string UserId, string SessionId, bool LoggedIn)
+        {
+            Logins login = new Logins
+            {
+                UserId = UserId.ToLower(),
+                SessionId = SessionId,
+                LoggedIn = LoggedIn,
+                LoggedInDateTime = DateTime.Now
+            };
+            _userUnitOfWork.UserRepository.SaveUserLoginRecord(login);
+            _userUnitOfWork.Save();
+        }
+        public bool IsYourLoginStillTrue(string userId, string sid)
+        {
+            return _userUnitOfWork.UserRepository.IsYourLoginStillTrue(userId, sid);
+        }
+        public bool IsUserLoggedOnElsewhere(string userId, string sid)
+        {
+            return _userUnitOfWork.UserRepository.IsUserLoggedOnElsewhere(userId, sid); }
+        public void LogEveryoneElseOut(string userId, string sid)
+        {
+            _userUnitOfWork.UserRepository.LogEveryoneElseOut(userId, sid); }
+
         public void Dispose()
         {
             _userUnitOfWork.Dispose();

@@ -29,7 +29,7 @@ namespace EBSM.Repo
         }
         public IEnumerable<Invoice> GetAll()
         {
-            return db.Invoices;
+            return db.Invoices.Include(x => x.Salesman).OrderByDescending(a => a.InvoiceDate).ThenByDescending(o => o.CreatedDate);
         }
         public IEnumerable<Invoice> GetInvoicesWithoutAnyBill(int customerId)
         {
@@ -47,7 +47,23 @@ namespace EBSM.Repo
                && (InvoiceDateFrom == null || x.InvoiceDate >= fromDate) && (InvoiceDateTo == null || x.InvoiceDate < toDate)
                 && (CustomerId == null || x.CustomerId == CustomerId) && (SalesmanId == null || x.SalesmanId == SalesmanId)).Include(o => o.Salesman).OrderByDescending(o => o.InvoiceDate).ThenByDescending(o => o.CreatedDate);
         }
-
-
+       
+        public IEnumerable<Invoice> GetAllSalesByDate(DateTime date)
+        {
+            return db.Invoices.Include(t => t.Customer).Where(t => t.InvoiceDate.Year == date.Year && t.InvoiceDate.Month == date.Month && t.InvoiceDate.Day == date.Day &&t.Status!=0).OrderByDescending(t => t.InvoiceDate);
+        }
+        public IEnumerable<Invoice> GetAllSalesByMonth(DateTime date)
+        {
+            return db.Invoices.Where(g => g.InvoiceDate.Year == date.Year && g.InvoiceDate.Month == date.Month);
+        }
+        public IEnumerable<Invoice> GetAllSalesByYear(int year)
+        {
+            return db.Invoices.Where(g => g.InvoiceDate.Year == year);
+        }
+        public double GetSalesAmountByDate(DateTime date)
+        {
+            double totalAmount= GetAllSalesByDate(date).Any() ?(double) GetAllSalesByDate(date).Sum(x => x.TotalPrice) : 0;
+            return totalAmount;
+        }
     }
 }

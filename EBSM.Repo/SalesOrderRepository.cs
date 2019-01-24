@@ -31,13 +31,21 @@ namespace EBSM.Repo
         {
             return db.SalesOrders;
         }
-        //public IEnumerable<SalesOrder> GetAll(int? SelectedProductId, string PName, string TransferDateFrom, string TransferDateTo)
-        //{
-        //    var fromDate = string.IsNullOrEmpty(TransferDateFrom) ? DateTime.Now.Date : Convert.ToDateTime(TransferDateFrom);
-        //    var toDate = string.IsNullOrEmpty(TransferDateTo) ? DateTime.Now.Date : Convert.ToDateTime(TransferDateTo).AddDays(1);
-        //    return db.ArticleTransfers.ToList().Where(x => (SelectedProductId == null || x.StockFrom.ProductId == SelectedProductId) && (PName == null || (x.StockFrom.Product.ProductFullName.StartsWith(PName) || x.StockFrom.Product.ProductFullName.Contains(" " + PName))) && (TransferDateFrom == null || x.TransferDate.Date >= fromDate) && (TransferDateTo == null || x.TransferDate.Date < toDate)).OrderByDescending(o => o.CreatedDate);
-        //} 
+        public IEnumerable<SalesOrder> GetAll(string OrderNo, string OrderDateFrom, string OrderDateTo, int? CustomerId, byte? Status)
+        {
+            var fromDate = string.IsNullOrEmpty(OrderDateFrom) ? DateTime.Now.Date : Convert.ToDateTime(OrderDateFrom);
+            var toDate = string.IsNullOrEmpty(OrderDateTo) ? DateTime.Now.Date : Convert.ToDateTime(OrderDateTo).AddDays(1);
+            return db.SalesOrders.Where(x => (OrderNo == null || x.OrderNumber.StartsWith(OrderNo))
+                && (OrderDateFrom == null || x.OrderDate >= fromDate) && (OrderDateTo == null || x.OrderDate < toDate)
+                 && (CustomerId == null || x.CustomerId == CustomerId) && (Status == null || x.Status == Status)).OrderByDescending(o => o.OrderDate).ThenByDescending(o => o.CreatedDate);
+        }
+        public int GetCount()
+        {
+            return db.SalesOrders.Count();
+        } public int GetPendingOrdersCount()
+        {
+            return db.SalesOrders.Count(t => t.Status == 1);
+        }
 
-    
     }
 }

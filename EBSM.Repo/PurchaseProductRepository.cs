@@ -30,6 +30,11 @@ namespace EBSM.Repo
         public IEnumerable<PurchaseProduct> GetAll()
         {
             return db.PurchaseProducts;
+        } public IEnumerable<PurchaseProduct> GetAll(string product,string fromDate2,string toDate2)
+        {
+            var fromDate = string.IsNullOrEmpty(fromDate2) ? DateTime.Now.Date : Convert.ToDateTime(fromDate2);
+            var toDate = string.IsNullOrEmpty(toDate2) ? DateTime.Now.Date : Convert.ToDateTime(toDate2).AddDays(1);
+            return db.PurchaseProducts.ToList().Where(x => (x.Product.ProductFullName.ToLower().StartsWith(product.ToLower()) || x.Product.ProductFullName.ToLower().Contains(" " + product.ToLower())) && (fromDate2 == null || x.Purchase.PurchaseDate >= fromDate) && (toDate2 == null || x.Purchase.PurchaseDate < toDate)).OrderByDescending(x => x.Purchase.PurchaseDate);
         }
         public IEnumerable<PurchaseProduct> GetAllByPurchaseId(int purchaseId)
         {

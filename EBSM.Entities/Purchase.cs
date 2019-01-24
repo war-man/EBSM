@@ -58,7 +58,9 @@ namespace EBSM.Entities
         public virtual ICollection<PurchaseProduct> PurchaseProducts { get; set; }
         public virtual ICollection<PurchaseCost> PurchaseCosts { get; set; }
         public virtual ICollection<PurchasePayment> PurchasePayments { get; set; }
-        
+        //public virtual ICollection<PurchaseOrderRelation> PurchaseOrderRelationCollection { get; set; }
+
+
     }
     [Table("PurchaseProducts")]
     public class PurchaseProduct
@@ -195,6 +197,21 @@ namespace EBSM.Entities
         [ForeignKey("CompanyId")]
         public virtual CompanyProfile CompanyProfile { get; set; }
     }
+    //[Table("PurchaseOrderRelation")]
+    //public class PurchaseOrderRelation
+    //{
+    //    [Key]
+    //    public int PurchaseOrderRelationId { get; set; }
+
+    //    public int PurchaseId { get; set; }
+    //    [ForeignKey("PurchaseId")]
+    //    public virtual Purchase Purchase { get; set; }
+    //    public int PurchaseOrderId { get; set; }
+    //    [ForeignKey("PurchaseOrderId")]
+    //    public virtual PurchaseOrder PurchaseOrder { get; set; }
+
+
+    //}
 }
 //=======================================================================================//
 //Author : Md. Mahid Choudhury

@@ -35,12 +35,12 @@ namespace EBSM.Services
             _salesUnitOfWork.SalesRepository.Edit(invoice);
             _salesUnitOfWork.Save(loggedInUserId.ToString());
         }
-        public IEnumerable<Invoice> GetAll()
+        public IEnumerable<Invoice> GetAllSales()
         {
             return _salesUnitOfWork.SalesRepository.GetAll();
         }
 
-        public IEnumerable<Invoice> GetAll(int? CustomerId, string InvoiceNo, string InvoiceDateFrom, string InvoiceDateTo, string TransactionMode, int? SalesmanId)
+        public IEnumerable<Invoice> GetAllSales(int? CustomerId, string InvoiceNo, string InvoiceDateFrom, string InvoiceDateTo, string TransactionMode, int? SalesmanId)
         {
             return _salesUnitOfWork.SalesRepository.GetAll(CustomerId, InvoiceNo, InvoiceDateFrom, InvoiceDateTo, TransactionMode, SalesmanId);
         }
@@ -52,9 +52,44 @@ namespace EBSM.Services
         {
             return _salesUnitOfWork.SalesRepository.GetCount();
         }
-
+        public IEnumerable<Invoice> GetAllSalesByDate(DateTime date)
+        {
+            return _salesUnitOfWork.SalesRepository.GetAllSalesByDate(date);
+        }
+        public IEnumerable<Invoice> GetAllTodaySales()
+        {
+            return _salesUnitOfWork.SalesRepository.GetAllSalesByDate(DateTime.Now);
+        }
+        public double GetSalesAmountByDate(DateTime date)
+        {
+            
+            return _salesUnitOfWork.SalesRepository.GetSalesAmountByDate(date);
+        }
+        public double GetTodaysSalesAmount()
+        {
+            return _salesUnitOfWork.SalesRepository.GetSalesAmountByDate(DateTime.Now);
+        }
+        public IEnumerable<Invoice> GetAllSalesByMonth(DateTime date)
+        {
+            return _salesUnitOfWork.SalesRepository.GetAllSalesByMonth(date);
+        }
+        public IEnumerable<Invoice> GetAllSalesByCurrentMonth()
+        {
+            return _salesUnitOfWork.SalesRepository.GetAllSalesByMonth(DateTime.Now);
+        } public IEnumerable<Invoice> GetAllSalesByYear(int year)
+        {
+            return _salesUnitOfWork.SalesRepository.GetAllSalesByYear(year);
+        }
+        public IEnumerable<Invoice> GetAllSalesByCurrentYear()
+        {
+            return _salesUnitOfWork.SalesRepository.GetAllSalesByYear(DateTime.Now.Year);
+        }
         //Invoice products
-        public InvoiceProduct GetByInvoiceAndProductId(int invoiceId, int productId)
+        public IEnumerable<InvoiceProduct> GetAllInvoiceProducts(string fromDate2, string toDate2, int? SelectedProductId)
+        {
+            return _salesUnitOfWork.SalesProductRepository.GetAll( fromDate2,  toDate2,  SelectedProductId);
+        }
+            public InvoiceProduct GetByInvoiceAndProductId(int invoiceId, int productId)
         {
             return _salesUnitOfWork.SalesProductRepository.GetByInvoiceAndProductId(invoiceId, productId);
         }
@@ -82,6 +117,14 @@ namespace EBSM.Services
         {
             _salesUnitOfWork.SalesProductRepository.DeleteFromDbByItem(item);
             _salesUnitOfWork.Save();
+        }
+        //public IEnumerable<InvoiceProduct> GetAllByDate(DateTime date)
+        //{
+        //    return _salesUnitOfWork.SalesProductRepository.GetAllByDate(date);
+        //}
+        public IEnumerable<InvoiceProduct> GetTopSalesProduct()
+        {
+            return _salesUnitOfWork.SalesProductRepository.GetAllByMonth(DateTime.Now);
         }
         public void Dispose()
         {

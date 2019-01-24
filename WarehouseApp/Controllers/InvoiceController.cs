@@ -34,7 +34,7 @@ namespace WarehouseApp.Controllers
          [OutputCache(Duration = 20)]
         public ActionResult Index(InvoiceSearchViewModel model)
         {
-            var invoices = _salesService.GetAll(model.CustomerId,model.InvoiceNo,model.InvoiceDateFrom,model.InvoiceDateTo,model.TransactionMode,model.SalesmanId);
+            var invoices = _salesService.GetAllSales(model.CustomerId,model.InvoiceNo,model.InvoiceDateFrom,model.InvoiceDateTo,model.TransactionMode,model.SalesmanId);
             model.Invoices = invoices.ToPagedList(model.Page, model.PageSize);
 
             ViewBag.SalesmanId = new SelectList(_salesmanService.GetAllSalesman(), "SalesmanId", "FullName");
@@ -869,7 +869,7 @@ namespace WarehouseApp.Controllers
 
             var order = cx.GetSalesOrderById(orderId);
             order.Status = 2;
-            cx.Edit(order, AuthenticatedUser.GetUserFromIdentity().UserId);
+            cx.EditSalesOrder(order, AuthenticatedUser.GetUserFromIdentity().UserId);
         }
         public static void RemoveInvoiceProduct(int invoiceId, int productId, double returnQty, double returnAmount)
     {

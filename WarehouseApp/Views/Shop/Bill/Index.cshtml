@@ -1,5 +1,5 @@
 ﻿@using System.Web.UI.WebControls
-@using WarehouseApp.Models
+@using EBSM.Entities;
 @using PagedList.Mvc
 @using WarehouseApp.Controllers
 @model WarehouseApp.Models.ViewModels.BillSearchViewModel
@@ -21,10 +21,10 @@
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" title="Settings" aria-expanded="false"><i class="fa fa-wrench"></i></a>
                         <ul class="dropdown-menu" role="menu">
-                           
+
                             <li><a href='@Url.Action("Index","Customer")'>Projects</a></li>
                             <li><a href='@Url.Action("Index","Invoice")'>Sales</a></li>
-                           
+
                         </ul>
                     </li>
                     <li>
@@ -34,186 +34,190 @@
                 <div class="clearfix"></div>
             </div>
             <div class="x_content">
-                        <div class="form-group">
-                            @using (Html.BeginForm("Index", "Bill", FormMethod.Post, new { @class = "", @id = "billSearchForm" }))
-                            {
-                                <div class="col-lg-2 ">
-                                    @Html.Label("Page Size", new { @class = "col-lg-8 pageSizeLabel" })
-                                    <div class="col-lg-4">
-                                        @Html.DropDownListFor(model => model.PageSize, new SelectList(new Dictionary<string, int> { { "25", 25 }, { "50", 50 }, { "100", 100 } }, "Key", "Value", null), new { @class = "pageSizeDropdown", id = "pagesizelist" })
+                <div class="form-group">
+                    @using (Html.BeginForm("Index", "Bill", FormMethod.Post, new { @class = "", @id = "billSearchForm" }))
+                    {
+                        <div class="col-lg-2 ">
+                            @Html.Label("Page Size", new { @class = "col-lg-8 pageSizeLabel" })
+                            <div class="col-lg-4">
+                                @Html.DropDownListFor(model => model.PageSize, new SelectList(new Dictionary<string, int> { { "25", 25 }, { "50", 50 }, { "100", 100 } }, "Key", "Value", null), new { @class = "pageSizeDropdown", id = "pagesizelist" })
 
-                                    </div>
-                                </div>
-                                <div class="col-lg-4 form-inline">
-                                    <div class="col-md-5 input-group " style="">
-                                        @Html.TextBoxFor(model => model.BillDateFrom, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", })
-                                        <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
-                                    </div>
-                                    <i class="fa fa-minus fa-fw"></i>
-                                    <div class="col-md-5 input-group " style="">
-                                        @Html.TextBoxFor(model => model.BillDateTo, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", })
-                                        <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
-                                    </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 form-inline">
+                            <div class="col-md-5 input-group " style="">
+                                @Html.TextBoxFor(model => model.BillDateFrom, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", })
+                                <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                            </div>
+                            <i class="fa fa-minus fa-fw"></i>
+                            <div class="col-md-5 input-group " style="">
+                                @Html.TextBoxFor(model => model.BillDateTo, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", })
+                                <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                            </div>
 
-                                </div>
-                                <div class="col-lg-2">
-                                    @Html.TextBox("BillNo", null, new { @class = "form-control input-sm", @placeholder = "Bill No" })
-                                </div>
-
-                                <div class="col-lg-3">
-                                    @Html.DropDownListFor(model => model.Customer, (SelectList)@ViewBag.CustomerDrpDownList, "Select project..", new { @class = "form-control input-sm", })
-
-                                </div>
-
-
-
-                                <div class="col-lg-1">
-                                    <button type="submit" class="btn btn-sm btn-success">
-                                        <span class="glyphicon glyphicon-search"></span>
-                                    </button>
-
-
-                                </div>
-                            }
+                        </div>
+                        <div class="col-lg-2">
+                            @Html.TextBox("BillNo", null, new { @class = "form-control input-sm", @placeholder = "Bill No" })
                         </div>
 
-            
+                        <div class="col-lg-3">
+                            @Html.DropDownListFor(model => model.Customer, (SelectList)@ViewBag.CustomerDrpDownList, "Select project..", new { @class = "form-control input-sm", })
 
-                    <table class="table table-striped table-condensed table-responsive  jambo_table">
-                        <thead>
-                            <tr>
-                                <th class="col-md-1">
-                                    @Html.DisplayNameFor(model => model.Bills.First().BillDate)
-                                </th>
-                                <th class="col-md-1">
-                                    @Html.DisplayNameFor(model => model.Bills.First().BillNo)
-                                </th>
-                                <th class="col-md-1">
-                                    @Html.DisplayNameFor(model => model.Bills.First().BillAmount)
-                                </th>
-                                <th class="col-md-3">
-                                    @Html.DisplayNameFor(model => model.Bills.First().CustomerId)
-                                </th>
+                        </div>
 
-                                <th class="col-md-2">Action</th>
-                            </tr>
-                        </thead><tbody>
-    @foreach (var item in Model.Bills)
-    {
 
-        <tr>
-            <td class="col-md-1">
-                @Html.DisplayFor(modelItem => item.BillDate)
-            </td>
-            <td class="col-md-1">
-                @Html.DisplayFor(modelItem => item.BillNo)
-            </td>
-            <td class="col-md-1">
-                @Html.DisplayFor(modelItem => item.BillAmount)
-            </td>
-            <td class="col-md-3">
-                @Html.DisplayFor(modelItem => item.Customer.FullName)
-            </td>
 
-            <td class="col-md-2">
-                @if (User.IsInRole("Global_SupAdmin") || User.IsInRole("Bill_Edit"))
-                {
-                    @Html.ActionLink(" ", "EditBill", "Bill", new {Id = item.BillId}, new {@class = "btn btn-xxs btn-primary fa fa-pencil", @title = "Edit"})
-                }
-                @Html.ActionLink(" ", "BillDetails", "Bill", new { id = item.BillId }, new { @class = "btn btn-xxs btn-info fa fa-search-plus", @title = "Details" })
+                        <div class="col-lg-1">
+                            <button type="submit" class="btn btn-sm btn-success">
+                                <span class="glyphicon glyphicon-search"></span>
+                            </button>
 
-            </td>
 
-        </tr>
-    }
-
-</tbody> </table>
-                    Page @(Model.Bills.PageCount < Model.Bills.PageNumber ? 0 : Model.Bills.PageNumber) of @Model.Bills.PageCount
-                    @Html.PagedListPager(Model.Bills, Page => Url.Action("Index", "Bill", new RouteValueDictionary() { { "Page", Page }, { "PageSize", Model.PageSize }, { "BillNo", Model.BillNo }, { "BillDateFrom", Model.BillDateFrom }, { "BillDateTo", Model.BillDateTo }, { "Customer", Model.Customer } }))
-
+                        </div>
+                    }
                 </div>
 
-            </div></div>
-            <div class="modal" id="addCustomerModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
-                <div class="modal-dialog modal-sm" role="document">
 
-                    <div class="modal-content">
-                        @using (Html.BeginForm("NewBill", "Bill", null, FormMethod.Get, new { @id = "selectCustomerForm" }))
+
+                <table class="table table-striped table-condensed table-responsive  jambo_table">
+                    <thead>
+                        <tr>
+                            <th class="col-md-1">
+                                @Html.DisplayNameFor(model => model.Bills.First().BillDate)
+                            </th>
+                            <th class="col-md-1">
+                                @Html.DisplayNameFor(model => model.Bills.First().BillNo)
+                            </th>
+                            <th class="col-md-1">
+                                @Html.DisplayNameFor(model => model.Bills.First().BillAmount)
+                            </th>
+                            <th class="col-md-3">
+                                @Html.DisplayNameFor(model => model.Bills.First().CustomerId)
+                            </th>
+
+                            <th class="col-md-2">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Bills)
                         {
-                            <div class="modal-header">
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                <h3 class="panel-title"><i class="fa fa-pencil"></i> Select Project</h3>
-                            </div>
-                            <div class="modal-body">
-                                <div class="col-xs-12 col-sm-12 col-md-12">
-                                    <div class="form-horizontal">
-                                        @Html.ValidationSummary(true)
 
-                                        <div class="form-group">
-                                            @Html.DropDownList("id", (SelectList)@ViewBag.CustomerDrpDownList, "--Select--", new { @class = "form-control input-sm chosen-select", @placeholder = "Select..." })
-                                        </div>
-                                    </div>
+                            <tr>
+                                <td class="col-md-1">
+                                    @Html.DisplayFor(modelItem => item.BillDate)
+                                </td>
+                                <td class="col-md-1">
+                                    @Html.DisplayFor(modelItem => item.BillNo)
+                                </td>
+                                <td class="col-md-1">
+                                    @Html.DisplayFor(modelItem => item.BillAmount)
+                                </td>
+                                <td class="col-md-3">
+                                    @Html.DisplayFor(modelItem => item.Customer.FullName)
+                                </td>
+
+                                <td class="col-md-2">
+                                    @if (User.IsInRole("Global_SupAdmin") || User.IsInRole("Bill_Edit"))
+                                    {
+                                        @Html.ActionLink(" ", "EditBill", "Bill", new { Id = item.BillId }, new { @class = "btn btn-xxs btn-primary fa fa-pencil", @title = "Edit" })
+                                    }
+                                    @Html.ActionLink(" ", "BillDetails", "Bill", new { id = item.BillId }, new { @class = "btn btn-xxs btn-info fa fa-search-plus", @title = "Details" })
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+                </table>
+                Page @(Model.Bills.PageCount < Model.Bills.PageNumber ? 0 : Model.Bills.PageNumber) of @Model.Bills.PageCount
+                @Html.PagedListPager(Model.Bills, Page => Url.Action("Index", "Bill", new RouteValueDictionary() { { "Page", Page }, { "PageSize", Model.PageSize }, { "BillNo", Model.BillNo }, { "BillDateFrom", Model.BillDateFrom }, { "BillDateTo", Model.BillDateTo }, { "Customer", Model.Customer } }))
+
+            </div>
+
+        </div>
+    </div>
+    <div class="modal" id="addCustomerModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
+        <div class="modal-dialog modal-sm" role="document">
+
+            <div class="modal-content">
+                @using (Html.BeginForm("NewBill", "Bill", null, FormMethod.Get, new { @id = "selectCustomerForm" }))
+                {
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h3 class="panel-title"><i class="fa fa-pencil"></i> Select Project</h3>
+                    </div>
+                    <div class="modal-body">
+                        <div class="col-xs-12 col-sm-12 col-md-12">
+                            <div class="form-horizontal">
+                                @Html.ValidationSummary(true)
+
+                                <div class="form-group">
+                                    @Html.DropDownList("id", (SelectList)@ViewBag.CustomerDrpDownList, "--Select--", new { @class = "form-control input-sm chosen-select", @placeholder = "Select..." })
                                 </div>
                             </div>
-                            <div class="modal-footer">
-                                <button type="button" id="customerSubmit" class="btn btn-primary"> Go</button>
-                                <button data-dismiss="modal" class="btn btn-default">Cancel</button>
-
-                            </div>
-                        }
+                        </div>
                     </div>
-                </div>
-            </div> </div> 
-            @section Scripts {
-                @Scripts.Render("~/bundles/chosen")
-                <script>
+                    <div class="modal-footer">
+                        <button type="button" id="customerSubmit" class="btn btn-primary"> Go</button>
+                        <button data-dismiss="modal" class="btn btn-default">Cancel</button>
 
-                    $(document).ready(function () {
-                        $('#pagesizelist').change(function () {
-                            $('#billSearchForm').submit();
-                        });
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    @Scripts.Render("~/bundles/chosen")
+    <script>
 
-                        $('.selectCustomerModal').click(function () {
-                            var rowId = $(this).data('id');
-                            $('#addCustomerModal').modal('show');
-                            if (rowId == 0) {
+        $(document).ready(function () {
+            $('#pagesizelist').change(function () {
+                $('#billSearchForm').submit();
+            });
 
-                            } else {
-                                $('#productId').val(rowId);
-                            }
-                        });
+            $('.selectCustomerModal').click(function () {
+                var rowId = $(this).data('id');
+                $('#addCustomerModal').modal('show');
+                if (rowId == 0) {
 
-                        $('#addCustomerModal').on('shown.bs.modal', function () {
-                            //$('.chosen-select', this).chosen();
-                            var config = {
-                                '.chosen-select': {},
-                                '.chosen-select-deselect': { allow_single_deselect: true },
-                                '.chosen-select-no-single': { disable_search_threshold: 10 },
-                                '.chosen-select-no-results': { no_results_text: 'Oops, nothing found!' },
-                                '.chosen-select-width': { width: "90%" }
-                            };
-                            for (var selector in config) {
-                                $('.chosen-select', this).chosen(config[selector]);
-                            }
-                            $('.modal .modal-body').css('overflow-y', 'auto');
-                            $('.modal .modal-body').css('min-height', $(window).height() * 0.5);
+                } else {
+                    $('#productId').val(rowId);
+                }
+            });
 
-                            $('#customerSubmit').click(function () {
-                                if ($('#id').val() == '') {
-                                    $.alert("Please select customer", '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
-                                } else {
-                                    $('#selectCustomerForm').submit();
-                                }
-                            });
+            $('#addCustomerModal').on('shown.bs.modal', function () {
+                //$('.chosen-select', this).chosen();
+                var config = {
+                    '.chosen-select': {},
+                    '.chosen-select-deselect': { allow_single_deselect: true },
+                    '.chosen-select-no-single': { disable_search_threshold: 10 },
+                    '.chosen-select-no-results': { no_results_text: 'Oops, nothing found!' },
+                    '.chosen-select-width': { width: "90%" }
+                };
+                for (var selector in config) {
+                    $('.chosen-select', this).chosen(config[selector]);
+                }
+                $('.modal .modal-body').css('overflow-y', 'auto');
+                $('.modal .modal-body').css('min-height', $(window).height() * 0.5);
 
-                        });
+                $('#customerSubmit').click(function () {
+                    if ($('#id').val() == '') {
+                        $.alert("Please select customer", '<i class="fa fa-exclamation-circle" aria-hidden="true"> Alert</i>');
+                    } else {
+                        $('#selectCustomerForm').submit();
+                    }
+                });
 
-                    });
+            });
+
+        });
 
 
-                </script>
-            }
-            @*//=======================================================================================//
-                //Author : Md. Mahid Choudhury
-                //Creation Date : January 2017
-                //=======================================================================================//*@
+    </script>
+}
+@*//=======================================================================================//
+    //Author : Md. Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

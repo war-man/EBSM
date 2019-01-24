@@ -1,4 +1,4 @@
-﻿@using WarehouseApp.Models
+﻿@using EBSM.Entities
 @model WarehouseApp.Models.ViewModels.PuchaseViewModel
 
 @{
@@ -16,13 +16,13 @@
 @using (Html.BeginForm("SavePurchase", "Purchase", null, FormMethod.Post, new { @id = "createPurchaseForm" }))
 {
     @Html.AntiForgeryToken()
-                 <div class="row">
+    <div class="row">
         <div class="col-md-12 col-xs-12">
             <div class="x_panel">
                 <div class="x_title">
                     <h2><i class="fa fa-pencil"></i> Stock In</h2>
                     <ul class="nav navbar-right panel_toolbox">
-                        
+
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="Settings"><i class="fa fa-wrench"></i></a>
                             <ul class="dropdown-menu" role="menu">
@@ -49,10 +49,10 @@
                             <div class="panel-body">
                                 <div class="form-horizontal">
                                     <div class="form-group">
-                                        @Html.TextBox("ProductBarCode", null, new { @class = "form-control", placeholder = "Scan Bar Code"@*@style="background-color: rgb(255, 215, 215)",@style = "background-color: rgb(191, 255, 191);"*@ })
-                                   
+                                        @Html.TextBox("ProductBarCode", null, new { @class = "form-control", placeholder = "Scan Bar Code"@*@style="background-color: rgb(255, 215, 215)",@style = "background-color: rgb(191, 255, 191);"*@})
+
                                         @Html.TextBox("ProductName", null, new { @class = "form-control", placeholder = "Product Name" })
-                                    
+
                                         @Html.TextBox("ProductCode", null, new { @class = "form-control", placeholder = "Product Code" })
                                     </div>
                                     @*<input type="button" id="checkBarcode" value="check">*@
@@ -66,34 +66,34 @@
                                 <thead style="background-color:#f5f5f5 ;color:black;">
                                     <tr class="panel-heading">
                                         <th>Item</th>
-                                        
+
                                         <th>Quantity</th>
                                         <th>Warehouse Zone</th>
-                                       
+
                                         <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @*<tr>
-                                        <td class="col-md-5 paddingReduce">
-                                            @Html.Hidden("ProductId", 1,new{@class="productId-1"})
+                                            <td class="col-md-5 paddingReduce">
+                                                @Html.Hidden("ProductId", 1,new{@class="productId-1"})
 
-                                            EMPORIO ARMANI 9852 138 [DD]
-                                        </td>
-                                       
-                                        <td class="col-md-2 paddingReduce">
-                                            <div class="col-md-12 paddingReduce input-group ">
-                                                @Html.TextBox("Quanity", null, new { @class = "form-control input-sm", @Value = 1 })
-                                                <span class="input-group-addon productUnit">Pcs</span>
-                                            </div>
-                                        </td>
-                                        <td class="col-md-2 paddingReduce">@Html.DropDownList("ZoneId", null,"--Select--", new { @class = "form-control input-sm "})</td>
-                                        <td class="col-md-1 paddingReduce"><span class="btn btn-xs btn-danger remove"><i class="fa fa-times"></i></span></td>
-                                    </tr>*@ 
+                                                EMPORIO ARMANI 9852 138 [DD]
+                                            </td>
+
+                                            <td class="col-md-2 paddingReduce">
+                                                <div class="col-md-12 paddingReduce input-group ">
+                                                    @Html.TextBox("Quanity", null, new { @class = "form-control input-sm", @Value = 1 })
+                                                    <span class="input-group-addon productUnit">Pcs</span>
+                                                </div>
+                                            </td>
+                                            <td class="col-md-2 paddingReduce">@Html.DropDownList("ZoneId", null,"--Select--", new { @class = "form-control input-sm "})</td>
+                                            <td class="col-md-1 paddingReduce"><span class="btn btn-xs btn-danger remove"><i class="fa fa-times"></i></span></td>
+                                        </tr>*@
                                 </tbody>
 
                             </table>
-                         
+
                         </div>
                     </div>
                     <div class="col-md-2 paddingReduce">
@@ -116,28 +116,31 @@
                                         <div class="col-md-4"> <span class="btn btn-xs btn-primary" id="newSupplierAddButton"><i class="fa fa-plus"></i></span></div>
                                         @Html.DropDownList("SupplierId", null, "--Select--", new { @class = "form-control" })
                                     </div>
-                                                                
-                                    
+
+
                                 </div>
-                                  
+
                                 <div class="row form-group">
-                                    @Html.HiddenFor(model=>model.FormSubmitType,1)
+                                    @Html.HiddenFor(model => model.FormSubmitType, 1)
                                     <button type="button" class="btn btn-block btn-primary" title="Save" id="savePurchase"><i class="fa fa-save"></i> Save</button>
                                 </div>
-                                
+
                                 <div class="row form-group">
                                     <a href='@Url.Action("NewPurchase","Purchase")' data-toggle="tooltip" title="Reset" id="reset" class="btn btn-block  btn-default" data-original-title="Reset"><i class="fa fa-refresh"></i> Reset</a>
                                 </div>
                                 <div class="row form-group">
                                     <a href='@Url.Action("Index","Purchase")' data-toggle="tooltip" title="Cancel" id="cancel" class="btn btn-block  btn-danger" data-original-title="Cancel"><i class="fa fa-reply"></i> Cancel</a>
                                 </div>
-                                    
-                             
+
+
                             </div>
                         </div>
                     </div>
-                </div></div></div></div>
-   
+                </div>
+            </div>
+        </div>
+    </div>
+
 }
 <div class="modal" id="supplierAddModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
     <div class="modal-dialog modal-sm" role="document">
@@ -150,13 +153,13 @@
     </div>
 </div>
 @section Scripts {
-@Scripts.Render("~/bundles/jquery-ui")
+    @Scripts.Render("~/bundles/jquery-ui")
     @Scripts.Render("~/bundles/jqueryval")
     @Scripts.Render("~/bundles/ShopScript")
     @Scripts.Render("~/bundles/PurchaseScript")
-@Scripts.Render("~/bundles/barcode-scanner-detection")
+    @Scripts.Render("~/bundles/barcode-scanner-detection")
     <script>
-        
+
         $(document).ready(function () {
             $('#addProduct').on('click', function () {
                 purchaseAddProduct();
@@ -167,11 +170,11 @@
                 endChar: [13], // be sure the scan is complete if key 13 (enter) is detected
                 avgTimeByChar: 40, // it's not a barcode if a character takes longer than 40ms
                 onComplete: function(barcode, qty) {
-                  
+
                     barcodeSearch(barcode);
                     $(this).val('');
                     //return false;
-                } // main callback function	
+                } // main callback function
             });
             $('#ProductName').focus(function () {
                 var url = '@Url.Action("GetProuctForStockIn", "Product")';
@@ -185,12 +188,12 @@
                 $('#TransactionModeId').empty();
                 var value = $(this).val();
                 if (value == "Cash") {
-                    $('#transactionAccountId').addClass('hidden'); 
+                    $('#transactionAccountId').addClass('hidden');
                 }
                 else{
                     $('#transactionAccountId').removeClass('hidden');
                 }
-                
+
                 var paramData = { TransactionMode: value };
                 var url = '@Url.Action("GetAccountByMode", "BankAccount")';
                 getDataShop(url, paramData, 'getAccountNo');
@@ -198,7 +201,7 @@
             $('#PcTransactionMode').change(function () {
                 $('#PcTransactionModeId').empty();
                 var value = $(this).val();
-                
+
                 var paramData = { TransactionMode: value };
                 var url = '@Url.Action("GetAccountByMode", "BankAccount")';
                 getDataShop(url, paramData, 'getAccountNoForPurchaseCost');
@@ -242,7 +245,7 @@
             $('#newSupplierModalFormSubmit').click(function () {
                 if ($('#newSupplierModalForm').valid()) {
                     var formData = objectifyForm($("#newSupplierModalForm").serializeArray());
-                   
+
                     var url = '@Url.Action("AddNewSupplier", "Supplier")';
                     var paramData = { supplier: formData };
 
@@ -253,7 +256,7 @@
             });
             $('#savePurchase').on('click', function () {
                 submitPurchaseForm();
-           
+
             });
             $('#checkBarcode').on('click', function () {
                 var barCode = $('#ProductBarCode').val();
@@ -267,9 +270,9 @@
             var paramData = { barCode: barcode };
             getDataShop(url, paramData, 'renderBarcodeSearchForStockIn');
         }
-        
-            
-        
+
+
+
 
         function submitPurchaseForm() {
             var count = 0;
@@ -316,7 +319,7 @@
 
     </script>
 }
-    @*//=======================================================================================//
+@*//=======================================================================================//
     //Author : Md. Mahid Choudhury
     //Creation Date : January 2017
     //=======================================================================================//*@

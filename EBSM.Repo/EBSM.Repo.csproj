@@ -31,13 +31,18 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="EntityFramework">
+    <Reference Include="EBSM.Entities">
+      <HintPath>..\EBSM.Entities\bin\Debug\EBSM.Entities.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data.Entity" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -46,6 +51,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TransactionUnitOfWork.cs" />
+    <Compile Include="TransactionRepository.cs" />
+    <Compile Include="ProductTransferUnitOfWork.cs" />
+    <Compile Include="ProductTransferRepository.cs" />
+    <Compile Include="AuditLogRepository.cs" />
+    <Compile Include="AuditLogUnitOfWork.cs" />
     <Compile Include="PurchasePaymentRepository.cs" />
     <Compile Include="PurchaseProductRepository.cs" />
     <Compile Include="PurchaseCostRepository.cs" />
@@ -102,6 +113,8 @@
     <Compile Include="BankAccountRepository.cs" />
     <Compile Include="TransactionAccountUnitOfWork.cs" />
     <Compile Include="StockWarehouseRelationRepository.cs" />
+    <Compile Include="UserRoleRepository.cs" />
+    <Compile Include="UserRoleUnitOfWork.cs" />
     <Compile Include="WarehouseZoneRepository.cs" />
     <Compile Include="WarehouseZoneUnitOfWork.cs" />
     <Compile Include="StockRepository.cs" />
@@ -124,10 +137,14 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\EBSM.Entities\EBSM.Entities.csproj">
-      <Project>{4bec0d63-b914-42e4-a480-428512ca3914}</Project>
-      <Name>EBSM.Entities</Name>
+    <ProjectReference Include="..\EBSM.CommonUtility\EBSM.CommonUtility.csproj">
+      <Project>{3fda332f-d50e-41d9-8783-98f066a0ce4e}</Project>
+      <Name>EBSM.CommonUtility</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

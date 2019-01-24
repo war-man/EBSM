@@ -95,10 +95,14 @@ namespace EBSM.Services
         {
             return _productAttributeUnitOfWork.ProductAttributeSetRepository.IsAttributeSetNameUsed(AttributeSetName, InitialAttributeSetName);
         }
-            //Attribute Set Attrinbute Relation
-            public IEnumerable<AttributeSetAttribute> GetAttributesByAttributeSetId(int attSetId)
+        public bool IsAttributeSetNameExist(string attSetName)
         {
-            return _productAttributeUnitOfWork.AttributeSetAttributeRepository.GetAllByAttributeSetId(attSetId);
+            return _productAttributeUnitOfWork.ProductAttributeSetRepository.IsAttributeSetNameExist( attSetName);
+        }
+        //Attribute Set Attrinbute Relation
+        public IEnumerable<AttributeSetAttribute> GetAttributesByAttributeSetId(int attSetId)
+        {
+            return _productAttributeUnitOfWork.AttributeSetAttributeRepository.GetAllByAttributeSetId(attSetId).ToList();
            
         }
         public void DeleteAttributeSetAttributeListFromDb(IEnumerable<AttributeSetAttribute> items)

@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using WarehouseApp.Models;
-
+using EBSM.Entities;
+using EBSM.Services;
 namespace WarehouseApp
 {
     public class UserRepo
     {
-        private WmsDbContext db = new WmsDbContext();
+        private UserService _userService = new UserService();
 
         //public User()
         //{
@@ -20,20 +21,19 @@ namespace WarehouseApp
 
         public User GetUserObjByUserName(string userName, string passWord)
         {
-            var user = db.Users.SingleOrDefault(
-              u => u.UserName == userName && u.Password == passWord);
+            var user = _userService.GetValidUserByPassword(userName, passWord);
             return user;
         }
 
         public User GetUserObjByUserName(string userName)
         {
-            var user = db.Users.SingleOrDefault(u => u.UserName == userName);
+            var user = _userService.GetUserByUsername(userName);
             return user;
         }
 
         public IEnumerable<User> GetAllUsers()
         {
-            return db.Users.AsEnumerable();
+            return _userService.GetAllUsers().AsEnumerable();
         }
 
         public int RegisterUser(User userObj)
@@ -42,11 +42,7 @@ namespace WarehouseApp
             user.UserName = userObj.UserName;
             user.Password = userObj.Password;
             user.Email = userObj.Email;
-
-            db.Users.Add(user);
-            db.SaveChanges();
-
-            return user.UserId;
+            return _userService.SaveUser(user); ;
         }
     }
 }

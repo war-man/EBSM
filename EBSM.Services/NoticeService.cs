@@ -39,10 +39,22 @@ namespace EBSM.Services
         {
             return _notificationUnitOfWork.NoticeRepository.GetAll();
         }
+        public int GetCount()
+        {
+            return _notificationUnitOfWork.NoticeRepository.GetCount();
+        }
         //public IEnumerable<Notice> GetAll(int? SelectedProductId, string PName, string TransferDateFrom, string TransferDateTo)
         //{
         //    return _notificationUnitOfWork.NoticeRepository.GetAll(SelectedProductId, PName, TransferDateFrom, TransferDateTo);
         //}
+        public int LastDateNoticeCount()
+        {
+            return _notificationUnitOfWork.NoticeRepository.LastDateNoticeCount();
+        }
+        public DateTime LastDateOfNoticePublished()
+        {
+            return _notificationUnitOfWork.NoticeRepository.LastDateOfNoticePublished();
+        }
         public void Dispose()
         {
             _notificationUnitOfWork.Dispose();

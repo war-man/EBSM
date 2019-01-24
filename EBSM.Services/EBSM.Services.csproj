@@ -31,6 +31,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="EBSM.Entities">
+      <HintPath>..\EBSM.Entities\bin\Debug\EBSM.Entities.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -41,6 +47,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TransactionService.cs" />
+    <Compile Include="ProductTransferService.cs" />
+    <Compile Include="AuditLogService.cs" />
     <Compile Include="PurchaseService.cs" />
     <Compile Include="SupplierService.cs" />
     <Compile Include="ProductAttributeService.cs" />
@@ -59,6 +68,7 @@
     <Compile Include="BillService.cs" />
     <Compile Include="ProductService.cs" />
     <Compile Include="TransactionAccountService.cs" />
+    <Compile Include="UserRoleService.cs" />
     <Compile Include="WarehouseZoneService.cs" />
     <Compile Include="StockService.cs" />
     <Compile Include="ArticleTransferService.cs" />
@@ -66,10 +76,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\EBSM.Entities\EBSM.Entities.csproj">
-      <Project>{4bec0d63-b914-42e4-a480-428512ca3914}</Project>
-      <Name>EBSM.Entities</Name>
-    </ProjectReference>
     <ProjectReference Include="..\EBSM.Repo\EBSM.Repo.csproj">
       <Project>{f8bca28b-8eaa-40d9-9a44-a3c092634799}</Project>
       <Name>EBSM.Repo</Name>

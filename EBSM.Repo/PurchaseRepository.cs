@@ -29,7 +29,7 @@ namespace EBSM.Repo
         }
         public IEnumerable<Purchase> GetAll()
         {
-            return db.Purchases;
+            return db.Purchases.Include(x => x.Supplier).OrderByDescending(a => a.PurchaseDate).ThenByDescending(o => o.CreatedDate);
         }
         public IEnumerable<Purchase> GetAll(string PurchaseNo,  string PurchaseDateFrom, string PurchaseDateTo, int? SupplierId,string TransactionMode)
         {
@@ -38,6 +38,20 @@ namespace EBSM.Repo
             return db.Purchases.Where(x => (PurchaseNo == null || x.PurchaseNumber.StartsWith(PurchaseNo))
                  && (PurchaseDateFrom == null || x.PurchaseDate >= fromDate) && (PurchaseDateTo == null || x.PurchaseDate < toDate)
                   && (SupplierId == null || x.SupplierId == SupplierId) && (TransactionMode == null || x.TransactionMode.Equals(TransactionMode))).Include(o => o.Supplier).OrderByDescending(o => o.PurchaseDate).ThenByDescending(o => o.CreatedDate);
+        }
+       
+        public IEnumerable<Purchase> GetAllPurchaseByDate(DateTime date)
+        {
+            return db.Purchases.Where(t => t.PurchaseDate.Year == date.Year && t.PurchaseDate.Month == date.Month && t.PurchaseDate.Day == date.Day && t.Status != 0).OrderByDescending(t => t.PurchaseDate);
+        }
+        public double GetSalesAmountByDate(DateTime date)
+        {
+            double totalAmount = GetAllPurchaseByDate(date).Any() ? (double)GetAllPurchaseByDate(date).Sum(x => x.TotalPrice) : 0;
+            return totalAmount;
+        }
+        public IEnumerable<Purchase> GetAllPurchasesByYear(int year)
+        {
+            return db.Purchases.Where(g => g.PurchaseDate.Year == year);
         }
         public int GetCount()
         {
@@ -52,5 +66,6 @@ namespace EBSM.Repo
         {
             db.Purchases.Remove(item);
         }
-    }
+        }
+        
 }

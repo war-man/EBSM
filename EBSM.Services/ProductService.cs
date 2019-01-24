@@ -69,17 +69,21 @@ namespace EBSM.Services
         {
             return _productUnitOfWork.ProductRepository.CheckProductNameExist(name);
         }
-
-
+        public IEnumerable<Product> GetAllNotExpiredProducts()
+        { return _productUnitOfWork.ProductRepository.GetAllNotExpiredProducts(); }
+        public int GetCount()
+        {
+            return _productUnitOfWork.ProductRepository.GetCount();
+        }
         //Product Attribute Relation
         public void SaveProductAttributeRelation(ProductAttributeRelation productAttributeRelation)
         {
-                _productUnitOfWork.ProductAttributeRelationRepository.Add(productAttributeRelation);
-                _productUnitOfWork.Save();
+            _productUnitOfWork.ProductAttributeRelationRepository.Add(productAttributeRelation);
+            _productUnitOfWork.Save();
         }
         public void SaveProductAttributeRelationList(IEnumerable<ProductAttributeRelation> productAttributeRelationList)
         {
-            foreach(var item in productAttributeRelationList)
+            foreach (var item in productAttributeRelationList)
             {
                 _productUnitOfWork.ProductAttributeRelationRepository.Add(item);
             }
@@ -97,6 +101,7 @@ namespace EBSM.Services
             }
             _productUnitOfWork.Save();
         }
+        
         //Product Category Relation
         public void SaveProductCategoryRelation(ProductCategory productCategory)
         {
@@ -154,7 +159,12 @@ namespace EBSM.Services
             }
             _productUnitOfWork.Save();
         }
-        public void Dispose()
+        public IEnumerable<ProductCustomerRelation> GetAllByProductByCodeAndCustomer(int CustomerId, string ProductCode)
+        {
+          return  _productUnitOfWork.ProductCustomerRalationRepository.GetAllByProductByCodeAndCustomer(CustomerId, ProductCode);
+        }
+       
+            public void Dispose()
         {
             _productUnitOfWork.Dispose();
         }

@@ -19,14 +19,16 @@ using Microsoft.AspNet.Identity;
 using PagedList;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
-
+using EBSM.Entities;
+using EBSM.Services;
 
 namespace WarehouseApp.Controllers
 {
     [Authorize]
     public class SettingsController : Controller
     {
-        private  WmsDbContext db = new WmsDbContext();
+        private  CompanyProfileService _companyProfileService = new CompanyProfileService();
+        private  AuditLogService _auditLogService = new AuditLogService();
         //
         // GET: /Configuration/
         //public ActionResult Vats()
@@ -56,7 +58,7 @@ namespace WarehouseApp.Controllers
         [Roles("Global_SupAdmin,Company_Profile_Edit")]
         public ActionResult CompanyProfile()
         {
-            CompanyProfile company = db.CompanyProfiles.FirstOrDefault();
+            CompanyProfile company = _companyProfileService.GetComapnyProfile();
             if (company == null)
             {
                 return HttpNotFound();
@@ -74,7 +76,7 @@ namespace WarehouseApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                CompanyProfile companyProfile = db.CompanyProfiles.Find(company.CompanyId);
+                CompanyProfile companyProfile = _companyProfileService.GetCompanyProfileById(company.CompanyId);
                 companyProfile.CompanyName = company.CompanyName;
                 companyProfile.CompanyAddress = company.CompanyAddress;
                 companyProfile.Email = company.Email;
@@ -84,9 +86,8 @@ namespace WarehouseApp.Controllers
                 companyProfile.VatRegNo = company.VatRegNo;
                 companyProfile.CompanyLogo = company.CompanyLogo;
                 companyProfile.UpdatedDate = DateTime.Now;
-                companyProfile.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
-                db.Entry(companyProfile).State = EntityState.Modified;
-                 db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                companyProfile.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
+                _companyProfileService.Edit(companyProfile, AuthenticatedUser.GetUserFromIdentity().UserId);
                 return RedirectToAction("Index","Home");
             }
             return View("../Settings/CompanyProfile", company);
@@ -94,8 +95,8 @@ namespace WarehouseApp.Controllers
 
         public static CompanyProfile CompanyInfo()
         {
-            var cx = new WmsDbContext();
-            CompanyProfile company = cx.CompanyProfiles.FirstOrDefault();
+            var cx = new CompanyProfileService();
+            CompanyProfile company = cx.GetComapnyProfile();
             if (company == null)
             {
                 company=new CompanyProfile()
@@ -198,14 +199,9 @@ namespace WarehouseApp.Controllers
         {
             var fromDate = Convert.ToDateTime(model.AuditDateFrom);
             var toDate = Convert.ToDateTime(model.AuditDateTo);
-            var auditLogs = db.AuditLogs.Where(x => (model.AuditDateFrom == null || x.UpdatedDate >= fromDate) && (model.AuditDateTo == null || x.UpdatedDate <= toDate)
-                 && (model.EventType == null || x.EventType == model.EventType) && (model.AuditTable == null || x.TableName == model.AuditTable)).OrderByDescending(x => x.UpdatedDate).ToList();
+            var auditLogs =_auditLogService.GetAllAuditLog(model.AuditDateFrom, model.AuditDateTo, model.EventType, model.AuditTable).ToList();
             model.AuditLogs = auditLogs.ToPagedList(model.Page, model.PageSize);
-
-
-            ViewBag.AuditTable = new SelectList(db.AuditLogs.GroupBy(x => x.TableName).Select(x => new { TableName = x.FirstOrDefault().TableName }).ToList(), "TableName", "TableName");
-           
-
+            ViewBag.AuditTable = new SelectList(_auditLogService.GetAllAuditTables().ToList(), "TableName", "TableName");
             return View("../Settings/AuditLogsView", model);
         }
 
@@ -316,7 +312,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _companyProfileService.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -324,7 +320,9 @@ namespace WarehouseApp.Controllers
     
     public class TicketPrintController : Controller
     {
-        private static WmsDbContext db = new WmsDbContext();
+        private static SalesService _salesService = new SalesService();
+        private static ProductService _productService = new ProductService();
+        private static CompanyProfileService _companyProfileService = new CompanyProfileService();
         //===========ticket printinng========================================================================
         public void PrintAllTicket(List<TicketPrintModel> ticketPrintList)
         {
@@ -379,8 +377,8 @@ namespace WarehouseApp.Controllers
         }
         public void PrintReceiptForTransaction(string ticketType, string ticketBody)
         {
-            var cx = new WmsDbContext();
-            ViewBag.Company = cx.CompanyProfiles.FirstOrDefault();
+            var cx = new CompanyProfileService();
+            ViewBag.Company = cx.GetComapnyProfile();
             ViewBag.TicketType = ticketType;
             ViewBag.TicketContent = ticketBody;
 
@@ -490,7 +488,7 @@ namespace WarehouseApp.Controllers
           
             if (id != null)
             {
-               Invoice  invoice = db.Invoices.Find(id);
+               Invoice  invoice = _salesService.GetInvoiceById(id.Value);
                 if (invoice != null)
                 {
                     List<ProductPrintModel> itemPmList = new List<ProductPrintModel>();
@@ -498,11 +496,12 @@ namespace WarehouseApp.Controllers
                     foreach (var invoiceProduct in invoice.InvoiceProducts)
                     {
                         //====add to printing model==============================================
+                        var itemInfo = _productService.GetProductById(invoiceProduct.ProductId);
                         ProductPrintModel productItem = new ProductPrintModel()
                         {
                             Sl = sl,
-                            ItemName = db.Products.Find(invoiceProduct.ProductId).ProductFullName,
-                            ItemCode = db.Products.Find(invoiceProduct.ProductId).ProductCode,
+                            ItemName = itemInfo.ProductFullName,
+                            ItemCode = itemInfo.ProductCode,
                             UnitPrice = invoiceProduct.Dp,
                             Quantity = invoiceProduct.Quantity,
                             Total = invoiceProduct.TotalPrice
@@ -581,7 +580,7 @@ namespace WarehouseApp.Controllers
         public void PrintInvoiceForTransaction(string invoiceBody)
         {
             //RfwDbContext cx = new RfwDbContext();
-            ViewBag.Company = db.CompanyProfiles.FirstOrDefault();
+            ViewBag.Company = _companyProfileService.GetComapnyProfile();
             ViewBag.InvoiceContent = invoiceBody;
 
             PrintDocument recordDoc = new PrintDocument();

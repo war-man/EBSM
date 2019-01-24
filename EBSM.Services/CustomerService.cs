@@ -54,7 +54,14 @@ namespace EBSM.Services
         {
             return _customerUnitOfWork.CustomerRepository.GetAll(CustomerName, ContactNo);
         }
-        public CustomerProject GetCustomerProjectById(int id)
+        public int GetCount()
+        {
+            return _customerUnitOfWork.CustomerRepository.GetCount();
+        }
+
+
+    //customer Project
+    public CustomerProject GetCustomerProjectById(int id)
         {
             return _customerUnitOfWork.CustomerProjectRepository.GetById(id);
         }
@@ -82,7 +89,8 @@ namespace EBSM.Services
         {
             return _customerUnitOfWork.CustomerProjectRepository.GetAll(CustomerId, Name);
         }
-        public void Dispose()
+        
+                    public void Dispose()
         {
             _customerUnitOfWork.Dispose();
         }

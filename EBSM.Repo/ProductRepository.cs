@@ -52,8 +52,6 @@ namespace EBSM.Repo
         }
         public IEnumerable<Product> GetAll(string PName, string PCode, int? GroupNameId, int? ManufacId, int? CatId, byte? Status, double? Price)
         {
-            //var fromDate = string.IsNullOrEmpty(TransferDateFrom) ? DateTime.Now.Date : Convert.ToDateTime(TransferDateFrom);
-            //var toDate = string.IsNullOrEmpty(TransferDateTo) ? DateTime.Now.Date : Convert.ToDateTime(TransferDateTo).AddDays(1);
             return db.Products.Where(x => (PName == null || (x.ProductFullName.StartsWith(PName) || x.ProductFullName.Contains(" " + PName)))
                     && (PCode == null || x.ProductCode.ToLower().StartsWith(PCode.ToLower()))
                     && (GroupNameId == null || x.GroupNameId == GroupNameId)
@@ -63,10 +61,16 @@ namespace EBSM.Repo
                     && (Price == null || x.Tp <= Price)).OrderBy(o => o.ProductName);
 
         }
+        public IEnumerable<Product> GetAllNotExpiredProducts()
+        {
+            return db.Products.Where(x => x.Status != 0 && x.ExpiryDate != null).OrderBy(a => a.ExpiryDate);
+        }
         public bool CheckProductNameExist(string name)
         {
             return db.Products.Any(e => e.ProductName.ToLower() == name.ToLower());
         }
+        public int GetCount() { return db.Products.Count(t => t.Status != 0); }
+ 
         public bool IsProductCodeExist(string ProductCode, string InitialProductCode)
         {
             bool isNotExist = true;

@@ -27,5 +27,9 @@ namespace EBSM.Repo
         {
             return db.StockWarehouseRelations.FirstOrDefault(x => x.StockId == stockId && x.ZoneId == zoneId);
         }
+        public IEnumerable<StockWarehouseRelation> GetStockWarehouseRelationByStockId(int stockId)
+        {
+            return db.StockWarehouseRelations.Where(x => x.StockId == stockId && x.Quantity != 0);
+        }
     }
 }

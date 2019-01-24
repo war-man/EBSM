@@ -39,10 +39,15 @@ namespace EBSM.Services
         {
             return _salesmanUnitOfWork.SalesmanRepository.GetAll();
         }
-        //public IEnumerable<Salesman> GetAll(int? SelectedProductId, string PName, string TransferDateFrom, string TransferDateTo)
-        //{
-        //    return _salesmanUnitOfWork.SalesmanRepository.GetAll(SelectedProductId, PName, TransferDateFrom, TransferDateTo);
-        //}
+        public IEnumerable<Salesman> GetAllSalesman(string SalesmanName)
+        {
+            return _salesmanUnitOfWork.SalesmanRepository.GetAll(SalesmanName);
+        }
+        public void DeleteSalesman(Salesman salesman)
+        {
+            _salesmanUnitOfWork.SalesmanRepository.DeleteFromDbByItem(salesman);
+            _salesmanUnitOfWork.Save();
+        }
         public void Dispose()
         {
             _salesmanUnitOfWork.Dispose();

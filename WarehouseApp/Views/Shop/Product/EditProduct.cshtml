@@ -1,10 +1,10 @@
 ﻿@model WarehouseApp.Models.ViewModels.AddProductViewModel
 
-@using WarehouseApp.Models
+@using EBSM.Entities;
 @using WarehouseApp.Models.ViewModels
 @{
     ViewBag.Title = "Edit Product";
-    var cx = new WmsDbContext();
+   // var cx = new WmsDbContext();
     int j = 0;
 }
 @*@Styles.Render("~/Content/JsTree")*@
@@ -22,44 +22,44 @@
 </div>
 <div class="row">
     <div class="col-md-12 col-xs-12">
-            <div class="x_panel">
-                <div class="x_title">
-                    <h2><i class="fa fa-pencil"></i> Edit Product</h2>
-                    <ul class="nav navbar-right panel_toolbox">
+        <div class="x_panel">
+            <div class="x_title">
+                <h2><i class="fa fa-pencil"></i> Edit Product</h2>
+                <ul class="nav navbar-right panel_toolbox">
 
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="Settings"><i class="fa fa-wrench"></i></a>
-                            <ul class="dropdown-menu" role="menu">
-                                <li>
-                                    <a href='@Url.Action("ListArrtibuteType","ProductAttribute")'>Attributes</a>
-                                </li>
-                                <li>
-                                    <a href='@Url.Action("AttributeSetList", "ProductAttribute")'>Attribute Sets</a>
-                                    <a href='@Url.Action("Index", "Category")'>Categories</a>
-                                </li>
-                                <li>
-                                    <a href='@Url.Action("Index","Customer")'>Projects</a>
-                                </li>
-                                <li>
-                                    <a href='@Url.Action("Index","Supplier")'>Suppliers</a>
-                                </li>
-                                <li>
-                                    <a href='@Url.Action("Index","WarehouseZone")'>Warehouse Zone</a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
-                        </li>
-                    </ul>
-                    <div class="clearfix"></div>
-                </div>
-                <div class="x_content">
-   
-			<div class="pull-right">
-                <button type="submit" form="form-product" data-toggle="tooltip" title="Save" class="btn btn-primary" data-original-title="Save" id="productSaveButton"><i class="fa fa-save"></i></button>
-                <a href='@Url.Action("Index","Product")' data-toggle="tooltip" title="Cancel" class="btn btn-default" data-original-title="Cancel"><i class="fa fa-reply"></i></a>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="Settings"><i class="fa fa-wrench"></i></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li>
+                                <a href='@Url.Action("ListArrtibuteType","ProductAttribute")'>Attributes</a>
+                            </li>
+                            <li>
+                                <a href='@Url.Action("AttributeSetList", "ProductAttribute")'>Attribute Sets</a>
+                                <a href='@Url.Action("Index", "Category")'>Categories</a>
+                            </li>
+                            <li>
+                                <a href='@Url.Action("Index","Customer")'>Projects</a>
+                            </li>
+                            <li>
+                                <a href='@Url.Action("Index","Supplier")'>Suppliers</a>
+                            </li>
+                            <li>
+                                <a href='@Url.Action("Index","WarehouseZone")'>Warehouse Zone</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a class="collapse-link" title="Collapse"><i class="fa fa-chevron-up"></i></a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
             </div>
+            <div class="x_content">
+
+                <div class="pull-right">
+                    <button type="submit" form="form-product" data-toggle="tooltip" title="Save" class="btn btn-primary" data-original-title="Save" id="productSaveButton"><i class="fa fa-save"></i></button>
+                    <a href='@Url.Action("Index","Product")' data-toggle="tooltip" title="Cancel" class="btn btn-default" data-original-title="Cancel"><i class="fa fa-reply"></i></a>
+                </div>
                 @using (Html.BeginForm("EditProduct", "Product", null, FormMethod.Post, new { @id = "editProductForm" }))
                 {
                     @Html.AntiForgeryToken()
@@ -68,7 +68,7 @@
                         <li class="active"><a href="#tab-general" data-toggle="tab">General</a></li>
                         <li><a href="#tab-attribute" data-toggle="tab">Attribute</a></li>
                         <li><a href="#tab-data" data-toggle="tab">Data</a></li>
-                        
+
                         <li><a href="#tab-links" data-toggle="tab">Links</a></li>
                         <li><a href="#tab-customer-option" data-toggle="tab">Project Option</a></li>
                         <li><a href="#tab-discount" data-toggle="tab">Discount</a></li>
@@ -99,7 +99,7 @@
                                         @Html.ValidationMessageFor(model => model.ProductCode)
                                     </div>
                                 </div>
-                                           
+
                                 <div class="form-group">
                                     @Html.LabelFor(model => model.Details, new { @class = "control-label col-md-2" })
                                     <div class="col-md-10">
@@ -117,7 +117,7 @@
                                     <dl class="dl-horizontal ">
                                         <div class="col-md-12">
                                             <div class="col-md-6">
-                                                @foreach (var att in cx.ProductAttributeRelations.Where(x => x.ProductId == Model.ProductId).Select(x => new { Attribute = x.Attribute, Value = x.Value }).ToList())
+                                                @foreach (ProductAttributeRelation att in ViewBag.AllAttributesOfThisProduct)
                                                 {
                                                     <dt>
                                                         @Html.DisplayFor(model => att.Attribute.AttributeName)
@@ -126,11 +126,11 @@
                                                     <dd>
                                                         @Html.DisplayFor(model => att.Value)
                                                         @Html.HiddenFor(model => model.ProductAtts[j].AttributeId, new
-                                                   { @*@Value = att.Attribute.AttributeId,*@ @class = "attributeId"
-                                                   })
+                                                   { @*@Value = att.Attribute.AttributeId,*@@class = "attributeId"
+                                            })
                                                         @Html.HiddenFor(model => model.ProductAtts[j].Value, new
-                                                   { @*@Value = att.Value,*@ @class = "attributeId"
-                                                   })
+                                                   { @*@Value = att.Value,*@@class = "attributeId"
+                                            })
                                                     </dd>
                                                     j++;
                                                 }
@@ -246,11 +246,12 @@
                                     <div class="form-group">
                                         @Html.Label("Select Group", new { @class = "control-label col-md-2" })
                                         <div class="col-md-10">
-                                            @Html.DropDownList("GroupNameId", null, "--Select--", new {@class = "form-control input-lg chosen-select", data_placeholder = "Select...", Size = 5,@required=true})
+                                            @Html.DropDownList("GroupNameId", null, "--Select--", new { @class = "form-control input-lg chosen-select", data_placeholder = "Select...", Size = 5, @required = true })
                                         </div>
                                     </div>
                                 }
-                                else{
+                                else
+                                {
                                     <div class="hidden col-md-10">
                                         @Html.TextBox("GroupNameId", null, new { @class = "form-control input-sm", @Value = "" })
                                     </div>
@@ -277,7 +278,7 @@
                                         @Html.ValidationMessageFor(model => model.Vat)
                                     </div>
                                 </div>
-                               
+
                                 <div class="form-group">
                                     @Html.LabelFor(model => model.MinStockLimit, new { @class = "control-label col-md-2" })
                                     <div class="col-md-10">
@@ -291,7 +292,7 @@
                                         @Html.DropDownListFor(model => model.DefaultZoneId, (SelectList)@ViewBag.ZoneId, null, new { @class = "form-control input-sm" })
                                         @Html.ValidationMessageFor(model => model.DefaultZoneId)
                                     </div>
-                                </div>   
+                                </div>
 
                                 <div class="form-group">
                                     @Html.LabelFor(model => model.Status, new { @class = "control-label col-md-2" })
@@ -308,7 +309,7 @@
                                 </div>
                             </div>
                         </div>
-                       
+
                         <div class="tab-pane" id="tab-links">
                             <div class="form-horizontal centered-form">
                                 @*<div class="form-group">
@@ -331,7 +332,7 @@
                                 <div class="form-group">
                                     @Html.Label("Select Categories", new { @class = "control-label col-md-2" })
                                     <div class="col-md-10">
-                                        @Html.DropDownList("CategoryIds", null, null, new { @class = "form-control input-lg chosen-select", data_placeholder = "Select...", Size = 5, multiple=true })
+                                        @Html.DropDownList("CategoryIds", null, null, new { @class = "form-control input-lg chosen-select", data_placeholder = "Select...", Size = 5, multiple = true })
                                     </div>
                                 </div>
 
@@ -344,7 +345,7 @@
 
 
                                 <div class="row">
-                                   
+
                                     <table id="customer-option-table" class="table">
                                         <tr>
 
@@ -423,15 +424,15 @@
 
                         </div>
                         @*<div class="tab-pane" id="tab-image">
-                                        <div class="form-horizontal centered-form">
-                                            <div class="form-group">
-                                                @Html.Label("Product Image", new { @class = "control-label col-md-2" })
-                                                <div class="col-md-10">
-                                                    <input type="file" />
-                                                </div>
-                                            </div>
+                                <div class="form-horizontal centered-form">
+                                    <div class="form-group">
+                                        @Html.Label("Product Image", new { @class = "control-label col-md-2" })
+                                        <div class="col-md-10">
+                                            <input type="file" />
                                         </div>
-                                    </div>*@
+                                    </div>
+                                </div>
+                            </div>*@
                     </div>
 
                 }
@@ -439,7 +440,7 @@
         </div>
 
     </div>
-               
+
 </div>
 
 @section Scripts {
@@ -449,16 +450,16 @@
     @*@Scripts.Render("~/bundles/JsTree")*@
 
     @Scripts.Render("~/bundles/chosen")
- <script type="text/javascript">CKEDITOR_BASEPATH = "@Url.Content("~/Content/Plugins/ckeditor/")";</script>
+    <script type="text/javascript">CKEDITOR_BASEPATH = "@Url.Content("~/Content/Plugins/ckeditor/")";</script>
     <script type="text/javascript" src="~/Content/Plugins/ckeditor/ckeditor.js"></script>
     <script type="text/javascript" src="~/Content/Plugins/ckeditor/adapters/jquery.js"></script>
     @*@Scripts.Render("~/bundles/ckeditor")*@
     <script>
 
 
-        $(document).ready(function() {
+        $(document).ready(function () {
             CKEDITOR.replace('FullDescription');
-            $('#productSaveButton').click(function() {
+            $('#productSaveButton').click(function () {
                 if ($('#editProductForm').valid()) {
                     DisplayProgressMessage(this, ' ');
                     $('#editProductForm').submit();

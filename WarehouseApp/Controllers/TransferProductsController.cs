@@ -20,7 +20,8 @@ namespace WarehouseApp.Controllers
     [Authorize]
     public class TransferProductsController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private ProductTransferService _productTransferService = new ProductTransferService();
+        private StockService _stockService = new StockService();
 
         // GET: /Damage/
         [Roles("Global_SupAdmin,Product_Transfer")]
@@ -28,7 +29,7 @@ namespace WarehouseApp.Controllers
         {
             var fromDate = Convert.ToDateTime(model.TransferDateFrom);
             var toDate = Convert.ToDateTime(model.TransferDateTo);
-            var productTransferList = db.TransferProducts.ToList().Where(x => (model.SelectedProductId == null || x.Stock.ProductId == model.SelectedProductId) && (model.PName == null || (x.Stock.Product.ProductFullName.StartsWith(model.PName) || x.Stock.Product.ProductFullName.Contains(" " + model.PName))) && (model.TransferDateFrom == null || x.TransferDate.Date >= fromDate) && (model.TransferDateTo == null || x.TransferDate.Date <= toDate)).OrderByDescending(o => o.CreatedDate);
+            var productTransferList = _productTransferService.GetAll(model.SelectedProductId, model.PName, model.TransferDateFrom, model.TransferDateTo);
             model.ProductTransfers = productTransferList.ToPagedList(model.Page, model.PageSize);
 
             return View("../Shop/ArticleTransfer/ProductTransferList", model);
@@ -57,15 +58,15 @@ namespace WarehouseApp.Controllers
                         ZoneFromId = item.ZoneFromId,
                         ZoneToId = item.ZoneToId,
                         TransferQuantity = item.TransferQuantity,
-                        CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
+                        CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId,
                         CreatedDate = DateTime.Now
                     };
-                    db.TransferProducts.Add(transferProduct);
-                    db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                    _productTransferService.Save(transferProduct, AuthenticatedUser.GetUserFromIdentity().UserId);
+             
 
                     //====update stock==============================================
                     StockController updateStock = new StockController();
-                    var stock = db.Stocks.Find(transferProduct.StockId);
+                    var stock = _stockService.GetById(transferProduct.StockId);
                     if (string.IsNullOrEmpty(stock.Barcode))
                     {
                         updateStock.RemoveFromStock(Convert.ToInt32(stock.ProductId), item.TransferQuantity, Convert.ToInt32(item.ZoneFromId), Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey));
@@ -74,7 +75,7 @@ namespace WarehouseApp.Controllers
                     {
                         updateStock.RemoveFromStock(Convert.ToInt32(stock.ProductId), item.TransferQuantity, Convert.ToInt32(item.ZoneFromId), Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey), stock.Barcode);
                     }
-if (string.IsNullOrEmpty(stock.Barcode))
+                    if (string.IsNullOrEmpty(stock.Barcode))
                     {
                         updateStock.AddToStock(Convert.ToInt32(stock.ProductId), item.TransferQuantity, Convert.ToInt32(item.ZoneToId), Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey));
                     }
@@ -82,7 +83,6 @@ if (string.IsNullOrEmpty(stock.Barcode))
                     {
                         updateStock.AddToStock(Convert.ToInt32(stock.ProductId), item.TransferQuantity, Convert.ToInt32(item.ZoneToId), Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey), stock.Barcode);
                     }
-
                    
                 }
                 return RedirectToAction("CreateProductTransfer", "TransferProducts");
@@ -96,7 +96,7 @@ if (string.IsNullOrEmpty(stock.Barcode))
         {
             if (disposing)
             {
-                db.Dispose();
+                _productTransferService.Dispose();
             }
             base.Dispose(disposing);
         }

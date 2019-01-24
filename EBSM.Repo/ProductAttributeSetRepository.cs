@@ -25,7 +25,7 @@ namespace EBSM.Repo
         }
         public ProductAttributeSet GetById(int id)
         {
-            return db.ProductAttributeSets.Find(id); 
+            return db.ProductAttributeSets.Find(id);
         }
         public ProductAttributeSet GetProductAttributeSetByName(string name)
         {
@@ -39,6 +39,9 @@ namespace EBSM.Repo
         {
             return db.ProductAttributeSets.Where(x => (AttributeSetName == null || x.AttributeSetName.StartsWith(AttributeSetName))).OrderBy(x => x.AttributeSetName);
         }
+        public bool IsAttributeSetNameExist(string attSetName){
+           return db.ProductAttributeSets.Any(x => x.AttributeSetName.ToLower()==attSetName.ToLower());
+    }
         public bool IsAttributeSetNameUsed(string AttributeSetName, string InitialAttributeSetName)
         {
             bool isNotExist = true;

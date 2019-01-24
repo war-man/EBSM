@@ -1,22 +1,21 @@
 using System.Collections.Generic;
-using WarehouseApp.Models;
-using WarehouseApp.Models.ViewModels;
 
-namespace WarehouseApp.Migrations
+
+namespace EBSM.Repo.Migrations
 {
     using System;
     using System.Data.Entity;
     using System.Data.Entity.Migrations;
     using System.Linq;
 
-    internal sealed class Configuration : DbMigrationsConfiguration<WarehouseApp.Models.WmsDbContext>
+    internal sealed class Configuration : DbMigrationsConfiguration<EBSM.Repo.WmsDbContext>
     {
         public Configuration()
         {
             AutomaticMigrationsEnabled = false;
         }
 
-        protected override void Seed(WarehouseApp.Models.WmsDbContext context)
+        protected override void Seed(EBSM.Repo.WmsDbContext context)
         {
             //  This method will be called after migrating to the latest version.
 

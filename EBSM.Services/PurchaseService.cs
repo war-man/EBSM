@@ -52,6 +52,14 @@ namespace EBSM.Services
             _purchaseUnitOfWork.PurchaseRepository.DeleteFromDbByItem(purchase);
             _purchaseUnitOfWork.Save();
         }
+        public IEnumerable<Purchase> GetAllPurchasesByYear(int year)
+        {
+            return _purchaseUnitOfWork.PurchaseRepository.GetAllPurchasesByYear(year);
+        }
+        public IEnumerable<Purchase> GetAllPurchasesByCurrentYear()
+        {
+            return _purchaseUnitOfWork.PurchaseRepository.GetAllPurchasesByYear(DateTime.Now.Year);
+        }
         //Purchase cost======================
         public PurchaseCost GetCostByPurchaseId(int purchaseId)
         {
@@ -72,7 +80,12 @@ namespace EBSM.Services
             _purchaseUnitOfWork.Save(loggedInUserId.ToString());
         }
         //Purchase Products======================
-        public void SavePurchaseProduct(PurchaseProduct purchaseProduct)
+        public IEnumerable<PurchaseProduct> GetAllPurchaseProducts(string product, string fromDate2, string toDate2)
+        {
+            return _purchaseUnitOfWork.PurchaseProductRepository.GetAll(product,fromDate2, toDate2);
+        
+    }
+    public void SavePurchaseProduct(PurchaseProduct purchaseProduct)
         {
             _purchaseUnitOfWork.PurchaseProductRepository.Add(purchaseProduct);
             _purchaseUnitOfWork.Save();
@@ -111,7 +124,7 @@ namespace EBSM.Services
         }
         public void EditPurchasePayment(PurchasePayment purchasePayment, int? loggedInUserId)
         {
-            _purchaseUnitOfWork.PurchaseCostRepository.Edit(purchasePayment);
+            _purchaseUnitOfWork.PurchasePaymentRepository.Edit(purchasePayment);
             _purchaseUnitOfWork.Save(loggedInUserId.ToString());
         }
         public void Dispose()

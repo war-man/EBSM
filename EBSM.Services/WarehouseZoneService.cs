@@ -21,12 +21,15 @@ namespace EBSM.Services
         public IEnumerable<WarehouseZone> GetAllWarehouseZone()
         {
             return _warehouseZoneUnitOfWork.WarehouseZoneRepository.GetAll();
+        } public IEnumerable<WarehouseZone> GetAllWarehouseZone(string ZoneName)
+        {
+            return _warehouseZoneUnitOfWork.WarehouseZoneRepository.GetAll(ZoneName);
         }
         public WarehouseZone GetWarehouseZoneByName(string name)
         {
             return _warehouseZoneUnitOfWork.WarehouseZoneRepository.GetWarehouseZoneByName(name);
         }
-        public WarehouseZone GetUserById(int id)
+        public WarehouseZone GetWarehouseZoneById(int id)
         {
             return _warehouseZoneUnitOfWork.WarehouseZoneRepository.GetById(id);
         }
@@ -36,24 +39,32 @@ namespace EBSM.Services
             _warehouseZoneUnitOfWork.WarehouseZoneRepository.Add(warehouseZone);
             _warehouseZoneUnitOfWork.Save(loggedInUserId.ToString());
             return warehouseZone.ZoneId;
+        }public void Edit(WarehouseZone warehouseZone, int? loggedInUserId)
+        {
+            _warehouseZoneUnitOfWork.WarehouseZoneRepository.Edit(warehouseZone);
+            _warehouseZoneUnitOfWork.Save(loggedInUserId.ToString());
         }
+        public bool IsNameUsed(string ZoneName, string InitialZoneName)
+        { return _warehouseZoneUnitOfWork.WarehouseZoneRepository.IsNameUsed(ZoneName, InitialZoneName); }
+            //public IEnumerable<User> GetAllCardNotAssignedEmployee()
+            //{
+            //    return _employeeUnitOfWork.EmployeeRepository.GetAllCardNotAssignedEmployee();
+            //}
+            //public void DeleteCostCenter(int id)
+            //{
+            //    _costCenterUnitOfWork.CostCenterRepository.DeleteById(id);
+            //    _costCenterUnitOfWork.Save();
+            //}
+            //public bool IsCostCenterExist(string CostCenterName, string InitialCostCenterName)
+            //{
+            //    return _costCenterUnitOfWork.CostCenterRepository.IsCostCenterExist(CostCenterName, InitialCostCenterName);
+            //}
 
-        //public IEnumerable<User> GetAllCardNotAssignedEmployee()
-        //{
-        //    return _employeeUnitOfWork.EmployeeRepository.GetAllCardNotAssignedEmployee();
-        //}
-        //public void DeleteCostCenter(int id)
-        //{
-        //    _costCenterUnitOfWork.CostCenterRepository.DeleteById(id);
-        //    _costCenterUnitOfWork.Save();
-        //}
-        //public bool IsCostCenterExist(string CostCenterName, string InitialCostCenterName)
-        //{
-        //    return _costCenterUnitOfWork.CostCenterRepository.IsCostCenterExist(CostCenterName, InitialCostCenterName);
-        //}
-
-        //ware house=============
-        public Warehouse GetWarehouseByName(string name)
+            //ware house=============
+            public IEnumerable<Warehouse> GetAllWarehouses()
+        {
+            return _warehouseZoneUnitOfWork.WarehouseZoneRepository.GetAllWarehouses();
+        }public Warehouse GetWarehouseByName(string name)
         {
             return _warehouseZoneUnitOfWork.WarehouseZoneRepository.GetWarehouseByName(name);
         }

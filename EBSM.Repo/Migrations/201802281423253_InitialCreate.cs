@@ -1,4 +1,4 @@
-namespace WarehouseApp.Migrations
+namespace EBSM.Repo.Migrations
 {
     using System;
     using System.Data.Entity.Migrations;

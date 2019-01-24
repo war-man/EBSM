@@ -183,7 +183,7 @@ namespace WarehouseApp.Controllers
         public ActionResult NewAttributeSet()
         {
             ViewBag.SelectedProductAttributeList = _productAttributeService.GetAllByName("unit").ToList();
-            ViewBag.NotSelectedProductAttributeList = _productAttributeService.GetAllExceptThisName("unit").ToList(); ;
+            ViewBag.NotSelectedProductAttributeList = _productAttributeService.GetAllExceptThisName("unit").ToList(); 
             return View("../Shop/ProductAttribute/NewAttributeSet");
         }
         // save attibute Set into database when user save information

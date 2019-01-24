@@ -34,6 +34,9 @@ namespace EBSM.Repo
         public IEnumerable<ProductCustomerRelation> GetAllByProductId(int productId)
         {
             return db.ProductCustomerRelations.Where(x => x.ProductId == productId).Include(x => x.Customer);
+        }public IEnumerable<ProductCustomerRelation> GetAllByProductByCodeAndCustomer(int CustomerId,string ProductCode)
+        {
+            return db.ProductCustomerRelations.Where( x => x.CustomerId == CustomerId &&x.ProductCode == ProductCode);
         }
         public void DeleteFromDbById(int id)
         {
