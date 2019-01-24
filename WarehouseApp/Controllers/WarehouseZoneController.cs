@@ -11,14 +11,17 @@ using System.Web.Security;
 using PagedList;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
-
+using EBSM.Entities;
+using EBSM.Services;
 
 namespace WarehouseApp.Controllers
 {
     [Authorize]
     public class WarehouseZoneController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private WarehouseZoneService _warehouseZoneService = new WarehouseZoneService();
+        private ProductService _productService = new ProductService();
+        private StockService _stockService = new StockService();
 
         #region warehouse zone list view
 
@@ -26,9 +29,9 @@ namespace WarehouseApp.Controllers
         public ActionResult Index(ZoneSearchViewModel model)
         {
 
-            var warehouseZones = db.WarehouseZones.Where(x => (model.ZoneName == null || x.ZoneName.StartsWith(model.ZoneName))).OrderBy(x => x.ZoneName).ToList();
+            var warehouseZones =_warehouseZoneService.GetAllWarehouseZone(model.ZoneName).ToList();
             model.WarehouseZones = warehouseZones.ToPagedList(model.Page, model.PageSize);
-            ViewBag.WarehouseId = new SelectList(db.Warehouses.Where(x => x.Status != 0).OrderBy(x => x.WarehouseName), "WarehouseId", "WarehouseName", db.Warehouses.FirstOrDefault(y=>y.IsDefault).WarehouseId);
+            ViewBag.WarehouseId = new SelectList(_warehouseZoneService.GetAllWarehouses(), "WarehouseId", "WarehouseName", _warehouseZoneService.GetWarehouseByName("default warehouse").WarehouseId);
 
             return View("../Shop/WarehouseZone/Index", model);
         }
@@ -42,13 +45,13 @@ namespace WarehouseApp.Controllers
             {
                
                 zone.Status = 1;
-                zone.CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                zone.CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 zone.CreatedDate = DateTime.Now;
-                db.WarehouseZones.Add(zone);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _warehouseZoneService.Save(zone,AuthenticatedUser.GetUserFromIdentity().UserId);
+               
                 return RedirectToAction("Index");
             }
-            ViewBag.WarehouseId = new SelectList(db.Warehouses.Where(x => x.Status != 0).OrderBy(x => x.WarehouseName), "WarehouseId", "WarehouseName", db.Warehouses.FirstOrDefault(y => y.IsDefault).WarehouseId);
+            ViewBag.WarehouseId = new SelectList(_warehouseZoneService.GetAllWarehouses(), "WarehouseId", "WarehouseName", _warehouseZoneService.GetWarehouseByName("default warehouse").WarehouseId);
             return View("../Shop/WarehouseZone/Create", zone);
         }
         #endregion
@@ -60,7 +63,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            WarehouseZone warehouseZone = db.WarehouseZones.Find(id);
+            WarehouseZone warehouseZone =_warehouseZoneService.GetWarehouseZoneById(id.Value);
             if (warehouseZone == null)
             {
                 return HttpNotFound();
@@ -77,13 +80,12 @@ namespace WarehouseApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                WarehouseZone zone = db.WarehouseZones.Find(warehouseZone.ZoneId);
+                WarehouseZone zone = _warehouseZoneService.GetWarehouseZoneById(warehouseZone.ZoneId);
                 zone.ZoneName = warehouseZone.ZoneName;
                 zone.Status = warehouseZone.Status;
-                zone.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                zone.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 zone.UpdatedDate = DateTime.Now;
-                db.Entry(zone).State = System.Data.Entity.EntityState.Modified;
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _warehouseZoneService.Edit(zone, AuthenticatedUser.GetUserFromIdentity().UserId);
                 return RedirectToAction("Index");
             }
 
@@ -93,23 +95,7 @@ namespace WarehouseApp.Controllers
         #region helper modules
         public JsonResult IsNameUsed(string ZoneName, string InitialZoneName)
         {
-            bool isNotExist = true;
-            if (ZoneName != string.Empty && InitialZoneName == "undefined")
-            {
-                var isExist = db.WarehouseZones.Any(x => x.ZoneName.ToLower().Equals(ZoneName.ToLower()));
-                if (isExist)
-                {
-                    isNotExist = false;
-                }
-            }
-            if (ZoneName != string.Empty && InitialZoneName != "undefined")
-            {
-                var isExist = db.WarehouseZones.Any(x => x.ZoneName.ToLower() == ZoneName.ToLower() && x.ZoneName.ToLower() != InitialZoneName.ToLower());
-                if (isExist)
-                {
-                    isNotExist = false;
-                }
-            }
+            bool isNotExist = _warehouseZoneService.IsNameUsed(ZoneName, InitialZoneName);
             return Json(isNotExist, JsonRequestBehavior.AllowGet);
         }
 
@@ -117,11 +103,11 @@ namespace WarehouseApp.Controllers
         {
             StringBuilder selectListString = new StringBuilder();
 
-            var allZone = db.WarehouseZones.ToList();
+            var allZone = _warehouseZoneService.GetAllWarehouseZone();
             int productDefaultZoneId = 0;
             if (productId != null)
             {
-                var product = db.Products.FirstOrDefault(x => x.ProductId == productId);
+                var product = _productService.GetProductById(productId.Value);
                 if (product != null)
                 {
                     productDefaultZoneId = Convert.ToInt32(product.DefaultZoneId);
@@ -143,7 +129,7 @@ namespace WarehouseApp.Controllers
         {
             StringBuilder selectListString = new StringBuilder();
 
-            var allZone = db.StockWarehouseRelations.Where(x => (x.StockId == stockId)&&(x.Quantity!=0)).Select(x=>x.WarehouseZone).ToList();
+            var allZone = _stockService.GetStockWarehouseRelationByStockId(stockId.Value).Select(x=>x.WarehouseZone).ToList();
             //int productDefaultZoneId = 0;
             //if (productId != null)
             //{
@@ -167,7 +153,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _warehouseZoneService.Dispose();
             }
             base.Dispose(disposing);
         }

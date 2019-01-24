@@ -10,21 +10,22 @@ using System.Web.Security;
 using PagedList;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
-
+using EBSM.Entities;
+using EBSM.Services;
 
 namespace WarehouseApp.Controllers
 {
     [Authorize]
     public class NoticeController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private NoticeService _noticeService = new NoticeService();
 
         // GET: /Notice/
       
         public ActionResult Index(NoticeboardPaginationViewModel model)
         {
             
-            var notices = db.Notices.ToList().OrderByDescending(x => x.CreatedDate);
+            var notices =_noticeService.GetAll();
           if (!User.IsInRole("Global_SupAdmin") || !User.IsInRole("Global_Manager"))
             {
                 notices = notices.Where(x=>x.Status!=0).ToList().OrderByDescending(x => x.CreatedDate);
@@ -39,7 +40,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Notice notice = db.Notices.Find(id);
+            Notice notice = _noticeService.GetNoticeById(id.Value);
             if (notice == null)
             {
                 return HttpNotFound();
@@ -64,10 +65,10 @@ namespace WarehouseApp.Controllers
             if (ModelState.IsValid)
             {
                 notice.Status = 1;
-                notice.CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                notice.CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 notice.CreatedDate = DateTime.Now;
-                db.Notices.Add(notice);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _noticeService.Save(notice, AuthenticatedUser.GetUserFromIdentity().UserId);
+               
                 return RedirectToAction("Index");
             }
 
@@ -82,7 +83,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Notice notice = db.Notices.Find(id);
+            Notice notice = _noticeService.GetNoticeById(id.Value);
             if (notice == null)
             {
                 return HttpNotFound();
@@ -100,14 +101,15 @@ namespace WarehouseApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                Notice editNotice = db.Notices.Find(notice.NoticeId);
+                Notice editNotice = _noticeService.GetNoticeById(notice.NoticeId); 
                 editNotice.Heading = notice.Heading;
                 editNotice.Description = notice.Description;
                 editNotice.Status = notice.Status;
-                editNotice.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                editNotice.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 editNotice.UpdatedDate = DateTime.Now;
-                db.Entry(editNotice).State = System.Data.Entity.EntityState.Modified;
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _noticeService.Edit(notice, AuthenticatedUser.GetUserFromIdentity().UserId);
+                //db.Entry(editNotice).State = System.Data.Entity.EntityState.Modified;
+                //db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
                 return RedirectToAction("Index");
             }
 
@@ -119,7 +121,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _noticeService.Dispose();
             }
             base.Dispose(disposing);
         }

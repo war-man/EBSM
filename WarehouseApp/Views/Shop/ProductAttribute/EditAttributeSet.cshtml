@@ -1,18 +1,17 @@
 ﻿
-@using WarehouseApp.Models
+@using EBSM.Entities;
 @model WarehouseApp.Models.ViewModels.AttributeSetViewModel
 @{
     ViewBag.Title = "Edit Attribute Set";
 
 }
 <style>
-
 </style>
 @using (Html.BeginForm("EditAttributeSet", "ProductAttribute", null, FormMethod.Post, new { @id = "editAttributeSetForm" }))
 {
     @Html.AntiForgeryToken()
     <div class="row">
-	<div class="col-md-10 col-xs-12">
+        <div class="col-md-10 col-xs-12">
             <div class="x_panel">
                 <div class="x_title">
                     <h2><i class="fa fa-pencil"></i> Edit Attribute Set</h2>
@@ -32,9 +31,9 @@
                     <div class="clearfix"></div>
                 </div>
                 <div class="x_content">
-        
+
                     @Html.ValidationSummary(true)
-                    @Html.HiddenFor(x=>x.AttributeSetId)
+                    @Html.HiddenFor(x => x.AttributeSetId)
                     @Html.Hidden("InitialAttributeSetName", Model.AttributeSetName)
                     <div class="col-xs-12 col-sm-12 col-md-12">
                         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -42,27 +41,27 @@
                                 @Html.LabelFor(model => model.AttributeSetName, new { @class = "control-label" })
                                 @if (@Model.AttributeSetName.ToLower() == "medicine")
                                 {
-                                @Html.TextBoxFor(model => model.AttributeSetName, new { @class = "form-control input-sm", placeholder = "Attribute Set Name", @readonly=true})
+                                    @Html.TextBoxFor(model => model.AttributeSetName, new { @class = "form-control input-sm", placeholder = "Attribute Set Name", @readonly = true })
 
                                 }
                                 else
                                 {
-                                @Html.TextBoxFor(model => model.AttributeSetName, new { @class = "form-control input-sm", placeholder = "Attribute Set Name"})
-                                    
+                                    @Html.TextBoxFor(model => model.AttributeSetName, new { @class = "form-control input-sm", placeholder = "Attribute Set Name" })
+
                                 }
                                 @Html.ValidationMessageFor(model => model.AttributeSetName)
 
                             </div>
-                        </div>  
+                        </div>
                         <div class="col-xs-6 col-sm-6 col-md-6">
                             <div class="form-group">
                                 @Html.LabelFor(model => model.Status, new { @class = "control-label col-md-12" })
                                 <div class="col-md-10">
                                     <div class="radio radio-inline">
-                                        <label>@Html.RadioButtonFor(model => model.Status, "1", new {@checked = true, @class = "status" }) Enabled</label>
+                                        <label>@Html.RadioButtonFor(model => model.Status, "1", new { @checked = true, @class = "status" }) Enabled</label>
                                     </div>
                                     <div class="radio radio-inline">
-                                        <label>@Html.RadioButtonFor(model => model.Status, "0", new {  @class = "status" }) Disabled</label>
+                                        <label>@Html.RadioButtonFor(model => model.Status, "0", new { @class = "status" }) Disabled</label>
                                     </div>
 
                                     @Html.ValidationMessageFor(model => model.Status)
@@ -122,8 +121,8 @@
 
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
-@Scripts.Render("~/bundles/jquery-ui")
-   @Scripts.Render("~/bundles/ShopScript")
+    @Scripts.Render("~/bundles/jquery-ui")
+    @Scripts.Render("~/bundles/ShopScript")
     <script>
         $(document).ready(function() {
             $("#attributeSetSaveBtn").click(function () {

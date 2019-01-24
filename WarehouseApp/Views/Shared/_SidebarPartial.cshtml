@@ -15,7 +15,7 @@
                 <li><a href='@Url.Action("Index", "Category")'>Categories</a></li>
                 @*<li><a href='@Url.Action("Index", "Group")'>Group Names</a></li>*@
                 <li><a href='@Url.Action("AttributeSetList", "ProductAttribute")'>Attribute Sets</a></li>
-                <li><a href='@Url.Action("ListArrtibuteType", "ProductAttribute")'>Attributes</a></li>
+                <li><a href='@Url.Action("AttributeTypeList", "ProductAttribute")'>Attributes</a></li>
                 @if (User.IsInRole("Global_SupAdmin") && User.Identity.GetUserName().Split('|')[1].ToLower() == "dev")
                 {
                     <li><a href='@Url.Action("ProductImport", "Product")'>Import Products</a></li>

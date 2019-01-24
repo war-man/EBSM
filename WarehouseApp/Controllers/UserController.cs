@@ -25,6 +25,8 @@ using Microsoft.Owin;
 using Microsoft.Owin.BuilderProperties;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
+using EBSM.Services;
+using EBSM.Entities;
 using LoginViewModel = WarehouseApp.Models.ViewModels.LoginViewModel;
 using RegisterViewModel = WarehouseApp.Models.ViewModels.RegisterViewModel;
 
@@ -33,16 +35,15 @@ namespace WarehouseApp.Controllers
 {
     public class UserController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private UserService _userService = new UserService();
+        private UserRoleService _userRoleService = new UserRoleService();
         public UserManager<ApplicationUser> UserManager { get; private set; }
         #region user list view
         // GET: /User/
         [Roles("Global_SupAdmin,User_Creation")]
-       
- 
         public ActionResult Index()
         {
-            var users = db.Users.Where(x=>x.Status!=2).Include(u => u.Role);
+            var users =_userService.GetAllUsers().Where(x=>x.Status!=2);
             
             return View(users.ToList());
         }
@@ -51,7 +52,7 @@ namespace WarehouseApp.Controllers
         public ActionResult UserProfile(int id)
         {
             
-            User userProfile = db.Users.Find(id);
+            User userProfile = _userService.GetUserById(id);
             if (userProfile == null)
             {
                 return HttpNotFound();
@@ -68,12 +69,12 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            User user = db.Users.Find(id);
+            User user = _userService.GetUserById(id.Value);
             if (user == null)
             {
                 return HttpNotFound();
             }
-            ViewBag.RoleId = new SelectList(db.Roles.Where(x => x.Status == 1), "RoleId", "RoleName", user.RoleId);
+            ViewBag.RoleId = new SelectList(_userRoleService.GetAllRoles(), "RoleId", "RoleName", user.RoleId);
             
             return View(user);
         }
@@ -87,25 +88,23 @@ namespace WarehouseApp.Controllers
         {
             if (!String.IsNullOrEmpty(user.FullName) && user.RoleId > 0)
             {
-                User u = db.Users.Find(user.UserId);
+                User u = _userService.GetUserById(user.UserId);
                 u.FullName = user.FullName;
                 u.Address = user.Address;
                 u.Email = user.Email;
                 u.ContactNo = user.ContactNo;
                 u.Gender = user.Gender;
                 u.NationalId = user.NationalId;
-              
-
-                    u.RoleId = user.RoleId;
+                u.RoleId = user.RoleId;
            
-                u.UpdatedBy = Membership.GetUser(User.Identity.Name, true).UserName;
+                u.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().Username;
                 u.UpdatedDate = DateTime.Now;
-                db.Entry(u).State = System.Data.Entity.EntityState.Modified;
-                db.SaveChanges();
+                _userService.EditUser(u, AuthenticatedUser.GetUserFromIdentity().UserId);
+             
                 return RedirectToAction("UserProfile", "User", new {id=u.UserId });
             }
 
-            ViewBag.RoleId =new SelectList(db.Roles.Where(r => r.Status == 1 ), "RoleId", "RoleName", user.RoleId);
+            ViewBag.RoleId =new SelectList(_userRoleService.GetAllRoles(), "RoleId", "RoleName", user.RoleId);
             return View(user);
         }
         #endregion
@@ -138,13 +137,13 @@ namespace WarehouseApp.Controllers
                 
                 // find user by username first
                 //var user = await UserManager.FindByNameAsync(model.UserName);
-                var user = db.Users.FirstOrDefault(u => u.UserName.ToLower() == model.UserName.ToLower() && u.Status != 0);
+                var user =_userService.GetUserByUsername(model.UserName);
 
                 if (user != null)
                 {
                     MD5 md5Hash = MD5.Create();
                     string hashPassword = GetMd5Hash(md5Hash, model.Password);
-                    var validCredentials = db.Users.FirstOrDefault(u => u.UserName.ToLower() == model.UserName.ToLower() && u.Password.Equals(hashPassword) && u.Status != 0);
+                    var validCredentials =_userService.GetValidUserByPassword(model.UserName, hashPassword) ;
                     //var validCredentials = await UserManager.FindAsync(model.UserName, model.Password);
                    if (validCredentials == null)
                     {
@@ -155,14 +154,7 @@ namespace WarehouseApp.Controllers
 
                         FormsAuthentication.SetAuthCookie(user.UserId + "|" + user.UserName.ToLower(), model.RememberMe);
                         Session["sessionid"] = System.Web.HttpContext.Current.Session.SessionID;
-                        Logins login = new Logins();
-                        login.UserId = model.UserName.ToLower();
-                        login.SessionId = System.Web.HttpContext.Current.Session.SessionID; ;
-                        login.LoggedIn = true;
-                        login.LoggedInDateTime = DateTime.Now;
-                        db.Logins.Add(login);
-                        db.SaveChanges();
-
+                        _userService.SaveUserLoginRecord(model.UserName, System.Web.HttpContext.Current.Session.SessionID,true);
 
                        if (Url.IsLocalUrl(returnUrl))
                         {
@@ -199,7 +191,7 @@ namespace WarehouseApp.Controllers
         {
             ViewBag.Message = "";
             TempData["RegistrationSuccess"] = "";
-            ViewBag.RoleId = new SelectList(db.Roles.Where(r => r.Status ==1), "RoleId", "RoleName");
+            ViewBag.RoleId = new SelectList(_userRoleService.GetAllRoles(), "RoleId", "RoleName");
             return View();
         }
 
@@ -228,20 +220,20 @@ namespace WarehouseApp.Controllers
                 string hashPassword = GetMd5Hash(md5Hash, userRegister.Password);
                 user.Password = hashPassword;
                 user.Status = 1;
-               user.CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+               user.CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 user.CreatedDate = DateTime.Now;
                 user.LastPassChangeDate = DateTime.Now.Date;
                 user.PasswordChangedCount = 0;
-                db.Users.Add(user);
+                _userService.SaveUser(user,AuthenticatedUser.GetUserFromIdentity().UserId);
                 TempData["RegistrationSuccess"] = "New user registration successfully complete! Username and Password sent to user by Email.";
-                db.SaveChanges();
+        
                 return RedirectToAction("index");
             }
             else
             {
                 ViewBag.Message = "Something went wrong! please try again";
             }
-            ViewBag.RoleId = new SelectList(db.Roles.Where(r => r.RoleId != 1 && r.Status ==1), "RoleId", "RoleName", userRegister.RoleId);
+            ViewBag.RoleId = new SelectList(_userRoleService.GetAllRoles().Where(r=>r.RoleId != 1), "RoleId", "RoleName", userRegister.RoleId);
             return View(userRegister);
         }
         #endregion
@@ -290,7 +282,7 @@ namespace WarehouseApp.Controllers
                     string hashNewPassword = GetMd5Hash(md5Hash, model.NewPassword);
 
                     //changePasswordSucceeded = currentUser.ChangePassword(model.OldPassword, model.NewPassword);
-                    var user = db.Users.FirstOrDefault(u => u.UserName.Equals(model.UserName) && u.Password.Equals(hashOldPassword) && u.Status != 0);
+                    var user = _userService.GetValidUserByPassword(model.UserName, hashOldPassword);
 
                     if (user == null)
                     {
@@ -304,9 +296,8 @@ namespace WarehouseApp.Controllers
                         user.Password = hashNewPassword;
                         user.LastPassChangeDate = DateTime.Now.Date;
                         user.PasswordChangedCount += 1;
+                        _userService.EditUser(user);
 
-                        db.Entry(user).State = EntityState.Modified;
-                        db.SaveChanges(user.UserId.ToString());
                         changePasswordSucceeded = true;
 
                     }
@@ -368,7 +359,7 @@ namespace WarehouseApp.Controllers
                 {
                     MD5 md5Hash = MD5.Create();
                     string hashNewPassword = GetMd5Hash(md5Hash, model.NewPassword);
-                    var user = db.Users.FirstOrDefault(u => u.UserId == model.UserId);
+                    var user =_userService.GetUserById(model.UserId);
 
                     if (user == null)
                     {
@@ -377,9 +368,9 @@ namespace WarehouseApp.Controllers
                     user.Password = hashNewPassword;
                     user.LastPassChangeDate = DateTime.Now;
                     user.PasswordChangedCount += 1;
-                    user.UpdatedBy = Membership.GetUser(User.Identity.Name, true).UserName;
-                    db.Entry(user).State = EntityState.Modified;
-                    db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                    user.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().Username;
+                      _userService.EditUser(user, AuthenticatedUser.GetUserFromIdentity().UserId);
+                  
                     resetPasswordSucceeded = true;
                 }
                 catch (Exception)
@@ -412,14 +403,15 @@ namespace WarehouseApp.Controllers
                 Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 return Json(new { Result = "Error" });
             }
-            User user = db.Users.Find(id);
+            User user = _userService.GetUserById(id.Value);
             if (user == null)
             {
                 Response.StatusCode = (int)HttpStatusCode.NotFound;
                 return Json(new { Result = "Error" });
             }
             user.Status = 0;
-            db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+            _userService.EditUser(user, AuthenticatedUser.GetUserFromIdentity().UserId);
+          
             return Json(new { Result = "OK" });
         }
         [Roles("Global_SupAdmin,User_Creation")]
@@ -430,14 +422,14 @@ namespace WarehouseApp.Controllers
                 Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 return Json(new { Result = "Error" });
             }
-            User user = db.Users.Find(id);
+            User user = _userService.GetUserById(id.Value);
             if (user == null)
             {
                 Response.StatusCode = (int)HttpStatusCode.NotFound;
                 return Json(new { Result = "Error" });
             }
             user.Status = status;
-            db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+            _userService.EditUser(user, AuthenticatedUser.GetUserFromIdentity().UserId);
             return Json(new { Result = "OK" });
         }
 #endregion
@@ -447,7 +439,7 @@ namespace WarehouseApp.Controllers
         public ActionResult Roles()
         {
            
-            return View("Roles", db.Roles.Where(x=>x.Status!=2).ToList());
+            return View("Roles", _userRoleService.GetAllRoles().Where(x=>x.Status!=2).ToList());
         }
         [Roles("Global_SupAdmin,Role_Creation")]
         public ActionResult CeateRole()
@@ -484,8 +476,8 @@ namespace WarehouseApp.Controllers
                     }
 
                 }
-                db.Roles.Add(role);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _userRoleService.SaveRole(role,AuthenticatedUser.GetUserFromIdentity().UserId);
+               
                 return RedirectToAction("Roles", "User");
             }
             
@@ -498,7 +490,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Role role = db.Roles.Find(id);
+            Role role =_userRoleService.GetRoleByid(id.Value);
             if (role == null)
             {
                 return HttpNotFound();
@@ -528,7 +520,7 @@ namespace WarehouseApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                var role = db.Roles.Find(model.RoleId);
+                var role = _userRoleService.GetRoleByid(model.RoleId.Value);
 
                 role.RoleName = model.RoleName;
                 role.Status = model.Status;
@@ -537,12 +529,8 @@ namespace WarehouseApp.Controllers
                 //db.Entry(role).State = EntityState.Modified;
                 //db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
                 var roleTasks = role.RoleTasks.ToList();
-                foreach (var removeTask in roleTasks)
-                {
-                    db.RoleTasks.Remove(removeTask);
-                }
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
-                
+                _userRoleService.DeleteRoleTasks(roleTasks);
+               
                 role.RoleTasks = new List<RoleTask>();
                 if (model.RoleTaskCheckBoxList.Any())
                 {
@@ -557,8 +545,8 @@ namespace WarehouseApp.Controllers
                     }
 
                 }
-                db.Entry(role).State = EntityState.Modified;
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _userRoleService.EditRole(role,AuthenticatedUser.GetUserFromIdentity().UserId);
+     
                 return RedirectToAction("Roles", "User");
             }
             // ViewBag.CategoryParentId =00. new SelectList(CategoryTree().Where(x => x.Status > 0).OrderBy(x => x.CategoryName), "ItemCategoryId", "CategoryName", category.CategoryParentId);
@@ -585,7 +573,7 @@ namespace WarehouseApp.Controllers
        
         private async Task<bool> IsFirstLogin(int? userId)
         {
-            var user = db.Users.FirstOrDefault(u => u.UserId == userId);
+            var user =_userService.GetUserById(userId.Value);
             if (user.PasswordChangedCount > 0 || user.PasswordChangedCount == null)
             {
                 return false;
@@ -634,36 +622,47 @@ namespace WarehouseApp.Controllers
         }
         //name or email exist checker
 
-         [AllowAnonymous]
-        public JsonResult CheckUserNameExist(string userName)
+        // [AllowAnonymous]
+        //public JsonResult CheckUserNameExist(string userName)
+        //{
+        //    var isUserNameExist = _userService.GetUserByUsername(db.Users.Any(u => u.UserName.ToLower() == userName.ToLower());
+        //    if (!isUserNameExist)
+        //    {
+        //        return Json(true, JsonRequestBehavior.AllowGet);
+        //    }
+        //    else
+        //    {
+        //        return Json(false, JsonRequestBehavior.AllowGet);
+        //    }
+        //}
+        [AllowAnonymous]
+        public JsonResult CheckUserNameExist(string userName, string InitialUserName)
         {
-            var isUserNameExist = db.Users.Any(u => u.UserName.ToLower() == userName.ToLower());
-            if (!isUserNameExist)
-            {
-                return Json(true, JsonRequestBehavior.AllowGet);
-            }
-            else
-            {
-                return Json(false, JsonRequestBehavior.AllowGet);
-            }
+            bool isNotExist = _userService.IsUserNameExist(userName, InitialUserName);
+            return Json(isNotExist, JsonRequestBehavior.AllowGet);
         }
-
-         [AllowAnonymous]
-        public JsonResult CheckEmailExist(string email)
+        //[AllowAnonymous]
+        //public JsonResult CheckEmailExist(string email)
+        //{
+        //    var isEmailExist = db.Users.Any(u => u.Email.ToLower() == email.ToLower() && u.Status != 0);
+        //    if (!isEmailExist)
+        //    {
+        //        return Json(true, JsonRequestBehavior.AllowGet);
+        //    }
+        //    else
+        //    {
+        //        return Json(false, JsonRequestBehavior.AllowGet);
+        //    }
+        //}
+        [AllowAnonymous]
+        public JsonResult CheckEmailExist(string email, string InitialEmail)
         {
-            var isEmailExist = db.Users.Any(u => u.Email.ToLower() == email.ToLower() && u.Status != 0);
-            if (!isEmailExist)
-            {
-                return Json(true, JsonRequestBehavior.AllowGet);
-            }
-            else
-            {
-                return Json(false, JsonRequestBehavior.AllowGet);
-            }
+            bool isNotExist = _userService.IsEmailExist(email, InitialEmail);
+            return Json(isNotExist, JsonRequestBehavior.AllowGet);
         }
         public bool EmailNotExist(string email)
         {
-            var isEmailExist = db.Users.Any(u => u.Email.ToLower() == email.ToLower() && u.Status!=0);
+            var isEmailExist = _userService.GetAllUsers().Any(u => u.Email.ToLower() == email.ToLower() && u.Status!=0);
             if (!isEmailExist)
             {
                 return true;
@@ -765,7 +764,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _userService.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -774,50 +773,22 @@ namespace WarehouseApp.Controllers
     #region login controller
     public class LoginsController : Controller
     {
-        private static WmsDbContext db = new WmsDbContext();
+        private static UserService _userService = new UserService();
         //
         // GET: /Logins/
         public static bool IsYourLoginStillTrue(string userId, string sid)
         {
-
-
-            //IEnumerable<Logins> logins = (from i in context.Logins
-            //                              where i.LoggedIn == true &&
-            //                              i.UserId == userId && i.SessionId == sid
-            //                              select i).AsEnumerable();
-            var logins = db.Logins.Where(i => i.LoggedIn == true && i.UserId == userId && i.SessionId == sid);
-            return logins.Any();
+            return  _userService.IsYourLoginStillTrue(userId, sid);
         }
 
         public static bool IsUserLoggedOnElsewhere(string userId, string sid)
         {
-
-
-            //IEnumerable<Logins> logins = (from i in context.Logins
-            //                              where i.LoggedIn == true &&
-            //                              i.UserId == userId && i.SessionId != sid
-            //                              select i).AsEnumerable();
-            var logins = db.Logins.Where(i => i.LoggedIn == true && i.UserId == userId && i.SessionId != sid);
-            return logins.Any();
+            return _userService.IsUserLoggedOnElsewhere(userId, sid);
         }
 
         public static void LogEveryoneElseOut(string userId, string sid)
         {
-
-
-            //IEnumerable<Logins> logins = (from i in context.Logins
-            //                              where i.LoggedIn == true &&
-            //                              i.UserId == userId &&
-            //                              i.SessionId != sid // need to filter by user ID
-            //                              select i).AsEnumerable();
-            var logins = db.Logins.Where(i => i.LoggedIn == true && i.UserId == userId && i.SessionId != sid);
-
-            foreach (Logins item in logins)
-            {
-                item.LoggedIn = false;
-            }
-
-            db.SaveChanges();
+            _userService.LogEveryoneElseOut(userId, sid);
         }
 
 
@@ -825,7 +796,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _userService.Dispose();
             }
             base.Dispose(disposing);
         }

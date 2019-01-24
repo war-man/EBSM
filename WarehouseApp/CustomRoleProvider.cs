@@ -9,13 +9,20 @@ using System.Web.Routing;
 using System.Web.Security;
 using System.Web.Caching;
 using WarehouseApp.Models;
+using EBSM.Entities;
+using EBSM.Services;
 
 namespace WarehouseApp
 {
     public class CustomRoleProvider:RoleProvider
     {
         private int _cacheTimeoutInMinute = 60;
+        private UserRoleService _userRoleService;
 
+        public CustomRoleProvider()
+        {
+            _userRoleService = new UserRoleService();
+        }
         public override bool IsUserInRole(string userId, string roleName)
         {
             var userRoles = GetRolesForUser(userId);
@@ -66,23 +73,25 @@ namespace WarehouseApp
             //}
             string[] RoleTasks = new string[] { };
             int id = Convert.ToInt32(userid.Split('|')[0]);
-            using (WmsDbContext db = new WmsDbContext())
-            {
-                RoleTasks = (from a in db.RoleTasks
-                             join b in db.Users on new {  a.RoleId } equals new {  b.RoleId }
-                             where b.UserId.Equals(id)
-                             select a.Task).ToArray<string>();
-                //var user = db.Users.FirstOrDefault(u => u.UserName == username);
-                //deptRoles =
-                //    db.DeptRoleConfigs.Where(x => x.DepartmentId == user.DepartmentId && x.RoleId == user.RoleId)
-                //        .Select(x => x.DepartmentRole)
-                //        .ToArray<string>();
-                //if (roles.Count() > 0)
-                //{
-                //    HttpRuntime.Cache.Insert(cacheKey,roles,null,DateTime.Now.AddMinutes(_cacheTimeoutInMinute), Cache.NoSlidingExpiration);
-                //}
 
-            }
+            //using (WmsDbContext db = new WmsDbContext())
+            //{
+            //    RoleTasks = (from a in db.RoleTasks
+            //                 join b in db.Users on new {  a.RoleId } equals new {  b.RoleId }
+            //                 where b.UserId.Equals(id)
+            //                 select a.Task).ToArray<string>();
+            //var user = db.Users.FirstOrDefault(u => u.UserName == username);
+            //deptRoles =
+            //    db.DeptRoleConfigs.Where(x => x.DepartmentId == user.DepartmentId && x.RoleId == user.RoleId)
+            //        .Select(x => x.DepartmentRole)
+            //        .ToArray<string>();
+            //if (roles.Count() > 0)
+            //{
+            //    HttpRuntime.Cache.Insert(cacheKey,roles,null,DateTime.Now.AddMinutes(_cacheTimeoutInMinute), Cache.NoSlidingExpiration);
+            //}
+
+            // }
+            RoleTasks= _userRoleService.GetRolesById(id);
             return RoleTasks;
         }
 

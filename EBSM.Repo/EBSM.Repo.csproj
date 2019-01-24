@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{F8BCA28B-8EAA-40D9-9A44-A3C092634799}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>EBSM.Repo</RootNamespace>
+    <AssemblyName>EBSM.Repo</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="EBSM.Entities">
+      <HintPath>..\EBSM.Entities\bin\Debug\EBSM.Entities.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="TransactionUnitOfWork.cs" />
+    <Compile Include="TransactionRepository.cs" />
+    <Compile Include="ProductTransferUnitOfWork.cs" />
+    <Compile Include="ProductTransferRepository.cs" />
+    <Compile Include="AuditLogRepository.cs" />
+    <Compile Include="AuditLogUnitOfWork.cs" />
+    <Compile Include="PurchasePaymentRepository.cs" />
+    <Compile Include="PurchaseProductRepository.cs" />
+    <Compile Include="PurchaseCostRepository.cs" />
+    <Compile Include="PurchaseRepository.cs" />
+    <Compile Include="PurchaseUnitOfWork.cs" />
+    <Compile Include="ProductCustomerRalationRepository.cs" />
+    <Compile Include="ProductCategoryRepository.cs" />
+    <Compile Include="ProductAttributeRelationRepository.cs" />
+    <Compile Include="SupplierRepository.cs" />
+    <Compile Include="SupplierUnitOfWork.cs" />
+    <Compile Include="AttributeSetAttributeRepository.cs" />
+    <Compile Include="ProductAttributeSetRepository.cs" />
+    <Compile Include="ProductAttributeRepository.cs" />
+    <Compile Include="ProductAttributeUnitOfWork.cs" />
+    <Compile Include="OrderProductRepository.cs" />
+    <Compile Include="OrderInvoiceRelationRepository.cs" />
+    <Compile Include="SalesOrderRepository.cs" />
+    <Compile Include="SalesOrderUnitOfWork.cs" />
+    <Compile Include="SalesmanRepository.cs" />
+    <Compile Include="SalesmanUnitOfWork.cs" />
+    <Compile Include="NoticeRepository.cs" />
+    <Compile Include="NoticeUnitOfWork.cs" />
+    <Compile Include="GroupRepository.cs" />
+    <Compile Include="GroupUnitOfWork.cs" />
+    <Compile Include="ExpenseTypeRepository.cs" />
+    <Compile Include="ExpenseRepository.cs" />
+    <Compile Include="ExpenseTypeUnitOfWork.cs" />
+    <Compile Include="ExpenseUnitOfWork.cs" />
+    <Compile Include="DamageReturnRepository.cs" />
+    <Compile Include="DamageDismissRepository.cs" />
+    <Compile Include="DamageStockRepository.cs" />
+    <Compile Include="DamageRepository.cs" />
+    <Compile Include="DamageUnitOfWork.cs" />
+    <Compile Include="CategoryRepository.cs" />
+    <Compile Include="CategoryUnitOfWork.cs" />
+    <Compile Include="CompnayProfileRepository.cs" />
+    <Compile Include="CompanyProfileUnitOfWork.cs" />
+    <Compile Include="BillInvoicesRepository.cs" />
+    <Compile Include="CustomerProjectRepository.cs" />
+    <Compile Include="SalesReturnProductRepository.cs" />
+    <Compile Include="SalesReturnRepository.cs" />
+    <Compile Include="SalesProductRepository.cs" />
+    <Compile Include="SalesRepository.cs" />
+    <Compile Include="SalesReturnUnitOfWork.cs" />
+    <Compile Include="SalesUnitOfWork.cs" />
+    <Compile Include="CustomerRepository.cs" />
+    <Compile Include="CustomerUnitOfWork.cs" />
+    <Compile Include="BillRepository.cs" />
+    <Compile Include="BillUnitOfWork.cs" />
+    <Compile Include="ProductRepository.cs" />
+    <Compile Include="ProductUnitOfWork.cs" />
+    <Compile Include="MobileBankingAccountRepository.cs" />
+    <Compile Include="CashAccountRepository.cs" />
+    <Compile Include="BankAccountRepository.cs" />
+    <Compile Include="TransactionAccountUnitOfWork.cs" />
+    <Compile Include="StockWarehouseRelationRepository.cs" />
+    <Compile Include="UserRoleRepository.cs" />
+    <Compile Include="UserRoleUnitOfWork.cs" />
+    <Compile Include="WarehouseZoneRepository.cs" />
+    <Compile Include="WarehouseZoneUnitOfWork.cs" />
+    <Compile Include="StockRepository.cs" />
+    <Compile Include="ArticleTransferRepository.cs" />
+    <Compile Include="StockUnitOfWork.cs" />
+    <Compile Include="UserRepository.cs" />
+    <Compile Include="ArticleTransferUnitOfWork.cs" />
+    <Compile Include="UserUnitOfWork.cs" />
+    <Compile Include="Migrations\201802281423253_InitialCreate.cs" />
+    <Compile Include="Migrations\201802281423253_InitialCreate.Designer.cs">
+      <DependentUpon>201802281423253_InitialCreate.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\Configuration.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WmsDbContext.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Migrations\201802281423253_InitialCreate.resx">
+      <DependentUpon>201802281423253_InitialCreate.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EBSM.CommonUtility\EBSM.CommonUtility.csproj">
+      <Project>{3fda332f-d50e-41d9-8783-98f066a0ce4e}</Project>
+      <Name>EBSM.CommonUtility</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

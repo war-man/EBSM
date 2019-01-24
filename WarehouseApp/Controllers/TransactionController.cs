@@ -9,26 +9,26 @@ using PagedList;
 using System.Web.Security;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
-
+using EBSM.Entities;
+using EBSM.Services;
 
 namespace WarehouseApp.Controllers
 {
     [Authorize]
     public class TransactionController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private TransactionService _transactionService = new TransactionService();
         [Roles("Global_SupAdmin")]
         [OutputCache(Duration = 30)]
         public ActionResult Index(TransactionSearchViewModel model)
         {
             var fromDate = Convert.ToDateTime(model.TransactionDateFrom);
             var toDate = Convert.ToDateTime(model.TransactionDateTo);
-            var transactions = db.Transactions.Where(x => (model.TransactionDateFrom == null || x.TransactionDate >= fromDate) && (model.TransactionDateTo == null || x.TransactionDate <= toDate)
-                 && (model.TransactionType == null || x.TypeOfTransaction == model.TransactionType) && (model.TransactionMode == null || x.TransactionMode == model.TransactionMode) && (model.TransactionTable == null || x.TableName == model.TransactionTable)).OrderByDescending(x => x.CreatedDate).ToList();
+            var transactions = _transactionService.GetAllTransactions(model.TransactionDateFrom, model.TransactionDateTo, model.TransactionType, model.TransactionMode, model.TransactionTable).ToList();
             model.Transactions = transactions.ToPagedList(model.Page, model.PageSize);
 
 
-            ViewBag.TransactionTable = new SelectList(db.Transactions.GroupBy(x => x.TableName).Select(x => new { TableName = x.FirstOrDefault().TableName }).ToList(), "TableName", "TableName");
+            ViewBag.TransactionTable = new SelectList(_transactionService.GetAllTransactions().GroupBy(x => x.TableName).Select(x => new { TableName = x.FirstOrDefault().TableName }).ToList(), "TableName", "TableName");
             ViewBag.TransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text");
 
             return View("../Shop/Transaction/Index", model);
@@ -51,8 +51,8 @@ namespace WarehouseApp.Controllers
                 CreatedBy = currentUserId,
                 CreatedDate = DateTime.Now,
             };
-            db.Transactions.Add(transaction);
-            db.SaveChanges(currentUserId.ToString());
+            _transactionService.SaveTransaction(transaction, currentUserId);
+
         }
         public void TransactionWithdraw(string transactionMode, int accountId, double amount, DateTime transactionDate, string tableName, string primaryKeyName, int primaryKeyValue, int? currentUserId,string transactionHead)
         {
@@ -71,97 +71,21 @@ namespace WarehouseApp.Controllers
                 CreatedBy =currentUserId,
                 CreatedDate = DateTime.Now,
             };
-            db.Transactions.Add(transaction);
-            db.SaveChanges(currentUserId.ToString());
+            _transactionService.SaveTransaction(transaction, currentUserId);
         }
 
         //====deposit to acccount function==============================================================================================================
         public void DepositToAccount(string transactionMode, int accountId, double amount, DateTime transactionDate, string tableName, string primaryKeyName, int primaryKeyValue, int? currentUserId, string transactionHead)
         {
-     
-            if (transactionMode == "Cash")
-            {
-                var cash = db.Cash.FirstOrDefault(x => x.CashId == accountId);
-                if (cash != null)
-                {
-                    cash.Balance += amount;
-                    cash.UpdatedBy =currentUserId;
-                    cash.CreatedDate = DateTime.Now;
-                    db.Entry(cash).State = System.Data.Entity.EntityState.Modified;
-                }
-
-            }
-            else if (transactionMode == "Bank")
-            {
-                var bankAcc = db.BankAccounts.FirstOrDefault(x => x.BankId == accountId);
-                if (bankAcc != null)
-                {
-                    bankAcc.Balance += amount;
-                    bankAcc.UpdatedBy = currentUserId;
-                    bankAcc.CreatedDate = DateTime.Now;
-                    db.Entry(bankAcc).State = System.Data.Entity.EntityState.Modified;
-                }
-
-            }
-            else if (transactionMode == "Mobile")
-            {
-                var mobAcc = db.MobileBangking.FirstOrDefault(x => x.AccountId == accountId);
-                if (mobAcc != null)
-                {
-                    mobAcc.Balance += amount;
-                    mobAcc.UpdatedBy = currentUserId;
-                    mobAcc.CreatedDate = DateTime.Now;
-                    db.Entry(mobAcc).State = System.Data.Entity.EntityState.Modified;
-                }
-            }
-
-            db.SaveChanges(currentUserId.ToString());
-            TransactionDeposit(transactionMode, accountId, amount, transactionDate, tableName, primaryKeyName, primaryKeyValue, currentUserId,transactionHead );
-            
+            _transactionService.DepositToAccount(transactionMode, accountId, amount, transactionDate, tableName, primaryKeyName, primaryKeyValue, currentUserId, transactionHead);
+            TransactionWithdraw(transactionMode, accountId, amount, transactionDate, tableName, primaryKeyName, primaryKeyValue, currentUserId, transactionHead);
         }
-
         //withdraw from account functtion================================================================================================================
         public void WithdrawFromAccount(string transactionMode, int accountId, double amount, DateTime transactionDate, string tableName, string primaryKeyName, int primaryKeyValue, int? currentUserId, string transactionHead)
         {
-            if (transactionMode == "Cash")
-            {
-                var cash = db.Cash.FirstOrDefault(x => x.CashId == accountId);
-                if (cash != null)
-                {
-                    cash.Balance -= amount;
-                    cash.UpdatedBy = currentUserId;
-                    cash.CreatedDate = DateTime.Now;
-                    db.Entry(cash).State = System.Data.Entity.EntityState.Modified;
-                }
-
-            }
-            else if (transactionMode == "Bank")
-            {
-                var bankAcc = db.BankAccounts.FirstOrDefault(x => x.BankId == accountId);
-                if (bankAcc != null)
-                {
-                    bankAcc.Balance -= amount;
-                    bankAcc.UpdatedBy = currentUserId;
-                    bankAcc.CreatedDate = DateTime.Now;
-                    db.Entry(bankAcc).State = System.Data.Entity.EntityState.Modified;
-                }
-
-            }
-            else if (transactionMode == "Mobile")
-            {
-                var mobAcc = db.MobileBangking.FirstOrDefault(x => x.AccountId == accountId);
-                if (mobAcc != null)
-                {
-                    mobAcc.Balance -= amount;
-                    mobAcc.UpdatedBy = currentUserId;
-                    mobAcc.CreatedDate = DateTime.Now;
-                    db.Entry(mobAcc).State = System.Data.Entity.EntityState.Modified;
-                }
-            }
-            db.SaveChanges(currentUserId.ToString());
+            _transactionService.WithdrawFromAccount( transactionMode,  accountId,  amount,  transactionDate,  tableName,  primaryKeyName,  primaryKeyValue,  currentUserId,  transactionHead);
             TransactionWithdraw(transactionMode, accountId, amount, transactionDate, tableName, primaryKeyName, primaryKeyValue, currentUserId, transactionHead);
         }
-
         public static string BillingMonthString(string date)
         {
             
@@ -192,7 +116,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _transactionService.Dispose();
             }
             base.Dispose(disposing);
         }

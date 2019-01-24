@@ -11,14 +11,22 @@ using OfficeOpenXml;
 using PagedList;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
-
+using EBSM.Entities;
+using EBSM.Services;
 
 namespace WarehouseApp.Controllers
 {
     [Authorize]
     public class ProductController : Controller
     {
-        private  WmsDbContext db = new WmsDbContext();
+        private  ProductService _productService = new ProductService();
+        private  GroupService _groupService = new GroupService();
+        private  CustomerService _customerService = new CustomerService();
+        private  SupplierService _supplierService = new SupplierService();
+        private  CategoryService _categoryService = new CategoryService();
+        private  ProductAttributeService _productAttributeService = new ProductAttributeService();
+        private WarehouseZoneService _warehouseZoneService = new WarehouseZoneService();
+        private StockService _stockService = new StockService();
 
         // GET: /Product/
         [Roles("Global_SupAdmin,Configuration")]
@@ -27,20 +35,16 @@ namespace WarehouseApp.Controllers
         {
             // To Bind the category drop down in search section
             ViewBag.CatId = new SelectList(CategoryController.CategoryTree().Where(x => x.Status != 0).OrderBy(x => x.CategoryName), "CategoryId", "CategoryName");
-            ViewBag.GroupNameId = new SelectList(db.Groups.Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName");
-            ViewBag.ManufacId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 2).OrderBy(x=>x.SupplierName), "SupplierId", "SupplierName");
+            ViewBag.GroupNameId = new SelectList(_groupService.GetAllGroups().Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName");
+            ViewBag.ManufacId = new SelectList(_supplierService.GetAllManufecturer(), "SupplierId", "SupplierName");
             
             // Get Products
-            var products = db.Products.Where(x => (model.PName == null || (x.ProductFullName.StartsWith(model.PName) || x.ProductFullName.Contains(" " + model.PName)))
-                    && (model.PCode == null || x.ProductCode.ToLower().StartsWith(model.PCode.ToLower()))
-                    && (model.GroupNameId == null || x.GroupNameId==model.GroupNameId)
-                    && (model.ManufacId == null || x.ManufacturerId == model.ManufacId)
-                     && (model.CatId == null || x.ProductCategories.Any(y=>y.CategoryId== model.CatId))
-                    &&(model.Status == null || x.Status==model.Status)
-                    && (model.Price == null || x.Tp < model.Price)).OrderBy(o => o.ProductName).ToList();
+            var products = _productService.GetAllProducts(model.PName, model.PCode, model.GroupNameId, model.ManufacId, model.CatId, model.Status, model.Price).ToList();
       
             model.Products = products.ToPagedList(model.Page, model.PageSize);
-            ViewBag.AttributeSetId = db.ProductAttributeSets.OrderBy(x => x.AttributeSetName).ToList();
+            ViewBag.AttributeSetId = _productAttributeService.GetAllAttributeSets().ToList();
+            ViewBag.MedicineAttributeSetExist = _productAttributeService.IsAttributeSetNameExist("medicine");
+       
             return View("../Shop/Product/Index",model);
         }
 
@@ -49,15 +53,15 @@ namespace WarehouseApp.Controllers
         [HttpGet]
         public ActionResult AddProduct(int attributeSetId)
         {
-            ViewBag.Attributes = db.AttributeSetAttributes.Where(x => x.AttributeSetId == attributeSetId).Select(x=>x.Attribute).ToList();
-            ViewBag.Categories=db.Categories.Where(x => !x.CategoryParentId.HasValue).ToList();
+            ViewBag.Attributes =_productAttributeService.GetAttributesByAttributeSetId(attributeSetId).Select(x=>x.Attribute).ToList();
+            ViewBag.Categories=_categoryService.GetAllRootCategories().ToList();
             ViewBag.CategoryIds = new MultiSelectList(CategoryController.CategoryTree().Where(x => x.Status != 0).OrderBy(x => x.CategoryName), "CategoryId", "CategoryName");
-            ViewBag.GroupNameId = new SelectList(db.Groups.Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName");
-            ViewBag.ManufacturerId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 2).OrderBy(x => x.SupplierName), "SupplierId", "SupplierName");
-            ViewBag.ZoneId = new SelectList(db.WarehouseZones.Where(x => x.Status != 0).OrderBy(x => x.ZoneName), "ZoneId", "ZoneName");
-            ViewBag.CustomerId = new SelectList(db.Customers.Where(x => x.Status != 0).OrderBy(x => x.CustomerId), "CustomerId", "FullName");
+            ViewBag.GroupNameId = new SelectList(_groupService.GetAllGroups().Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName");
+            ViewBag.ManufacturerId = new SelectList(_supplierService.GetAllManufecturer(), "SupplierId", "SupplierName");
+            ViewBag.ZoneId = new SelectList(_warehouseZoneService.GetAllWarehouseZone(), "ZoneId", "ZoneName");
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers().Where(x => x.Status != 0), "CustomerId", "FullName");
 
-            var attributeSet = db.ProductAttributeSets.Find(attributeSetId);
+            var attributeSet = _productAttributeService.GetProductAttributeSetById(attributeSetId);
             if (attributeSet == null)
             {
                 return HttpNotFound();
@@ -114,15 +118,17 @@ namespace WarehouseApp.Controllers
                     ProductImage = productModel.ProductImage,
                     AttributeSetId = productModel.AttributeSetId,
                     Status = productModel.Status,
-                    CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
+                    CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId,
                     CreatedDate = DateTime.Now,
                 };
-                db.Products.Add(product);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _productService.Save(product, AuthenticatedUser.GetUserFromIdentity().UserId);
+         
 
                 //add product attributes relationship===============================================
+
                 if (productModel.ProductAtts.Any())
                 {
+                    List<ProductAttributeRelation> ProductAttributeRelationList = new List<ProductAttributeRelation>();
                     foreach (var att in productModel.ProductAtts)
                     {
                         if (att.ProdAttCheckboxes != null)
@@ -148,25 +154,19 @@ namespace WarehouseApp.Controllers
                             AttributeId = att.AttributeId,
                             Value = att.Value
                         };
-                        db.ProductAttributeRelations.Add(productAtts);
+                        ProductAttributeRelationList.Add(productAtts);
                     }
+                    _productService.SaveProductAttributeRelationList(ProductAttributeRelationList);
                 }
                 //add product categories relationship===============================================
-                if (productModel.CategoryIds!=null) { 
-                foreach (var cat in productModel.CategoryIds)
-                {
-                    var productCat = new ProductCategory()
-                    {
-                        ProductId = product.ProductId,
-                        CategoryId = cat,
-                    };
-                    db.ProductCategories.Add(productCat);
-                }
+                if (productModel.CategoryIds!=null) {
+                    _productService.SaveProductCategoryRelationList(product.ProductId,productModel.CategoryIds.ToArray());
                 }
 
                 //add product customer options===============================================
                 if (productModel.CustomerOptionList != null)
                 {
+                    List<ProductCustomerRelation> ProductCustomerRelationList = new List<ProductCustomerRelation>();
                     foreach (var customerOption in productModel.CustomerOptionList)
                     {
                         if (customerOption.CustomerId != null)
@@ -180,24 +180,25 @@ namespace WarehouseApp.Controllers
                                 UnitPrice = customerOption.UnitPrice,
                                 Mrp = customerOption.Mrp,
                             };
-                            db.ProductCustomerRelations.Add(customerRelation);
+                            ProductCustomerRelationList.Add(customerRelation);
                         }
                        
                     }
+                    _productService.SaveProductCustomerRelationList(ProductCustomerRelationList);
                 }
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+               
                 return RedirectToAction("Index");
             }
 
-            ViewBag.Attributes = db.AttributeSetAttributes.Where(x => x.AttributeSetId == productModel.AttributeSetId).Select(x => x.Attribute).ToList();
-            ViewBag.Categories = db.Categories.Where(x => !x.CategoryParentId.HasValue).ToList();
+            ViewBag.Attributes = _productAttributeService.GetAttributesByAttributeSetId(productModel.AttributeSetId).Select(x => x.Attribute).ToList();
+            ViewBag.Categories = _categoryService.GetAllRootCategories().ToList();
             ViewBag.CategoryIds = new MultiSelectList(CategoryController.CategoryTree().Where(x => x.Status != 0).OrderBy(x => x.CategoryName), "CategoryId", "CategoryName", productModel.CategoryIds);
-            ViewBag.GroupNameId = new SelectList(db.Groups.Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName", productModel.GroupNameId);
-            ViewBag.ManufacturerId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 2).OrderBy(x => x.SupplierName), "SupplierId", "SupplierName", productModel.ManufacturerId);
-            ViewBag.ZoneId = new SelectList(db.WarehouseZones.Where(x => x.Status != 0).OrderBy(x => x.ZoneName), "ZoneId", "ZoneName", productModel.DefaultZoneId);
-            ViewBag.CustomerId = new SelectList(db.Customers.Where(x => x.Status != 0).OrderBy(x => x.CustomerId), "CustomerId", "FullName");
+            ViewBag.GroupNameId = new SelectList(_groupService.GetAllGroups().Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName", productModel.GroupNameId);
+            ViewBag.ManufacturerId = new SelectList(_supplierService.GetAllManufecturer(), "SupplierId", "SupplierName", productModel.ManufacturerId);
+            ViewBag.ZoneId = new SelectList(_warehouseZoneService.GetAllWarehouseZone(), "ZoneId", "ZoneName", productModel.DefaultZoneId);
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers().Where(x => x.Status != 0), "CustomerId", "FullName");
 
-            var attributeSet = db.ProductAttributeSets.Find(productModel.AttributeSetId);
+            var attributeSet = _productAttributeService.GetProductAttributeSetById(productModel.AttributeSetId);
             productModel.AttributeSet = attributeSet;
        
             return View("../Shop/Product/AddProduct", productModel);
@@ -211,7 +212,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Product product = db.Products.FirstOrDefault(x => x.ProductId == productId);
+            Product product =_productService.GetProductById(productId.Value);
             if (product == null)
             {
                 return HttpNotFound();
@@ -221,7 +222,7 @@ namespace WarehouseApp.Controllers
                 return RedirectToAction("EditProduct", "Product", new {productId =product.ProductId , attributeSetId =product.AttributeSetId });
                 //ViewBag.AttributeSetId = new SelectList(db.ProductAttributeSets.Where(x => x.Status !=0 &&x.AttributeSetId==product.AttributeSetId),"AttributeSetId", "AttributeSetName", product.AttributeSetId);
             }
-            ViewBag.AttributeSetId = new SelectList(db.ProductAttributeSets.Where(x => x.Status != 0).OrderBy(x=>x.AttributeSetName),"AttributeSetId", "AttributeSetName", product.AttributeSetId);
+            ViewBag.AttributeSetId = new SelectList(_productAttributeService.GetAllAttributeSets().Where(x => x.Status != 0),"AttributeSetId", "AttributeSetName", product.AttributeSetId);
             return View("../Shop/Product/AddAttributeSet", product);
         }
         [Roles("Global_SupAdmin,Configuration")]
@@ -232,9 +233,9 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            var attributeSet = db.ProductAttributeSets.Find(attributeSetId);
-            Product product = db.Products.FirstOrDefault(x => x.ProductId == productId);
-             var productAttributeRelations = db.ProductAttributeRelations.Where(x => x.ProductId == product.ProductId).ToList();
+            var attributeSet = _productAttributeService.GetProductAttributeSetById(attributeSetId.Value);
+            Product product =_productService.GetProductById(productId.Value);
+             var productAttributeRelations = _productService.GetAllAttributeByProductId(product.ProductId).ToList();
             List<ProductAttributeViewModel> productAtts=new List<ProductAttributeViewModel>();
             if (productAttributeRelations.Any()) { 
             foreach (var pa in productAttributeRelations)
@@ -248,7 +249,7 @@ namespace WarehouseApp.Controllers
                 productAtts.Add(prAttModel);
             }
             }
-             var productCategories = db.ProductCategories.Where(x => x.ProductId == product.ProductId);
+            var productCategories = _productService.GetAllCategoriesByProductId(product.ProductId); 
             List<int> catIds=new List<int>();
             foreach (var pc in productCategories)
             {
@@ -288,11 +289,11 @@ namespace WarehouseApp.Controllers
             };
             if (attributeSetId == product.AttributeSetId)
             {
-                ViewBag.Attributes = db.ProductAttributeRelations.Where(x => x.ProductId == product.ProductId).Select(x => new ProductAttributeValueViewModel { Attribute = x.Attribute, Value = String.IsNullOrEmpty(x.Value) ? "" : x.Value }).ToList();
+                ViewBag.Attributes = _productService.GetAllAttributeByProductId(product.ProductId).Select(x => new ProductAttributeValueViewModel { Attribute = x.Attribute, Value = String.IsNullOrEmpty(x.Value) ? "" : x.Value }).ToList();
             }
             else
             {
-                var atts = db.AttributeSetAttributes.Where(x => x.AttributeSetId == attributeSetId).Select(x => new ProductAttributeValueViewModel { Attribute = x.Attribute, Value = String.IsNullOrEmpty(x.Attribute.DefaultValue) ? "" : x.Attribute.DefaultValue }).ToList();
+                var atts =_productAttributeService.GetAttributesByAttributeSetId(attributeSetId.Value).Select(x => new ProductAttributeValueViewModel { Attribute = x.Attribute, Value = String.IsNullOrEmpty(x.Attribute.DefaultValue) ? "" : x.Attribute.DefaultValue }).ToList();
                 ViewBag.Attributes = atts;
                 List<ProductAttributeViewModel> productAttsDiff = new List<ProductAttributeViewModel>();
                 foreach (var pa in atts)
@@ -320,15 +321,16 @@ namespace WarehouseApp.Controllers
                 };
                 productModel.CustomerOptionList.Add(customerOption);
             }
-            ViewBag.GroupNameId = new SelectList(db.Groups.Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName", product.GroupNameId);
-            ViewBag.ManufacturerId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 2).OrderBy(x => x.SupplierName), "SupplierId", "SupplierName", product.ManufacturerId);
-            ViewBag.Categories = db.Categories.Where(x => !x.CategoryParentId.HasValue).ToList();
+            ViewBag.GroupNameId = new SelectList(_groupService.GetAllGroups().Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName", product.GroupNameId);
+            ViewBag.ManufacturerId = new SelectList(_supplierService.GetAllManufecturer(), "SupplierId", "SupplierName", product.ManufacturerId);
+            ViewBag.Categories =_categoryService.GetAllRootCategories().ToList();
             
             ViewBag.CategoryIds = new MultiSelectList(CategoryController.CategoryTree().Where(x => x.Status > 0).OrderBy(x => x.CategoryName), "CategoryId", "CategoryName", productModel.CategoryIds);
-            ViewBag.ZoneId = new SelectList(db.WarehouseZones.Where(x => x.Status != 0).OrderBy(x => x.ZoneName), "ZoneId", "ZoneName",product.DefaultZoneId);
-            ViewBag.CustomerId = new SelectList(db.Customers.Where(x => x.Status != 0).OrderBy(x => x.CustomerId), "CustomerId", "FullName");
-            ViewBag.Customers = db.Customers.Where(x => x.Status != 0).OrderBy(x => x.CustomerId).ToList();
+            ViewBag.ZoneId = new SelectList(_warehouseZoneService.GetAllWarehouseZone(), "ZoneId", "ZoneName",product.DefaultZoneId);
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers().Where(x => x.Status != 0), "CustomerId", "FullName");
+            ViewBag.Customers = _customerService.GetAllCustomers().Where(x => x.Status != 0).ToList();
 
+            ViewBag.AllAttributesOfThisProduct = _productService.GetAllAttributeByProductId(productId.Value).Select(x => new ProductAttributeRelation{ Attribute = x.Attribute, Value = x.Value }).ToList();
             return View("../Shop/Product/EditProduct", productModel);
         }
 
@@ -352,7 +354,7 @@ namespace WarehouseApp.Controllers
                 }
 
                 // update product information=================================
-                Product product = db.Products.Find(productModel.ProductId);
+                Product product =_productService.GetProductById(productModel.ProductId.Value);
                 product.ProductCode = productModel.ProductCode;
                 product.ProductName = productModel.ProductName;
                 product.ProductFullName = productModel.ProductName + productAttributes;
@@ -371,34 +373,29 @@ namespace WarehouseApp.Controllers
                 product.AttributeSetId = productModel.AttributeSetId;
                 product.DefaultZoneId = productModel.DefaultZoneId;
                 product.Status = productModel.Status;
-                product.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                product.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 product.UpdatedDate = DateTime.Now;
-                
-                db.Entry(product).State = EntityState.Modified;
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
-
+                _productService.Edit(product, AuthenticatedUser.GetUserFromIdentity().UserId);
+               
                 // remove product attributes relationship==============================
-                var productAttributeRelations = db.ProductAttributeRelations.Where(x => x.ProductId == product.ProductId);
-                if (productAttributeRelations != null) { 
-                foreach (var item in productAttributeRelations)
-                {
-                    db.ProductAttributeRelations.Remove(item);
+                var productAttributeRelations =_productService.GetAllAttributeByProductId(product.ProductId);
+                if (productAttributeRelations != null) {
+                    _productService.DeleteProductAttributeRelationList(productAttributeRelations);
+               
                 }
-                }
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
 
                 // remove product categories relationship==============================
-                var productCategories = db.ProductCategories.Where(x => x.ProductId == product.ProductId);
-                foreach (var item in productCategories)
+                var productCategories =_productService.GetAllCategoriesByProductId(product.ProductId);
+                if (productCategories != null)
                 {
-                    db.ProductCategories.Remove(item);
+                    _productService.DeleteProductCategoryList(productCategories);
                 }
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
-
+                
                 //add product attributes relationship===============================================
                 if (productModel.ProductAtts!=null)
                 {
-                foreach (var att in productModel.ProductAtts)
+                    List<ProductAttributeRelation> ProductAttributeRelationList = new List<ProductAttributeRelation>();
+                    foreach (var att in productModel.ProductAtts)
                 {
                     if (att.ProdAttCheckboxes != null)
                     {
@@ -423,34 +420,29 @@ namespace WarehouseApp.Controllers
                         AttributeId = att.AttributeId,
                         Value = att.Value
                     };
-                    db.ProductAttributeRelations.Add(productAtts);
-                }}
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                        ProductAttributeRelationList.Add(productAtts);
+                }
+                    _productService.SaveProductAttributeRelationList(ProductAttributeRelationList);
+                }
+               
                  //add product categories relationship=============================================
                 if (productModel.CategoryIds!=null && productModel.CategoryIds.Count > 0)
                 {
-                    foreach (ProductCategory productCat in productModel.CategoryIds.Select(cat => new ProductCategory()
-                    {
-                        ProductId = product.ProductId,
-                        CategoryId = cat,
-                    }))
-                    {
-                        db.ProductCategories.Add(productCat);
-                    }
+                    _productService.SaveProductCategoryRelationList(product.ProductId, productModel.CategoryIds.ToArray());
                 }
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+              
 
                 // remove product customer Options==============================
-                var customerReleations = db.ProductCustomerRelations.Where(x => x.ProductId == product.ProductId);
-                foreach (var item in customerReleations)
+                var customerReleations = _productService.GetAllProductCustomerRelationByProductId(product.ProductId);
+                if (customerReleations != null)
                 {
-                    db.ProductCustomerRelations.Remove(item);
+                    _productService.DeleteProductCustomerRelationList(customerReleations);
                 }
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
-
+               
                 //add product customer options===============================================
                 if (productModel.CustomerOptionList != null)
                 {
+                    List<ProductCustomerRelation> ProductCustomerRelationList = new List<ProductCustomerRelation>();
                     foreach (var customerOption in productModel.CustomerOptionList)
                     {
                         if (customerOption.CustomerId != null)
@@ -464,24 +456,25 @@ namespace WarehouseApp.Controllers
                                 UnitPrice = customerOption.UnitPrice,
                                 Mrp = customerOption.Mrp,
                             };
-                            db.ProductCustomerRelations.Add(customerRelation);
+                            ProductCustomerRelationList.Add(customerRelation);
                         }
 
                     }
+                    _productService.SaveProductCustomerRelationList(ProductCustomerRelationList);
                 }
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+              
                 return RedirectToAction("Index");
             }
 
 
-            ViewBag.GroupNameId = new SelectList(db.Groups.Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName", productModel.GroupNameId);
-            ViewBag.ManufacturerId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 2).OrderBy(x => x.SupplierName), "SupplierId", "SupplierName", productModel.ManufacturerId);
-            ViewBag.Attributes = db.ProductAttributeRelations.Where(x => x.ProductId == productModel.AttributeSetId).Select(x => new ProductAttributeValueViewModel { Attribute = x.Attribute, Value = x.Value }).ToList();
-            ViewBag.Categories = db.Categories.Where(x => !x.CategoryParentId.HasValue).ToList();
+            ViewBag.GroupNameId = new SelectList(_groupService.GetAllGroups().Where(x => x.Status != 0).OrderBy(x => x.GroupName), "GroupNameId", "GroupName", productModel.GroupNameId);
+            ViewBag.ManufacturerId = new SelectList(_supplierService.GetAllManufecturer(), "SupplierId", "SupplierName", productModel.ManufacturerId);
+            ViewBag.Attributes =_productService.GetAllAttributeByProductId(productModel.ProductId.Value).Select(x => new ProductAttributeValueViewModel { Attribute = x.Attribute, Value = x.Value }).ToList();
+            ViewBag.Categories = _categoryService.GetAllRootCategories().ToList();
             ViewBag.CategoryIds = new MultiSelectList(CategoryController.CategoryTree().Where(x => x.Status > 0).OrderBy(x => x.CategoryName), "CategoryId", "CategoryName", productModel.CategoryIds);
-            ViewBag.ZoneId = new SelectList(db.WarehouseZones.Where(x => x.Status != 0).OrderBy(x => x.ZoneName), "ZoneId", "ZoneName", productModel.DefaultZoneId);
-            ViewBag.CustomerId = new SelectList(db.Customers.Where(x => x.Status != 0).OrderBy(x => x.CustomerId), "CustomerId", "FullName");
-            ViewBag.Customers = db.Customers.Where(x => x.Status != 0).OrderBy(x => x.CustomerId).ToList();
+            ViewBag.ZoneId = new SelectList(_warehouseZoneService.GetAllWarehouseZone(), "ZoneId", "ZoneName", productModel.DefaultZoneId);
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers().Where(x => x.Status != 0).OrderBy(x => x.CustomerId), "CustomerId", "FullName");
+            ViewBag.Customers = _customerService.GetAllCustomers().Where(x => x.Status != 0).OrderBy(x => x.CustomerId).ToList();
             return View("../Shop/Product/EditProduct", productModel);
         }
 
@@ -500,18 +493,19 @@ namespace WarehouseApp.Controllers
         public ActionResult ProductImport(FormCollection formCollection)
         {
 
-            int? swapnoId = db.Customers.FirstOrDefault(x => x.FullName.ToLower().Contains("swapno")).CustomerId;
-            int? agoraId = db.Customers.FirstOrDefault(x => x.FullName.ToLower().Contains("agora")).CustomerId;
-            int? nandanId = db.Customers.FirstOrDefault(x => x.FullName.ToLower().Contains("nandan")).CustomerId;
-            int? csdSuperId = db.Customers.FirstOrDefault(x => x.FullName.ToLower().Contains("csd super")).CustomerId;
-            int? csdExclusiveId = db.Customers.FirstOrDefault(x => x.FullName.ToLower().Contains("csd exclusive")).CustomerId;
-            int? happyMartId = db.Customers.FirstOrDefault(x => x.FullName.ToLower().Contains("happy mart")).CustomerId;
-            int? oneStopId = db.Customers.FirstOrDefault(x => x.FullName.ToLower().Contains("one stop")).CustomerId;
-            int? defaultWaregouseId =db.Warehouses.FirstOrDefault(x => x.WarehouseName.ToLower() == "default warehouse").WarehouseId;
+            int? swapnoId = _customerService.GetCustomerByName("swapno").CustomerId;
+            int? agoraId = _customerService.GetCustomerByName("agora").CustomerId;
+            int? nandanId = _customerService.GetCustomerByName("nandan").CustomerId;
+            int? csdSuperId = _customerService.GetCustomerByName("csd super").CustomerId;
+            int? csdExclusiveId = _customerService.GetCustomerByName("csd exclusive").CustomerId;
+            int? happyMartId = _customerService.GetCustomerByName("happy mart").CustomerId;
+            int? oneStopId = _customerService.GetCustomerByName("one stop").CustomerId;
+
+            int? defaultWaregouseId =_warehouseZoneService.GetWarehouseByName("default warehouse").WarehouseId;
             string ExcuteMsg = string.Empty;
             int NumberOfColume = 0;
-            var attributeSet = db.ProductAttributeSets.FirstOrDefault(x => x.AttributeSetName.ToLower() == "General Items".ToLower());
-            var attribute = db.ProductAttributes.FirstOrDefault(x => x.AttributeName.ToLower() == "Unit".ToLower());
+            var attributeSet = _productAttributeService.GetProductAttributeSetByName("General Items");
+            var attribute =_productAttributeService.GetProductAttributeByName("Unit");
             try
             {
                 HttpPostedFileBase file = Request.Files["ProductExcel"];
@@ -690,7 +684,7 @@ namespace WarehouseApp.Controllers
 
 
                                 };
-                                if (!db.Products.Any(e => e.ProductName.ToLower() == productImport.ProductName.ToLower()))
+                                if (!_productService.CheckProductNameExist(productImport.ProductName))
                                 {
                                     productImportList.Add(productImport);
                                 }
@@ -709,7 +703,7 @@ namespace WarehouseApp.Controllers
                                         //Default Stock Zone
                                         if (!item.DefaultStockZoneId.HasValue && item.DefaultStockZone != null)
                                         {
-                                            WarehouseZone defaultStockZone = db.WarehouseZones.FirstOrDefault(x => x.Status != 0 && x.ZoneName.ToLower() == item.DefaultStockZone.ToLower());
+                                            WarehouseZone defaultStockZone =_warehouseZoneService.GetWarehouseZoneByName(item.DefaultStockZone);
 
                                             if (defaultStockZone == null)
                                             {
@@ -718,11 +712,11 @@ namespace WarehouseApp.Controllers
                                                     ZoneName = item.DefaultStockZone,
                                                     Status = 1,
                                                     WarehouseId = defaultWaregouseId,
-                                                    CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
+                                                    CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId,
                                                     CreatedDate = DateTime.Now
                                                 };
-                                                db.WarehouseZones.Add(defaultStockZone);
-                                                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                                                _warehouseZoneService.Save(defaultStockZone, AuthenticatedUser.GetUserFromIdentity().UserId);
+                                                
                                             }
                                             var sameZoneName = productImportList.Where(x => !x.DefaultStockZoneId.HasValue && x.DefaultStockZone != null && x.DefaultStockZone.Equals(item.DefaultStockZone)).ToList();
                                             if (sameZoneName.Count > 0)
@@ -735,18 +729,17 @@ namespace WarehouseApp.Controllers
                                         //Catagories 
                                         if (!item.CategoryId.HasValue && item.Category != null)
                                         {
-                                            Category category = db.Categories.FirstOrDefault(x => x.CategoryName.ToLower() == item.Category.ToLower());
+                                            Category category =_categoryService.GetCategoryByName(item.Category);
                                             if (category == null)
                                             {
                                                 category = new Category()
                                                 {
                                                     CategoryName = item.Category,
                                                     Status = 1,
-                                                    CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
+                                                    CreatedBy =AuthenticatedUser.GetUserFromIdentity().UserId,
                                                     CreatedDate = DateTime.Now
                                                 };
-                                                db.Categories.Add(category);
-                                                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                                                _categoryService.Save(category, AuthenticatedUser.GetUserFromIdentity().UserId);
                                             }
                                             var sameCat = productImportList.Where(x => !x.CategoryId.HasValue && x.Category != null && x.Category.Equals(item.Category)).ToList();
                                             if (sameCat.Count > 0)
@@ -756,11 +749,9 @@ namespace WarehouseApp.Controllers
                                                     sameItem.CategoryId = category.CategoryId;
                                                 }
                                             }
-
                                         }
                                         if (attributeSet != null && attribute != null)
                                         {
-
                                             Product product = new Product()
                                             {
                                                 ProductCode = item.ProductCode,
@@ -780,11 +771,12 @@ namespace WarehouseApp.Controllers
 
                                                 AttributeSetId = attributeSet.AttributeSetId,
                                                 Status = 1,
-                                                CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
+                                                CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId,
                                                 CreatedDate = DateTime.Now,
                                             };
-                                            db.Products.Add(product);
-                                            db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                                            _productService.Save(product, AuthenticatedUser.GetUserFromIdentity().UserId);
+                                            //db.Products.Add(product);
+                                            //db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
                                             productId = product.ProductId;
 
                                             //add product attributes relationship===============================================
@@ -795,7 +787,8 @@ namespace WarehouseApp.Controllers
                                                 AttributeId = attribute.AttributeId,
                                                 Value = "Pcs"
                                             };
-                                            db.ProductAttributeRelations.Add(productAtts);
+                                            _productService.SaveProductAttributeRelation(productAtts);
+                                     
 
                                             //add product categories relationship===============================================
                                             if (item.CategoryId != null)
@@ -806,11 +799,9 @@ namespace WarehouseApp.Controllers
                                                     ProductId = product.ProductId,
                                                     CategoryId = Convert.ToInt32(item.CategoryId),
                                                 };
-                                                db.ProductCategories.Add(productCat);
-
+                                                _productService.SaveProductCategoryRelation(productCat);
                                             }
-                                            db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
-
+                                            
                                             StockController updateStock = new StockController();
 
                                             updateStock.AddToStock(Convert.ToInt32(product.ProductId), 0, Convert.ToInt32(product.DefaultZoneId), Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey));
@@ -832,7 +823,8 @@ namespace WarehouseApp.Controllers
                                                     UnitPrice = item.SwapnoRetailPrice,
 
                                                 };
-                                                db.ProductCustomerRelations.Add(productCustomerRelation);
+                                                _productService.SaveProductCustomerRelation(productCustomerRelation);
+                                          
                                             }
 
                                             //Agora
@@ -850,7 +842,7 @@ namespace WarehouseApp.Controllers
                                                     UnitPrice = item.AgoraRetailPrice,
 
                                                 };
-                                                db.ProductCustomerRelations.Add(productCustomerRelation);
+                                                _productService.SaveProductCustomerRelation(productCustomerRelation);
                                             }
 
                                             //Nandan
@@ -867,7 +859,7 @@ namespace WarehouseApp.Controllers
                                                     UnitPrice = item.NandanRetailPrice,
 
                                                 };
-                                                db.ProductCustomerRelations.Add(productCustomerRelation);
+                                                _productService.SaveProductCustomerRelation(productCustomerRelation);
                                             }
 
                                             //CSD Supper Shop
@@ -886,7 +878,7 @@ namespace WarehouseApp.Controllers
                                                     UnitPrice = item.CsdSupperShopRetailPrice,
 
                                                 };
-                                                db.ProductCustomerRelations.Add(productCustomerRelation);
+                                                _productService.SaveProductCustomerRelation(productCustomerRelation);
                                             }
 
                                             //CSD Exclusive Shop
@@ -907,7 +899,7 @@ namespace WarehouseApp.Controllers
                                                     UnitPrice = item.CsdExclusiveShopRetailPrice,
 
                                                 };
-                                                db.ProductCustomerRelations.Add(productCustomerRelation);
+                                                _productService.SaveProductCustomerRelation(productCustomerRelation);
                                             }
 
                                             //Happy_Mart
@@ -925,7 +917,7 @@ namespace WarehouseApp.Controllers
                                                     UnitPrice = item.HappyMartRetailPrice,
 
                                                 };
-                                                db.ProductCustomerRelations.Add(productCustomerRelation);
+                                                _productService.SaveProductCustomerRelation(productCustomerRelation);
                                             }
 
                                             //One Stop
@@ -943,11 +935,11 @@ namespace WarehouseApp.Controllers
                                                     UnitPrice = item.OneStopRetailPrice,
 
                                                 };
-                                                db.ProductCustomerRelations.Add(productCustomerRelation);
+                                                _productService.SaveProductCustomerRelation(productCustomerRelation);
                                             }
 
                                             #endregion
-                                            db.SaveChanges();
+                                            //db.SaveChanges();
                                             NumberOfColume++;
                                         }
                                     }
@@ -984,42 +976,31 @@ namespace WarehouseApp.Controllers
         #region helper modules
          public JsonResult GetProuctNameOnly(string term)
          {
-             var products = db.Products.Where(p => (p.ProductName.StartsWith(term) || p.ProductName.Contains(" " + term)) && p.Status != 0).GroupBy(p => p.ProductName).ToList().Select(x => new { ProductFullName = x.First().ProductName,ProductName=x.First().ProductName, Flag = "ProductConfig" });
+             var products =_productService.GetAllByProductName(term).GroupBy(p => p.ProductName).ToList().Select(x => new { ProductFullName = x.First().ProductName,ProductName=x.First().ProductName, Flag = "ProductConfig" });
              return Json(products, JsonRequestBehavior.AllowGet);
          }
-
         public JsonResult GetProuctByproductId(int productId)
         {
-            var product =
-                db.Products.Where(p => p.ProductId == productId)
-                    .ToList()
-                    .Select(
-                        x =>
-                            new
+            var p=_productService.GetProductById(productId);
+            var product =new
                             {
-                                ProductFullName = x.ProductFullName,
-                                ProductName = x.ProductName,
-                                x.ProductId,
-                                ProductCode = x.ProductCode,
-                                PurchasePrice = x.Tp,
-                                SalePrice = x.Dp,
-                                Unit = FindProductUnit(x.ProductId),
-                                DiscountAmount = x.DiscountAmount ?? 0,
-                                DiscountType = x.DiscountType,
-                                Vat = x.Vat ?? 0,
-                                DefaultWarehouseId = x.DefaultZoneId,
-                                DefaultWarehouseName = x.DefaultZoneId != null ? x.WarehouseZone.ZoneName : " ",
-                                Manufacturer = x.ManufacturerId != null ? x.Supplier.SupplierName : " ",
-                                Discount =
-                                    x.DiscountAmount > 0
-                                        ? BankAccountController.DiscountCalculator(x.DiscountAmount, x.DiscountType,
-                                            x.Dp).DiscountValueShow
-                                        : "N/A"
-                            })
-                    .FirstOrDefault();
-            var specifications =
-                db.ProductAttributeRelations.Where(x => x.ProductId == productId && x.Value != null)
-                    .Include(x => x.Attribute);
+                                ProductFullName = p.ProductFullName,
+                                ProductName = p.ProductName,
+                                ProductId=p.ProductId,
+                                ProductCode = p.ProductCode,
+                                PurchasePrice = p.Tp,
+                                SalePrice = p.Dp,
+                                Unit = FindProductUnit(p.ProductId),
+                                DiscountAmount = p.DiscountAmount ?? 0,
+                                DiscountType = p.DiscountType,
+                                Vat = p.Vat ?? 0,
+                                DefaultWarehouseId = p.DefaultZoneId,
+                                DefaultWarehouseName = p.DefaultZoneId != null ? p.WarehouseZone.ZoneName : " ",
+                                Manufacturer = p.ManufacturerId != null ? p.Supplier.SupplierName : " ",
+                                Discount =p.DiscountAmount > 0? BankAccountController.DiscountCalculator(p.DiscountAmount, p.DiscountType,p.Dp).DiscountValueShow : "N/A"
+                            };
+            
+            var specifications =_productService.GetAllAttributeByProductId(productId).Where(x => x.Value != null);
             StringBuilder specificationsSb = new StringBuilder("");
             if (specifications.Any())
             {
@@ -1028,7 +1009,7 @@ namespace WarehouseApp.Controllers
                     specificationsSb.Append(specification.Attribute.AttributeName + " - " + specification.Value +", ");
                 }
             }
-            var pCats = db.ProductCategories.Where(x => x.ProductId == productId).Include(x => x.Category);
+            var pCats =_productService.GetAllCategoriesByProductId(productId);
                 StringBuilder pCatsSb = new StringBuilder("");
                 if (pCats.Any())
                 {
@@ -1037,8 +1018,8 @@ namespace WarehouseApp.Controllers
                         pCatsSb.Append(pCat.Category.CategoryName + ", ");
                     }
                 }
-                var customerOptions =
-                    db.ProductCustomerRelations.Where(x => x.ProductId == productId).Include(x => x.Customer);
+            var customerOptions = _productService.GetAllProductCustomerRelationByProductId(productId);
+                  
                 StringBuilder customerOptionsSb =
                     new StringBuilder(
                         "<table class='table'><tr><td>Customer Name</td><td>Description</td><td>Code</td><td>Unit Price</td><td>MRP</td></tr>");
@@ -1068,118 +1049,106 @@ namespace WarehouseApp.Controllers
         }
 
         // product query for barcode----------------------
-         public JsonResult GetProuctByBarcode(string barCode)
+        public JsonResult GetProuctByBarcode(string barCode)
          {
-             var products = db.Stocks.Where(p => p.Barcode.Equals(barCode)).OrderBy(p => p.Product.ProductFullName).ToList().Select(x => new { ProductFullName = x.Product.ProductFullName, ProductName = x.Product.ProductName, x.ProductId, Barcode = x.Barcode, PurchasePrice = x.PurchasePrice ?? x.Product.Tp, SalePrice = x.SalePrice ?? x.Product.Dp, Unit = FindProductUnit(x.Product.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, DefaultWarehouse = x.Product.DefaultZoneId, x.Exp }).ToList();
+             var products = _stockService.GetAllProuctByBarcode(barCode).ToList().Select(x => new { ProductFullName = x.Product.ProductFullName, ProductName = x.Product.ProductName, x.ProductId, Barcode = x.Barcode, PurchasePrice = x.PurchasePrice ?? x.Product.Tp, SalePrice = x.SalePrice ?? x.Product.Dp, Unit = FindProductUnit(x.Product.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, DefaultWarehouse = x.Product.DefaultZoneId, x.Exp }).ToList();
              return Json(products, JsonRequestBehavior.AllowGet);
          }
          public JsonResult GetProuctByNameForBarcodeGenerate(string term)
          {
-
-             var products = db.Products.Where(p => (p.ProductFullName.StartsWith(term) || p.ProductFullName.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.ProductFullName).ToList().Select(x => new { x.ProductFullName,  x.ProductName, x.ProductId, UnitPrice = x.Tp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, x.DiscountType, Vat = x.Vat ?? 0, x.ExpiryDate, Flag = "Barcode" }).ToList();
+             var products = _productService.GetAllByProductFullName(term).ToList().Select(x => new { x.ProductFullName,  x.ProductName, x.ProductId, UnitPrice = x.Tp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, x.DiscountType, Vat = x.Vat ?? 0, x.ExpiryDate, Flag = "Barcode" }).ToList();
              return Json(products, JsonRequestBehavior.AllowGet);
          }
          public JsonResult GetProuctbyCodeForBarcodeGenerate(string term)
          {
-             var products = db.Products.Where(p => (p.ProductCode.StartsWith(term) || p.ProductCode.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.ProductFullName).ToList().Select(x => new { x.ProductFullName, x.ProductName,x.ProductId, UnitPrice = x.Dp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, x.DiscountType, Vat = x.Vat ?? 0, x.ExpiryDate, Flag = "Barcode" }).ToList();
+             var products = _productService.GetAllByProductCode(term).ToList().Select(x => new { x.ProductFullName, x.ProductName,x.ProductId, UnitPrice = x.Dp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, x.DiscountType, Vat = x.Vat ?? 0, x.ExpiryDate, Flag = "Barcode" }).ToList();
              return Json(products, JsonRequestBehavior.AllowGet);
          }
         public JsonResult GetProuctByNameForBarcodePrint(string term)
          {
-
-             var products = db.Stocks.Where(p => p.Barcode != null && (p.Product.ProductFullName.StartsWith(term) || p.Product.ProductFullName.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate).ToList().Select(x => new { ProductFullName = x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, x.ProductId, x.Barcode, UnitPrice = x.Product.Dp, DiscountAmount = x.Product.DiscountAmount ?? 0, x.Product.DiscountType, ExpiryDate = x.Exp, Flag = "PrintBarcode" }).ToList();
+             var products = _stockService.GetAllProuctByFullName(term).ToList().Select(x => new { ProductFullName = x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, x.ProductId, x.Barcode, UnitPrice = x.Product.Dp, DiscountAmount = x.Product.DiscountAmount ?? 0, x.Product.DiscountType, ExpiryDate = x.Exp, Flag = "PrintBarcode" }).ToList();
              return Json(products, JsonRequestBehavior.AllowGet);
          }
         public JsonResult GetProuctbyCodeForBarcodePrint(string term)
          {
-
-             var products = db.Stocks.Where(p => p.Barcode != null && (p.Product.ProductCode.StartsWith(term) || p.Product.ProductCode.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate).ToList().Select(x => new { ProductFullName = x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, x.ProductId, x.Barcode, UnitPrice = x.Product.Dp, DiscountAmount = x.Product.DiscountAmount ?? 0, x.Product.DiscountType, ExpiryDate = x.Exp, Flag = "PrintBarcode" }).ToList();
+             var products = _stockService.GetAllProuctByProductCode(term).ToList().Select(x => new { ProductFullName = x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, x.ProductId, x.Barcode, UnitPrice = x.Product.Dp, DiscountAmount = x.Product.DiscountAmount ?? 0, x.Product.DiscountType, ExpiryDate = x.Exp, Flag = "PrintBarcode" }).ToList();
              return Json(products, JsonRequestBehavior.AllowGet);
          }
-
         public JsonResult GetProuctByBarcodeForPrint(string barCode)
         {
-            var products = db.Stocks.Where(p => p.Barcode.Equals(barCode)).OrderBy(p => p.Product.ProductFullName).ToList().Select(x => new { ProductFullName = x.Product.ProductFullName, ProductName = x.Product.ProductFullName, x.ProductId, Barcode = x.Barcode, PurchasePrice = x.PurchasePrice ?? x.Product.Tp, UnitPrice = x.SalePrice ?? x.Product.Dp, Unit = FindProductUnit(x.Product.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, x.Exp }).ToList();
+            var products =_stockService.GetAllProuctByBarcode(barCode).ToList().Select(x => new { ProductFullName = x.Product.ProductFullName, ProductName = x.Product.ProductFullName, x.ProductId, Barcode = x.Barcode, PurchasePrice = x.PurchasePrice ?? x.Product.Tp, UnitPrice = x.SalePrice ?? x.Product.Dp, Unit = FindProductUnit(x.Product.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, x.Exp }).ToList();
             return Json(products, JsonRequestBehavior.AllowGet);
         }
 
         // product query for purchase----------------------
         public JsonResult GetProuctForPurchase(string term)
         {
-            var products = db.Stocks.Where(p => p.Product.ProductFullName.StartsWith(term) || p.Product.ProductFullName.Contains(" " + term) && p.Status != 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.ProductId, Barcode = x.Barcode, UnitPrice = x.Product.Tp, Unit = FindProductUnit(x.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "Purchase" }).ToList();
+            var products = _stockService.GetAllProuctByFullName(term).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.ProductId, Barcode = x.Barcode, UnitPrice = x.Product.Tp, Unit = FindProductUnit(x.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "Purchase" }).ToList();
             if (!products.Any())
             {
-                products = db.Products.Where(p => (p.ProductFullName.StartsWith(term) || p.ProductFullName.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.ProductFullName).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.Tp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "Purchase" }).ToList();
+                products = _productService.GetAllByProductFullName(term).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.Tp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "Purchase" }).ToList();
                 
             }
             return Json(products, JsonRequestBehavior.AllowGet);
         }
-
         public JsonResult GetProuctbyCodeForPurchase(string term)
         {
-            var products = db.Stocks.Where(p => p.Product.ProductCode.StartsWith(term) || p.Product.ProductCode.Contains(" " + term) && p.Status != 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.ProductId, Barcode = x.Barcode, UnitPrice = x.Product.Tp, Unit = FindProductUnit(x.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "Purchase" }).ToList();
+            var products = _stockService.GetAllProuctByProductCode(term).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.ProductId, Barcode = x.Barcode, UnitPrice = x.Product.Tp, Unit = FindProductUnit(x.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "Purchase" }).ToList();
             if (!products.Any())
             {
-                products = db.Products.Where(p => (p.ProductCode.StartsWith(term) || p.ProductCode.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.ProductFullName).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.Tp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "Purchase" }).ToList();
+                products = _productService.GetAllByProductCode(term).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.Tp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "Purchase" }).ToList();
 
             }
-
-
            return Json(products, JsonRequestBehavior.AllowGet);
         }
         public JsonResult GetProuctForStockIn(string term)
         {
-            var products = db.Stocks.Where(p => p.Product.ProductFullName.StartsWith(term) || p.Product.ProductFullName.Contains(" " + term) && p.Status != 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.ProductId, Barcode = x.Barcode, UnitPrice = x.Product.Tp, Unit = FindProductUnit(x.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "StockIn" }).ToList();
+            var products = _stockService.GetAllProuctByFullName(term).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.ProductId, Barcode = x.Barcode, UnitPrice = x.Product.Tp, Unit = FindProductUnit(x.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "StockIn" }).ToList();
             if (!products.Any())
             {
-                products = db.Products.Where(p => (p.ProductFullName.StartsWith(term) || p.ProductFullName.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.ProductFullName).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.Tp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "StockIn" }).ToList();
+                products = _productService.GetAllByProductFullName(term).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.Tp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "StockIn" }).ToList();
 
             }
             return Json(products, JsonRequestBehavior.AllowGet);
         }
-
         public JsonResult GetProuctbyCodeForStockIn(string term)
         {
-            var products = db.Stocks.Where(p => p.Product.ProductCode.StartsWith(term) || p.Product.ProductCode.Contains(" " + term) && p.Status != 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.ProductId, Barcode = x.Barcode, UnitPrice = x.Product.Tp, Unit = FindProductUnit(x.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "StockIn" }).ToList();
+            var products =  _stockService.GetAllProuctByProductCode(term).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.ProductId, Barcode = x.Barcode, UnitPrice = x.Product.Tp, Unit = FindProductUnit(x.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "StockIn" }).ToList();
             if (!products.Any())
             {
-                products = db.Products.Where(p => (p.ProductCode.StartsWith(term) || p.ProductCode.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.ProductFullName).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.Tp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "StockIn" }).ToList();
-
+                products = _productService.GetAllByProductCode(term).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.Tp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "StockIn" }).ToList();
             }
-
-
             return Json(products, JsonRequestBehavior.AllowGet);
         }
 
         // product query for sell----------------------
         public JsonResult GetProuctForSell(string term)
         {
-            var products = db.Stocks.Where(p => p.Product.ProductFullName.StartsWith(term) || p.Product.ProductFullName.Contains(" " + term) && p.Status != 0 && p.TotalQuantity > 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.ProductId, Barcode = x.Barcode, UnitPrice = x.Product.Dp, Unit = FindProductUnit(x.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "Sell" }).ToList();
+            var products = _stockService.GetAllProuctByFullNameIsInStock(term).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.ProductId, Barcode = x.Barcode, UnitPrice = x.Product.Dp, Unit = FindProductUnit(x.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "Sell" }).ToList();
             if (!products.Any())
             {
-                products = db.Products.Where(p => (p.ProductFullName.StartsWith(term) || p.ProductFullName.Contains(" " + term)) && p.Status != 0 && p.Stocks.Sum(y => y.TotalQuantity) > 0).OrderBy(p => p.ProductFullName).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.Dp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "Sell" }).ToList();
+                products = _productService.GetAllByProductFullNameIsInStock(term).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.Dp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "Sell" }).ToList();
 
             }
           
             return Json(products, JsonRequestBehavior.AllowGet);
-        }  public JsonResult GetProuctbyCodeForSell(string term)
+        }
+        public JsonResult GetProuctbyCodeForSell(string term)
         {
-            var products = db.Stocks.Where(p => p.Product.ProductCode.StartsWith(term) || p.Product.ProductCode.Contains(" " + term) && p.Status != 0 && p.TotalQuantity > 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.ProductId, Barcode = x.Barcode, UnitPrice = x.Product.Dp, Unit = FindProductUnit(x.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "Sell" }).ToList();
+            var products =_stockService.GetAllProuctByProductCodeIsInStock(term).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.ProductId, Barcode = x.Barcode, UnitPrice = x.Product.Dp, Unit = FindProductUnit(x.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "Sell" }).ToList();
             if (!products.Any())
             {
-                products = db.Products.Where(p => (p.ProductCode.StartsWith(term) || p.ProductCode.Contains(" " + term)) && p.Status != 0 && p.Stocks.Sum(y => y.TotalQuantity) > 0).OrderBy(p => p.ProductFullName).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.Dp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "Sell" }).ToList();
-
+                products = _productService.GetAllByProductCodeIsInStock(term).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.Dp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "Sell" }).ToList();
             }
 
             return Json(products, JsonRequestBehavior.AllowGet);
         }
-
         public JsonResult GetProuctForSellWithCustomerId(string term, int? id)
         {
-            var products = db.Stocks.Where(p => p.Product.ProductFullName.StartsWith(term) || p.Product.ProductFullName.Contains(" " + term) && p.Status != 0 && p.TotalQuantity > 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.ProductId, Barcode = x.Barcode, UnitPrice = x.Product.CustomerOptions.Any(y => y.CustomerId == id && y.UnitPrice > 0) ? x.Product.CustomerOptions.FirstOrDefault(y => y.CustomerId == id && y.UnitPrice > 0).UnitPrice : x.Product.Dp, Unit = FindProductUnit(x.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "Sell" }).ToList();
+            var products = _stockService.GetAllProuctByFullNameIsInStock(term).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.ProductId, Barcode = x.Barcode, UnitPrice = x.Product.CustomerOptions.Any(y => y.CustomerId == id && y.UnitPrice > 0) ? x.Product.CustomerOptions.FirstOrDefault(y => y.CustomerId == id && y.UnitPrice > 0).UnitPrice : x.Product.Dp, Unit = FindProductUnit(x.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "Sell" }).ToList();
             if (!products.Any())
             {
-                products = db.Products.Where(p => (p.ProductFullName.StartsWith(term) || p.ProductFullName.Contains(" " + term)) && p.Status != 0 && p.Stocks.Sum(y => y.TotalQuantity) > 0).OrderBy(p => p.ProductFullName).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.CustomerOptions.Any(y => y.CustomerId == id && y.UnitPrice > 0) ? x.CustomerOptions.FirstOrDefault(y => y.CustomerId == id && y.UnitPrice > 0).UnitPrice : x.Dp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "Sell" }).ToList();
+                products = _productService.GetAllByProductFullNameIsInStock(term).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.CustomerOptions.Any(y => y.CustomerId == id && y.UnitPrice > 0) ? x.CustomerOptions.FirstOrDefault(y => y.CustomerId == id && y.UnitPrice > 0).UnitPrice : x.Dp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "Sell" }).ToList();
 
             }
 
@@ -1187,10 +1156,10 @@ namespace WarehouseApp.Controllers
         }
         public JsonResult GetProuctbyCodeForSellWithCustomerId(string term, int? id)
         {
-            var products = db.Stocks.Where(p => p.Product.ProductCode.StartsWith(term) || p.Product.ProductCode.Contains(" " + term) && p.Status != 0 && p.TotalQuantity > 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.ProductId, Barcode = x.Barcode, UnitPrice = x.Product.CustomerOptions.Any(y => y.CustomerId == id && y.UnitPrice > 0) ? x.Product.CustomerOptions.FirstOrDefault(y => y.CustomerId == id && y.UnitPrice > 0).UnitPrice : x.Product.Dp, Unit = FindProductUnit(x.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "Sell" }).ToList();
+            var products = _stockService.GetAllProuctByProductCodeIsInStock(term).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.ProductId, Barcode = x.Barcode, UnitPrice = x.Product.CustomerOptions.Any(y => y.CustomerId == id && y.UnitPrice > 0) ? x.Product.CustomerOptions.FirstOrDefault(y => y.CustomerId == id && y.UnitPrice > 0).UnitPrice : x.Product.Dp, Unit = FindProductUnit(x.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "Sell" }).ToList();
             if (!products.Any())
             {
-                products = db.Products.Where(p => (p.ProductCode.StartsWith(term) || p.ProductCode.Contains(" " + term)) && p.Status != 0 && p.Stocks.Sum(y => y.TotalQuantity) > 0).OrderBy(p => p.ProductFullName).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.CustomerOptions.Any(y => y.CustomerId == id && y.UnitPrice > 0) ? x.CustomerOptions.FirstOrDefault(y => y.CustomerId == id && y.UnitPrice > 0).UnitPrice : x.Dp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "Sell" }).ToList();
+                products = _productService.GetAllByProductCodeIsInStock(term).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.CustomerOptions.Any(y => y.CustomerId == id && y.UnitPrice > 0) ? x.CustomerOptions.FirstOrDefault(y => y.CustomerId == id && y.UnitPrice > 0).UnitPrice : x.Dp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "Sell" }).ToList();
 
             }
 
@@ -1199,20 +1168,18 @@ namespace WarehouseApp.Controllers
        //---------- product query for damage--------------------------------------------------------------
         public JsonResult GetProuctByNameForDamage(string term)
         {
-
-            var products = db.Stocks.Where(p => (p.Product.ProductFullName.StartsWith(term) || p.Product.ProductFullName.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.StockId, x.Barcode, UnitPrice = x.Product.Dp, DiscountAmount = x.Product.DiscountAmount ?? 0, x.Product.DiscountType, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "Damage" }).ToList();
+            var products = _stockService.GetAllProuctByFullName(term).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.StockId, x.Barcode, UnitPrice = x.Product.Dp, DiscountAmount = x.Product.DiscountAmount ?? 0, x.Product.DiscountType, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "Damage" }).ToList();
             return Json(products, JsonRequestBehavior.AllowGet);
         }
         public JsonResult GetProuctbyCodeForDamage(string term)
         {
 
-            var products = db.Stocks.Where(p => (p.Product.ProductCode.StartsWith(term) || p.Product.ProductCode.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.StockId, x.Barcode, UnitPrice = x.Product.Dp, DiscountAmount = x.Product.DiscountAmount ?? 0, x.Product.DiscountType, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "Damage" }).ToList();
+            var products = _stockService.GetAllProuctByProductCode(term).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.StockId, x.Barcode, UnitPrice = x.Product.Dp, DiscountAmount = x.Product.DiscountAmount ?? 0, x.Product.DiscountType, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "Damage" }).ToList();
             return Json(products, JsonRequestBehavior.AllowGet);
         }
-
         public JsonResult GetProuctByBarcodeForDamage(string barCode)
         {
-            var products = db.Stocks.Where(p => p.Barcode.Equals(barCode)).OrderBy(p => p.Product.ProductFullName).ToList().Select(x => new { ProductFullName = x.Product.ProductFullName, ProductName = x.Product.ProductFullName, ProductId = x.StockId, Barcode = x.Barcode, PurchasePrice = x.PurchasePrice ?? x.Product.Tp, UnitPrice = x.SalePrice ?? x.Product.Dp, Unit = FindProductUnit(x.Product.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0,DefaultWarehouse = x.Product.DefaultZoneId, x.Exp }).ToList();
+            var products = _stockService.GetAllProuctByBarcode(barCode).ToList().Select(x => new { ProductFullName = x.Product.ProductFullName, ProductName = x.Product.ProductFullName, ProductId = x.StockId, Barcode = x.Barcode, PurchasePrice = x.PurchasePrice ?? x.Product.Tp, UnitPrice = x.SalePrice ?? x.Product.Dp, Unit = FindProductUnit(x.Product.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0,DefaultWarehouse = x.Product.DefaultZoneId, x.Exp }).ToList();
             return Json(products, JsonRequestBehavior.AllowGet);
         }
 
@@ -1221,19 +1188,18 @@ namespace WarehouseApp.Controllers
         public JsonResult GetProuctByNameForArticleTransfer(string term)
         {
 
-            var products = db.Stocks.Where(p => (p.Product.ProductFullName.StartsWith(term) || p.Product.ProductFullName.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.StockId, x.Barcode, UnitPrice = x.Product.Dp, DiscountAmount = x.Product.DiscountAmount ?? 0, x.Product.DiscountType, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "ArticleTransfer" }).ToList();
+            var products = _stockService.GetAllProuctByFullName(term).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.StockId, x.Barcode, UnitPrice = x.Product.Dp, DiscountAmount = x.Product.DiscountAmount ?? 0, x.Product.DiscountType, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "ArticleTransfer" }).ToList();
             return Json(products, JsonRequestBehavior.AllowGet);
         }
         public JsonResult GetProuctbyCodeForArticleTransfer(string term)
         {
 
-            var products = db.Stocks.Where(p => (p.Product.ProductCode.StartsWith(term) || p.Product.ProductCode.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.StockId, x.Barcode, UnitPrice = x.Product.Dp, DiscountAmount = x.Product.DiscountAmount ?? 0, x.Product.DiscountType, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "ArticleTransfer" }).ToList();
+            var products = _stockService.GetAllProuctByProductCode(term).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.StockId, x.Barcode, UnitPrice = x.Product.Dp, DiscountAmount = x.Product.DiscountAmount ?? 0, x.Product.DiscountType, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "ArticleTransfer" }).ToList();
             return Json(products, JsonRequestBehavior.AllowGet);
         }
-
         public JsonResult GetProuctByBarcodeForArticleTransfer(string barCode)
         {
-            var products = db.Stocks.Where(p => p.Barcode.Equals(barCode)).OrderBy(p => p.Product.ProductFullName).ToList().Select(x => new { ProductFullName = x.Product.ProductFullName, ProductName = x.Product.ProductFullName, ProductId = x.StockId, Barcode = x.Barcode, PurchasePrice = x.PurchasePrice ?? x.Product.Tp, UnitPrice = x.SalePrice ?? x.Product.Dp, Unit = FindProductUnit(x.Product.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0,DefaultWarehouse = x.Product.DefaultZoneId, x.Exp }).ToList();
+            var products = _stockService.GetAllProuctByBarcode(barCode).ToList().Select(x => new { ProductFullName = x.Product.ProductFullName, ProductName = x.Product.ProductFullName, ProductId = x.StockId, Barcode = x.Barcode, PurchasePrice = x.PurchasePrice ?? x.Product.Tp, UnitPrice = x.SalePrice ?? x.Product.Dp, Unit = FindProductUnit(x.Product.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0,DefaultWarehouse = x.Product.DefaultZoneId, x.Exp }).ToList();
             return Json(products, JsonRequestBehavior.AllowGet);
         }
 
@@ -1244,50 +1210,48 @@ namespace WarehouseApp.Controllers
         public JsonResult GetProuctByNameForProductTransfer(string term)
         {
 
-            var products = db.Stocks.Where(p => (p.Product.ProductFullName.StartsWith(term) || p.Product.ProductFullName.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.StockId, x.Barcode, UnitPrice = x.Product.Dp, DiscountAmount = x.Product.DiscountAmount ?? 0, x.Product.DiscountType, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "ProductTransfer" }).ToList();
+            var products = _stockService.GetAllProuctByFullName(term).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.StockId, x.Barcode, UnitPrice = x.Product.Dp, DiscountAmount = x.Product.DiscountAmount ?? 0, x.Product.DiscountType, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "ProductTransfer" }).ToList();
             return Json(products, JsonRequestBehavior.AllowGet);
         }
         public JsonResult GetProuctbyCodeForProductTransfer(string term)
         {
 
-            var products = db.Stocks.Where(p => (p.Product.ProductCode.StartsWith(term) || p.Product.ProductCode.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.Product.ProductFullName).ThenByDescending(p => p.CreatedDate).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.StockId, x.Barcode, UnitPrice = x.Product.Dp, DiscountAmount = x.Product.DiscountAmount ?? 0, x.Product.DiscountType, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "ProductTransfer" }).ToList();
+            var products = _stockService.GetAllProuctByProductCode(term).ToList().Select(x => new { ProductFullName = string.IsNullOrEmpty(x.Barcode) ? x.Product.ProductFullName : x.Product.ProductFullName + "(" + x.Barcode + ")", ProductName = x.Product.ProductFullName, ProductId = x.StockId, x.Barcode, UnitPrice = x.Product.Dp, DiscountAmount = x.Product.DiscountAmount ?? 0, x.Product.DiscountType, ExpiryDate = x.Exp, DefaultWarehouse = x.Product.DefaultZoneId, Flag = "ProductTransfer" }).ToList();
             return Json(products, JsonRequestBehavior.AllowGet);
         }
-
         public JsonResult GetProuctByBarcodeForProductTransfer(string barCode)
         {
-            var products = db.Stocks.Where(p => p.Barcode.Equals(barCode)).OrderBy(p => p.Product.ProductFullName).ToList().Select(x => new { ProductFullName = x.Product.ProductFullName, ProductName = x.Product.ProductFullName, ProductId = x.StockId, Barcode = x.Barcode, PurchasePrice = x.PurchasePrice ?? x.Product.Tp, UnitPrice = x.SalePrice ?? x.Product.Dp, Unit = FindProductUnit(x.Product.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, DefaultWarehouse = x.Product.DefaultZoneId, x.Exp }).ToList();
+            var products = _stockService.GetAllProuctByBarcode(barCode).ToList().Select(x => new { ProductFullName = x.Product.ProductFullName, ProductName = x.Product.ProductFullName, ProductId = x.StockId, Barcode = x.Barcode, PurchasePrice = x.PurchasePrice ?? x.Product.Tp, UnitPrice = x.SalePrice ?? x.Product.Dp, Unit = FindProductUnit(x.Product.ProductId), stock = x.TotalQuantity, DiscountAmount = x.Product.DiscountAmount ?? 0, DiscountType = x.Product.DiscountType, Vat = x.Product.Vat ?? 0, DefaultWarehouse = x.Product.DefaultZoneId, x.Exp }).ToList();
             return Json(products, JsonRequestBehavior.AllowGet);
         }
 
         //-----------------------------------------------------------------------------------------------------------------------------------
         public JsonResult GetProuctForOthers(string term)
         {
-            var products =  db.Products.Where(p => (p.ProductFullName.StartsWith(term) || p.ProductFullName.Contains(" " + term)) && p.Status != 0).OrderBy(p => p.ProductFullName).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.Tp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "Others" }).ToList();
+            var products = _productService.GetAllByProductFullName(term).ToList().Select(x => new { ProductFullName = x.ProductFullName, ProductName = x.ProductName, ProductId = x.ProductId, Barcode = "", UnitPrice = x.Tp, Unit = FindProductUnit(x.ProductId), stock = x.Stocks.Count > 0 ? x.Stocks.FirstOrDefault().TotalQuantity : 0, DiscountAmount = x.DiscountAmount ?? 0, DiscountType = x.DiscountType, Vat = x.Vat ?? 0, ExpiryDate = x.ExpiryDate, DefaultWarehouse = x.DefaultZoneId, Flag = "Others" }).ToList();
             return Json(products, JsonRequestBehavior.AllowGet);
         }
         public ActionResult GetProductDetails(int? productId)
         {
-            var productinfo = db.Products.Where(p => p.ProductId == productId).Select(p => new { p.ProductId, p.ProductName, p.PerCarton, p.Tp });
+            var p = _productService.GetProductById(productId.Value);
+            var productinfo =new { p.ProductId, p.ProductName, p.PerCarton, p.Tp };
             var data = new { product = productinfo };
-
             return Json(data, JsonRequestBehavior.AllowGet);
         }
 
         public static void UpdateProductExpiryDate(int? productId, DateTime? expiryDate, int? currentUserId)
         {
-            var cx = new WmsDbContext();
-            Product product = cx.Products.Find(productId);
+            var cx = new ProductService();
+            Product product = cx.GetProductById(productId.Value);
                 product.ExpiryDate = Convert.ToDateTime(expiryDate);
-                cx.Entry(product).State = EntityState.Modified;
-                cx.SaveChanges(currentUserId.ToString());
-            
+            cx.Edit(product,AuthenticatedUser.GetUserFromIdentity().UserId);
+
         }
 
         public static string FindProductUnit(int productId)
         {
-            var cx = new WmsDbContext();
-            Product product = cx.Products.Find(productId);
+            var cx = new ProductService();
+            Product product = cx.GetProductById(productId);
             string unit = "";
             if (product != null)
             {
@@ -1298,29 +1262,13 @@ namespace WarehouseApp.Controllers
         }
         public static double FindStockByProductIdAndBarcode(int productId, string barcode)
         {
-            var cx = new WmsDbContext();
-            double stock = cx.Stocks.FirstOrDefault(x => x.ProductId == productId && x.Barcode == barcode).TotalQuantity ?? 0;
+            var cx = new StockService();
+            double stock = cx.GetByProductIdAndBarcode(productId, barcode).TotalQuantity ?? 0;
             return stock;
         }
         public JsonResult IsProductCodeExist(string ProductCode, string InitialProductCode)
         {
-            bool isNotExist = true;
-            if (ProductCode != string.Empty && InitialProductCode == "undefined")
-            {
-                var isExist = db.Products.Any(x => x.ProductCode.ToLower().Equals(ProductCode.ToLower()));
-                if (isExist)
-                {
-                    isNotExist = false;
-                }
-            }
-            if (ProductCode != string.Empty && InitialProductCode != "undefined")
-            {
-                var isExist = db.Products.Any(x => x.ProductCode.ToLower() == ProductCode.ToLower() && x.ProductCode.ToLower() != InitialProductCode.ToLower());
-                if (isExist)
-                {
-                    isNotExist = false;
-                }
-            }
+            bool isNotExist = _productService.IsProductCodeExist(ProductCode, InitialProductCode);
             return Json(isNotExist, JsonRequestBehavior.AllowGet);
         }
 #endregion
@@ -1329,7 +1277,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _productService.Dispose();
             }
             base.Dispose(disposing);
         }

@@ -4,18 +4,19 @@ using System.Linq;
 using System.Web.Mvc;
 
 using WarehouseApp.Models;
-
+using EBSM.Entities;
+using EBSM.Services;
 namespace WarehouseApp.Controllers
 {
     [Authorize]
     public class DamageStockController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private DamageService _damageService = new DamageService();
 
         // GET: /DamageStock/
         public ActionResult Index()
         {
-            var damagestocks = db.DamageStocks;
+            var damagestocks = _damageService.GetAllDamageStocks();
             return View(damagestocks.ToList());
         }
 
@@ -24,7 +25,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _damageService.Dispose();
             }
             base.Dispose(disposing);
         }

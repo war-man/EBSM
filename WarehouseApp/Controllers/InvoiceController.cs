@@ -16,28 +16,29 @@ using PagedList;
 using System.Web.Security;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
-
+using EBSM.Entities;
+using EBSM.Services;
 namespace WarehouseApp.Controllers
 {
     [Authorize]
     public class InvoiceController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private SalesService _salesService = new SalesService();
+        private CustomerService _customerService = new CustomerService();
+        private SalesmanService _salesmanService = new SalesmanService();
+        private ProductService _productService = new ProductService();
+        private SalesReturnService _salesReturnService = new SalesReturnService();
         private const int InitialInvoiceNo = 1;
         #region list view
         [Roles("Global_SupAdmin,Sales_Create,Sales_Edit")]
          [OutputCache(Duration = 20)]
         public ActionResult Index(InvoiceSearchViewModel model)
         {
-            var fromDate = Convert.ToDateTime(model.InvoiceDateFrom);
-            var toDate = Convert.ToDateTime(model.InvoiceDateTo);
-            var invoices = db.Invoices.Where(x => (model.TransactionMode == null || x.TransactionMode.Equals(model.TransactionMode))&&(model.InvoiceNo == null || x.InvoiceNumber.StartsWith(model.InvoiceNo))
-                && (model.InvoiceDateFrom == null || x.InvoiceDate >= fromDate) && (model.InvoiceDateTo == null || x.InvoiceDate <= toDate)
-                 && (model.CustomerId == null || x.CustomerId == model.CustomerId) && (model.SalesmanId == null || x.SalesmanId == model.SalesmanId)).Include(o => o.Salesman).OrderByDescending(o => o.InvoiceDate).ThenByDescending(o => o.CreatedDate);
+            var invoices = _salesService.GetAllSales(model.CustomerId,model.InvoiceNo,model.InvoiceDateFrom,model.InvoiceDateTo,model.TransactionMode,model.SalesmanId);
             model.Invoices = invoices.ToPagedList(model.Page, model.PageSize);
 
-            ViewBag.SalesmanId = new SelectList(db.Salesman.OrderBy(x=>x.FullName), "SalesmanId", "FullName");
-            ViewBag.CustomerId = new SelectList(db.Customers.Where(x => x.Status != 0).OrderBy(x => x.FullName), "CustomerId", "FullName");
+            ViewBag.SalesmanId = new SelectList(_salesmanService.GetAllSalesman(), "SalesmanId", "FullName");
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers().Where(x=>x.Status!=0), "CustomerId", "FullName");
             return View("../Shop/Invoice/Index", model);
         }
         #endregion
@@ -48,8 +49,8 @@ namespace WarehouseApp.Controllers
         {
             ViewBag.TransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text","Cash");
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode("Cash"), "Id","Name");
-            ViewBag.SalesmanId = new SelectList(db.Salesman.OrderBy(x => x.FullName), "SalesmanId", "FullName");
-            ViewBag.CustomerId = new SelectList(db.Customers.OrderBy(x => x.FullName), "CustomerId", "FullName");
+            ViewBag.SalesmanId = new SelectList(_salesmanService.GetAllSalesman(), "SalesmanId", "FullName");
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers(), "CustomerId", "FullName");
             return View("../Shop/Invoice/NewSales");
 
        }
@@ -66,16 +67,16 @@ namespace WarehouseApp.Controllers
                 int billId = 0;
                 string fmt = "0000000.##";
                 int lastInvoiceId = 0;
-                var invoices = db.Invoices.ToList();
-                if (invoices.Count > 0)
-                {
-                    lastInvoiceId = invoices.OrderByDescending(x => x.InvoiceId).FirstOrDefault().InvoiceId;
-                }
+                var invoiceCount =_salesService.GetCount();
+                //if (invoices > 0)
+                //{
+                //    lastInvoiceId = invoices.OrderByDescending(x => x.InvoiceId).FirstOrDefault().InvoiceId;
+                //}
                 #region Invoice save
                 Invoice invoice = new Invoice()
                 {
                     InvoiceDate = Convert.ToDateTime(data.InvoiceDate),
-                    InvoiceNumber = "S" + TransactionController.BillingMonthString(data.InvoiceDate) + (lastInvoiceId + 1).ToString(fmt),
+                    InvoiceNumber = "S" + TransactionController.BillingMonthString(data.InvoiceDate) + (invoiceCount + 1).ToString(fmt),
                     TotalQuantity = data.InvoiceProducts.Sum(x => x.Quantity),
                     TotalPrice = data.TotalPrice,
                     TotalVat = data.TotalVat,
@@ -90,11 +91,11 @@ namespace WarehouseApp.Controllers
                     CashPaid = data.CashPaid ?? 0,
                     Note = data.Note,
                     Status = 1,
-                    CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
+                    CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId,
                     CreatedDate = DateTime.Now
                 };
-                db.Invoices.Add(invoice);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _salesService.Save(invoice, AuthenticatedUser.GetUserFromIdentity().UserId);
+               
                 #endregion
                 #region invoice products update and stok update
                 var sl = 1;
@@ -112,8 +113,8 @@ namespace WarehouseApp.Controllers
                         Quantity = item.Quantity,
                         Status = 1
                     };
-                    db.InvoiceProducts.Add(invoiceProduct);
-                    db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                    _salesService.SaveInvoiceProduct(invoiceProduct);
+             
 
                     //====update stock==============================================
                     #region stock update
@@ -122,40 +123,37 @@ namespace WarehouseApp.Controllers
                     {
                         if (item.DefaultZoneId == null)
                         {
-                            updateStock.RemoveFromStock(Convert.ToInt32(invoiceProduct.ProductId), item.Quantity,
-                                Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey));
+                            updateStock.RemoveFromStock(Convert.ToInt32(invoiceProduct.ProductId), item.Quantity,AuthenticatedUser.GetUserFromIdentity().UserId);
                         }
                         else 
                         {
                             updateStock.RemoveFromStock(Convert.ToInt32(invoiceProduct.ProductId), item.Quantity,
-                                Convert.ToInt32(item.DefaultZoneId),
-                                Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey));
+                                Convert.ToInt32(item.DefaultZoneId), AuthenticatedUser.GetUserFromIdentity().UserId);
                         }
                     }
                     else
                     {
                         if (item.DefaultZoneId == null)
                         {
-                            updateStock.RemoveFromStock(Convert.ToInt32(invoiceProduct.ProductId), item.Quantity,
-                                Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
+                            updateStock.RemoveFromStock(Convert.ToInt32(invoiceProduct.ProductId), item.Quantity, AuthenticatedUser.GetUserFromIdentity().UserId,
                                 item.Barcode);
                         }
                         else
                         {
                             updateStock.RemoveFromStock(Convert.ToInt32(invoiceProduct.ProductId), item.Quantity,
-                                Convert.ToInt32(item.DefaultZoneId),
-                                Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey), item.Barcode);
+                                Convert.ToInt32(item.DefaultZoneId), AuthenticatedUser.GetUserFromIdentity().UserId, item.Barcode);
                         }
                     }
                     #endregion
                     //====add to printing model==============================================
-                    if (data.FormSubmitType == 2) { 
-                    ProductPrintModel productItem = new ProductPrintModel()
+                    if (data.FormSubmitType == 2) {
+                        var product = _productService.GetProductById(invoiceProduct.ProductId);
+                        ProductPrintModel productItem = new ProductPrintModel()
                     {
+                        
                         Sl = sl,
-
-                        ItemName = db.Products.Find(invoiceProduct.ProductId).ProductFullName,
-                        ItemCode = db.Products.Find(invoiceProduct.ProductId).ProductCode,
+                        ItemName = product.ProductFullName,
+                        ItemCode = product.ProductCode,
                         UnitPrice = invoiceProduct.Dp,
                         Quantity = invoiceProduct.Quantity,
                         Total = invoiceProduct.TotalPrice
@@ -178,7 +176,7 @@ namespace WarehouseApp.Controllers
                     transactionAmount = Convert.ToDouble(data.TotalPrice + data.TotalVat);
                 }
 
-                transaction.DepositToAccount(data.TransactionMode, Convert.ToInt32(data.TransactionModeId), transactionAmount, Convert.ToDateTime(data.InvoiceDate), "Invoices", "InvoiceId", invoice.InvoiceId, Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),"Sells Payment");
+                transaction.DepositToAccount(data.TransactionMode, Convert.ToInt32(data.TransactionModeId), transactionAmount, Convert.ToDateTime(data.InvoiceDate), "Invoices", "InvoiceId", invoice.InvoiceId, AuthenticatedUser.GetUserFromIdentity().UserId, "Sells Payment");
                 #endregion
                 #region sales to order
 
@@ -201,7 +199,7 @@ namespace WarehouseApp.Controllers
                     //int ShopDeptId =db.Departments.FirstOrDefault(x => x.DepartmentName.Equals("Shop") && x.Status != 0).DepartmentId;
                     //invoicePm.VatPercentage = Convert.ToDouble(db.Vats.FirstOrDefault(x => x.DepartmentId == ShopDeptId).VatPercentage);
                     invoicePm.Total = Convert.ToDouble((invoicePm.NetTotal - discountAmount) + invoicePm.VatAmount);
-                    invoicePm.CashierName = Membership.GetUser(User.Identity.Name, true).UserName;
+                    invoicePm.CashierName = AuthenticatedUser.GetUserFromIdentity().Username;
                     invoicePm.Items = itemPmList;
                     invoicePm.CashPaid = Convert.ToDouble(invoice.CashPaid);
                     invoicePm.ReturnAmount = Convert.ToDouble(invoice.CashPaid) - invoicePm.Total;
@@ -216,7 +214,7 @@ namespace WarehouseApp.Controllers
                 {
                     var billController = new BillController();
                    
-                    billId = billController.SaveInvoiceBill(invoice, Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey));
+                    billId = billController.SaveInvoiceBill(invoice, AuthenticatedUser.GetUserFromIdentity().UserId);
                     return RedirectToAction("BillDetails", "Bill", new { id = billId });
                 }
 
@@ -226,8 +224,8 @@ namespace WarehouseApp.Controllers
             }
             ViewBag.TransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text", "Cash");
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode("Cash"), "Id", "Name");
-            ViewBag.SalesmanId = new SelectList(db.Salesman.OrderBy(x => x.FullName), "SalesmanId", "FullName");
-            ViewBag.CustomerId = new SelectList(db.Customers.OrderBy(x => x.FullName), "CustomerId", "FullName",data.CustomerId);
+            ViewBag.SalesmanId = new SelectList(_salesmanService.GetAllSalesman(), "SalesmanId", "FullName");
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers(), "CustomerId", "FullName",data.CustomerId);
             return View("../Shop/Invoice/NewSales");
         }
 
@@ -240,7 +238,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Invoice invoice = db.Invoices.Find(id);
+            Invoice invoice = _salesService.GetInvoiceById(id.Value);
             if (invoice == null)
             {
                 return HttpNotFound();
@@ -256,7 +254,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Invoice invoice = db.Invoices.Find(id);
+            Invoice invoice = _salesService.GetInvoiceById(id.Value);
             if (invoice == null)
             {
                 return HttpNotFound();
@@ -272,7 +270,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Invoice invoice = db.Invoices.Find(id);
+            Invoice invoice = _salesService.GetInvoiceById(id.Value);
             if (invoice == null)
             {
                 return HttpNotFound();
@@ -327,10 +325,10 @@ namespace WarehouseApp.Controllers
        
             ViewBag.TransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text", invoice.TransactionMode);
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode(invoice.TransactionMode), "Id", "Name",invoice.TransactionModeId);
-            ViewBag.SalesmanId = new SelectList(db.Salesman.OrderBy(x => x.FullName), "SalesmanId", "FullName", invoice.SalesmanId);
+            ViewBag.SalesmanId = new SelectList(_salesmanService.GetAllSalesman(), "SalesmanId", "FullName", invoice.SalesmanId);
     
-            ViewBag.CustomerId = new SelectList(db.Customers.OrderBy(x => x.FullName), "CustomerId", "FullName",invoice.CustomerId);
-            ViewBag.CustomerBranchId = new SelectList(db.CustomerProjects.Where(x => x.CustomerId == invoice.CustomerId).OrderBy(x => x.ProjectName), "CustomerProjectId", "ProjectName", invoice.CustomerBranchId);
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers(), "CustomerId", "FullName",invoice.CustomerId);
+            ViewBag.CustomerBranchId = new SelectList(_customerService.GetAllCustomerProjectsByCustomerId(invoice.CustomerId) , "CustomerProjectId", "ProjectName", invoice.CustomerBranchId);
             return View("../Shop/Invoice/EditSales", invoiceViewModel);
         }
         [HttpPost]
@@ -342,7 +340,7 @@ namespace WarehouseApp.Controllers
             {
                 InvoicePrintModel invoicePm = new InvoicePrintModel();
                 List<ProductPrintModel> itemPmList = new List<ProductPrintModel>();
-                Invoice invoice = db.Invoices.Find(data.InvoiceId);
+                Invoice invoice = _salesService.GetInvoiceById(data.InvoiceId.Value); 
                 if (invoice == null)
                 {
                     return HttpNotFound();
@@ -378,7 +376,7 @@ namespace WarehouseApp.Controllers
                 invoice.Note = data.Note;
                 invoice.Status = 1;
 
-                invoice.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                invoice.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 invoice.UpdatedDate = DateTime.Now;
                
                 if (customer.FullName != null)
@@ -389,13 +387,14 @@ namespace WarehouseApp.Controllers
                 {
                     invoice.SalesmanId = data.SalesmanId;
                 }
-                db.Entry(invoice).State = System.Data.Entity.EntityState.Modified;
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _salesService.Edit(invoice, AuthenticatedUser.GetUserFromIdentity().UserId);
+                //db.Entry(invoice).State = System.Data.Entity.EntityState.Modified;
+                //db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
 
                 StockController updateStock = new StockController();
 
                 //====remove previous invoice products=======================
-                var invoicePrdcts = db.InvoiceProducts.Where(x => x.InvoiceId == invoice.InvoiceId).ToList();
+                var invoicePrdcts = _salesService.GetProductsByInvoiceId(invoice.InvoiceId).ToList();
                 if (invoicePrdcts.Count > 0)
                 {
                     foreach (var removeItem in invoicePrdcts)
@@ -407,13 +406,13 @@ namespace WarehouseApp.Controllers
                             if (removeItem.Product.DefaultZoneId == null)
                             {
                                 updateStock.AddToStock(Convert.ToInt32(removeItem.ProductId), removeItem.Quantity,
-                                Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey));
+                               AuthenticatedUser.GetUserFromIdentity().UserId);
                             }
                             else
                             {
                                 updateStock.AddToStock(Convert.ToInt32(removeItem.ProductId), removeItem.Quantity,
                                     Convert.ToInt32(removeItem.Product.DefaultZoneId),
-                                    Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey));
+                                   AuthenticatedUser.GetUserFromIdentity().UserId);
                             }
                         }
                         else
@@ -421,21 +420,19 @@ namespace WarehouseApp.Controllers
                             if (removeItem.Product.DefaultZoneId == null)
                             {
                                 updateStock.AddToStock(Convert.ToInt32(removeItem.ProductId), removeItem.Quantity,
-                              Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey), removeItem.Barcode);
+                             AuthenticatedUser.GetUserFromIdentity().UserId, removeItem.Barcode);
                             }
                             else
                             {
                                 updateStock.AddToStock(Convert.ToInt32(removeItem.ProductId), removeItem.Quantity,
                                     Convert.ToInt32(removeItem.Product.DefaultZoneId),
-                                    Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey), removeItem.Barcode);
+                                   AuthenticatedUser.GetUserFromIdentity().UserId, removeItem.Barcode);
                             }
                         }
 
-                      
-                     
-                        db.InvoiceProducts.Remove(removeItem);
+                        _salesService.DeleteInvoiceProductFromDbByItem(removeItem);
                     }
-                    db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                   
                 }
                 //====Add new invoice products=======================
                 var sl = 1;
@@ -452,12 +449,10 @@ namespace WarehouseApp.Controllers
                         TotalPrice = item.TotalPrice,
                         Quantity = item.Quantity,
                         Status = 1
-
-
-                        
                     };
-                    db.InvoiceProducts.Add(invoiceProduct);
-                    db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                    _salesService.SaveInvoiceProduct(invoiceProduct);
+                    //db.InvoiceProducts.Add(invoiceProduct);
+                    //db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
 
                     //====update stock==============================================
                     if (string.IsNullOrEmpty(item.Barcode))
@@ -465,13 +460,13 @@ namespace WarehouseApp.Controllers
                         if (item.DefaultZoneId == null)
                         {
                             updateStock.RemoveFromStock(Convert.ToInt32(invoiceProduct.ProductId), item.Quantity,
-                                Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey));
+                                AuthenticatedUser.GetUserFromIdentity().UserId);
                         }
                         else
                         {
                             updateStock.RemoveFromStock(Convert.ToInt32(invoiceProduct.ProductId), item.Quantity,
                                 Convert.ToInt32(item.DefaultZoneId),
-                                Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey));
+                               AuthenticatedUser.GetUserFromIdentity().UserId);
                         }
                     }
                     else
@@ -479,14 +474,12 @@ namespace WarehouseApp.Controllers
                         if (item.DefaultZoneId == null)
                         {
                             updateStock.RemoveFromStock(Convert.ToInt32(invoiceProduct.ProductId), item.Quantity,
-                                Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
-                                item.Barcode);
+                               AuthenticatedUser.GetUserFromIdentity().UserId,item.Barcode);
                         }
                         else
                         {
                             updateStock.RemoveFromStock(Convert.ToInt32(invoiceProduct.ProductId), item.Quantity,
-                                Convert.ToInt32(item.DefaultZoneId),
-                                Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey), item.Barcode);
+                                Convert.ToInt32(item.DefaultZoneId),AuthenticatedUser.GetUserFromIdentity().UserId, item.Barcode);
                         }
                     }
 
@@ -494,12 +487,13 @@ namespace WarehouseApp.Controllers
                     //====add to printing model==============================================
                     if (data.FormSubmitType == 2)
                     {
+                        var product = _productService.GetProductById(invoiceProduct.ProductId);
                         ProductPrintModel productItem = new ProductPrintModel()
                         {
                             Sl = sl,
 
-                            ItemName = db.Products.Find(invoiceProduct.ProductId).ProductFullName,
-                            ItemCode = db.Products.Find(invoiceProduct.ProductId).ProductCode,
+                            ItemName = product.ProductFullName,
+                            ItemCode = product.ProductCode,
                             UnitPrice = invoiceProduct.Dp,
                             Quantity = invoiceProduct.Quantity,
                             Total = invoiceProduct.TotalPrice
@@ -520,7 +514,7 @@ namespace WarehouseApp.Controllers
                     transactionAmount = Convert.ToDouble(data.TotalPrice) + Convert.ToDouble(data.TotalVat);
                 }
                 if (Convert.ToDouble(transactionAmount) - Convert.ToDouble(oldTransactionAmount) != 0) {
-                    transaction.DepositToAccount(data.TransactionMode, Convert.ToInt32(data.TransactionModeId), (Convert.ToDouble(transactionAmount) - Convert.ToDouble(oldTransactionAmount)), Convert.ToDateTime(data.InvoiceDate), "Invoices", "InvoiceId", invoice.InvoiceId, Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey), "Sells Payment");
+                    transaction.DepositToAccount(data.TransactionMode, Convert.ToInt32(data.TransactionModeId), (Convert.ToDouble(transactionAmount) - Convert.ToDouble(oldTransactionAmount)), Convert.ToDateTime(data.InvoiceDate), "Invoices", "InvoiceId", invoice.InvoiceId, AuthenticatedUser.GetUserFromIdentity().UserId, "Sells Payment");
                 }
                 //----------------------------invoice printing-------------------------------------------------------------
                 if (data.FormSubmitType == 2)
@@ -535,7 +529,7 @@ namespace WarehouseApp.Controllers
                     invoicePm.DiscountType = invoice.DiscountType;
                     invoicePm.VatAmount = Convert.ToDouble(invoice.TotalVat);
                     invoicePm.Total = Convert.ToDouble((invoicePm.NetTotal - discountAmount) + invoicePm.VatAmount);
-                    invoicePm.CashierName = Membership.GetUser(User.Identity.Name, true).UserName;
+                    invoicePm.CashierName = AuthenticatedUser.GetUserFromIdentity().Username;
                     invoicePm.Items = itemPmList;
                     invoicePm.CashPaid = Convert.ToDouble(invoice.CashPaid);
                     invoicePm.ReturnAmount = Convert.ToDouble(invoice.CashPaid) - invoicePm.Total;
@@ -553,9 +547,9 @@ namespace WarehouseApp.Controllers
           
             ViewBag.TransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text", data.TransactionMode);
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode(data.TransactionMode), "Id", "Name", data.TransactionModeId);
-            ViewBag.SalesmanId = new SelectList(db.Salesman.OrderBy(x => x.FullName), "SalesmanId", "FullName", data.SalesmanId);
-            ViewBag.CustomerId = new SelectList(db.Customers.OrderBy(x => x.FullName), "CustomerId", "FullName", data.CustomerId);
-            ViewBag.CustomerBranchId = new SelectList(db.CustomerProjects.Where(x => x.CustomerId == data.CustomerId).OrderBy(x => x.ProjectName), "CustomerProjectId", "ProjectName", data.CustomerBranchId);
+            ViewBag.SalesmanId = new SelectList(_salesmanService.GetAllSalesman(), "SalesmanId", "FullName", data.SalesmanId);
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers(), "CustomerId", "FullName", data.CustomerId);
+            ViewBag.CustomerBranchId = new SelectList(_customerService.GetAllCustomerProjectsByCustomerId(data.CustomerId), "CustomerProjectId", "ProjectName", data.CustomerBranchId);
             return View("../Shop/Invoice/EditSales", data);
 
         }
@@ -564,7 +558,7 @@ namespace WarehouseApp.Controllers
         public void ExportChalanExcel(int id)
         {
            
-            Invoice invoice = db.Invoices.Find(id);
+            Invoice invoice = _salesService.GetInvoiceById(id);
             var companyProfile = SettingsController.CompanyInfo();
 
             ExcelPackage excel = new ExcelPackage();
@@ -696,15 +690,12 @@ namespace WarehouseApp.Controllers
         [OutputCache(Duration = 10)]
         public ActionResult LoadSalesReturn(SalesReturnSearchViewModel model)
         {
-            var fromDate = Convert.ToDateTime(model.ReturnDateFrom);
-            var toDate = Convert.ToDateTime(model.ReturnDateTo);
-            var returns = db.Returns.Where(x =>  (model.InvoiceNo == null || x.Invoice.InvoiceNumber.StartsWith(model.InvoiceNo))
-                && (model.ReturnDateFrom == null || x.CreatedDate >= fromDate) && (model.ReturnDateTo == null || x.CreatedDate <= toDate)
-                 && (model.CustomerId == null || x.Invoice.CustomerId == model.CustomerId)).Include(x=>x.Invoice).OrderByDescending(o => o.CreatedDate);
+          
+            var returns = _salesReturnService.GetAll(model.CustomerId,model.InvoiceNo,model.ReturnDateFrom,model.ReturnDateTo);
             model.SalesReturns = returns.ToPagedList(model.Page, model.PageSize);
 
-            ViewBag.SalesmanId = new SelectList(db.Salesman.OrderBy(x => x.FullName), "SalesmanId", "FullName");
-            ViewBag.CustomerId = new SelectList(db.Customers.Where(x => x.Status != 0).OrderBy(x => x.FullName), "CustomerId", "FullName");
+            ViewBag.SalesmanId = new SelectList(_salesmanService.GetAllSalesman(), "SalesmanId", "FullName");
+            ViewBag.CustomerId = new SelectList(_customerService.GetAllCustomers().Where(x => x.Status != 0).OrderBy(x => x.FullName), "CustomerId", "FullName");
             return View("../Shop/Invoice/SalesReturnList", model);
         }
         #endregion
@@ -716,7 +707,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Invoice invoice = db.Invoices.Find(invoiceId);
+            Invoice invoice = _salesService.GetInvoiceById(invoiceId.Value);
             if (invoice == null)
             {
                 return HttpNotFound();
@@ -766,18 +757,18 @@ namespace WarehouseApp.Controllers
             if (ModelState.IsValid && data.ReturnProducts.Any(x => x.ReturnQty > 0))
             {
                 // assigning new value ==========================================
-         
+
                 Return salesReturn = new Return
                 {
-                    InvoiceId=data.InvoiceId,
+                    InvoiceId = data.InvoiceId,
                     TotalQuantity = data.ReturnProducts.Sum(x => x.ReturnQty),
-                    TotalPrice=data.TotalReturn,
+                    TotalPrice = data.TotalReturn,
                     Status = 1,
                     CreatedDate = Convert.ToDateTime(data.ReturnDate),
-                    CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey)
+                    CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId
                 };
-                db.Returns.Add(salesReturn);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _salesReturnService.Save(salesReturn, AuthenticatedUser.GetUserFromIdentity().UserId);
+                
 
                 StockController updateStock = new StockController();
 
@@ -797,8 +788,8 @@ namespace WarehouseApp.Controllers
                         ZoneId=item.ZoneId,
                         Status = 1,
                     };
-                    db.ReturnProducts.Add(returnProduct);
-                    db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                    _salesReturnService.SaveReturnProduct(returnProduct);
+                   
 
                     //====update stock==============================================
                     if (string.IsNullOrEmpty(item.Barcode))
@@ -806,13 +797,13 @@ namespace WarehouseApp.Controllers
                         if (item.DefaultZoneId == null)
                         {
                             updateStock.AddToStock(Convert.ToInt32(item.ProductId), Convert.ToDouble(item.Quantity),
-                            Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey));
+                            AuthenticatedUser.GetUserFromIdentity().UserId);
                         }
                         else
                         {
                             updateStock.AddToStock(Convert.ToInt32(item.ProductId), Convert.ToDouble(item.Quantity),
                                 Convert.ToInt32(item.DefaultZoneId),
-                                Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey));
+                                 AuthenticatedUser.GetUserFromIdentity().UserId);
                         }
                     }
                     else
@@ -820,13 +811,13 @@ namespace WarehouseApp.Controllers
                         if (item.DefaultZoneId == null)
                         {
                             updateStock.AddToStock(Convert.ToInt32(item.ProductId), Convert.ToDouble(item.Quantity),
-                          Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey), item.Barcode);
+                          AuthenticatedUser.GetUserFromIdentity().UserId, item.Barcode);
                         }
                         else
                         {
                             updateStock.AddToStock(Convert.ToInt32(item.ProductId), Convert.ToDouble(item.Quantity),
                                 Convert.ToInt32(item.DefaultZoneId),
-                                Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey), item.Barcode);
+                                AuthenticatedUser.GetUserFromIdentity().UserId, item.Barcode);
                         }
                     }
 
@@ -836,12 +827,10 @@ namespace WarehouseApp.Controllers
                 }
 
                 // Invoice update  ---------------------
-                Invoice invoice = db.Invoices.FirstOrDefault(x => x.InvoiceId == data.InvoiceId);
+                Invoice invoice = _salesService.GetInvoiceById(data.InvoiceId); 
                 invoice.TotalQuantity = invoice.TotalQuantity -salesReturn.TotalQuantity;
                 invoice.TotalPrice = invoice.TotalPrice - salesReturn.TotalPrice;
-                db.Entry(invoice).State = EntityState.Modified;
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
-
+                _salesService.Edit(invoice,AuthenticatedUser.GetUserFromIdentity().UserId);
                 return RedirectToAction("Index", "Invoice");
             }
 
@@ -857,7 +846,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Return salesReturn = db.Returns.Find(id);
+            Return salesReturn = _salesReturnService.GetSalesReturnById(id.Value);
             if (salesReturn == null)
             {
                 return HttpNotFound();
@@ -869,35 +858,31 @@ namespace WarehouseApp.Controllers
         #region helping modules
         public static void SaveInvoiceOrderRelation( int invoiceId, int orderId)
         {
-            using (var cx = new WmsDbContext()) { 
+            var cx = new SalesOrderService();
             var invoiceOrder = new InvoiceOrder
             {
                 InvoiceId = invoiceId,
                 OrderId = orderId
             };
-            cx.InvoiceOrders.Add(invoiceOrder);
-            cx.SaveChanges("");
+            cx.SaveOrderInvoice(invoiceOrder,AuthenticatedUser.GetUserFromIdentity().UserId);
+           
 
-            var order = cx.SalesOrders.Find(orderId);
+            var order = cx.GetSalesOrderById(orderId);
             order.Status = 2;
-            cx.Entry(order).State = EntityState.Modified;
-            cx.SaveChanges("");
-            }
-
+            cx.EditSalesOrder(order, AuthenticatedUser.GetUserFromIdentity().UserId);
         }
         public static void RemoveInvoiceProduct(int invoiceId, int productId, double returnQty, double returnAmount)
     {
-        using (var cx = new WmsDbContext())
-        {
-            var invoiceProduct = cx.InvoiceProducts.FirstOrDefault(x => x.InvoiceId == invoiceId && x.ProductId == productId);
+            var cx = new SalesService();
+            var invoiceProduct = cx.GetByInvoiceAndProductId(invoiceId, productId);
             if (invoiceProduct != null)
             {
                 invoiceProduct.Quantity = invoiceProduct.Quantity - returnQty;
                 invoiceProduct.TotalPrice = invoiceProduct.TotalPrice - returnAmount;
-                cx.Entry(invoiceProduct).State = EntityState.Modified;
-                cx.SaveChanges("");
+                cx.EditInvoiceProduct(invoiceProduct);
+                //cx.Entry(invoiceProduct).State = EntityState.Modified;
+                //cx.SaveChanges("");
             } 
-        }
     }
         #endregion
         #region dispose
@@ -905,7 +890,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _salesService.Dispose();
             }
          
         base.Dispose(disposing);

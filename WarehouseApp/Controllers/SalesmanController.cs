@@ -10,27 +10,28 @@ using System.Web.Security;
 using PagedList;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
-
+using EBSM.Entities;
+using EBSM.Services;
 
 namespace WarehouseApp.Controllers
 {
     [Authorize]
     public class SalesmanController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private SalesmanService _salesmanService = new SalesmanService();
 
         // GET: /Salesman/
         [Roles("Global_SupAdmin,Configuration")]
         public ActionResult Index(SalsemanSearchViewModel model)
         {
 
-            var salesmanList = db.Salesman.Where(x => (model.SalesmanName == null || x.FullName.StartsWith(model.SalesmanName))).OrderBy(x => x.FullName).ToList();
+            var salesmanList = _salesmanService.GetAllSalesman(model.SalesmanName).ToList();
             model.SalesmanList = salesmanList.ToPagedList(model.Page, model.PageSize);
             return View("../Shop/Salesman/Index", model);
         } 
         public ActionResult LoadAllSalesman()
         {
-            var salesmanList = db.Salesman.OrderBy(s=>s.FullName).ToList();
+            var salesmanList = _salesmanService.GetAllSalesman().ToList();
             return Json(new{data = salesmanList}, JsonRequestBehavior.AllowGet);
         }
 
@@ -52,9 +53,10 @@ namespace WarehouseApp.Controllers
             if (ModelState.IsValid)
             {
                 salesman.CreatedDate = DateTime.Now;
+                salesman.CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 salesman.Status = 1;
-                db.Salesman.Add(salesman);
-                 db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _salesmanService.Save(salesman, AuthenticatedUser.GetUserFromIdentity().UserId);
+                
                 return RedirectToAction("Index");
             }
 
@@ -68,7 +70,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Salesman salesman = db.Salesman.Find(id);
+            Salesman salesman =_salesmanService.GetSalesmanById(id.Value);
             if (salesman == null)
             {
                 return HttpNotFound();
@@ -83,7 +85,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Salesman salesman = db.Salesman.Find(id);
+            Salesman salesman = _salesmanService.GetSalesmanById(id.Value);
             if (salesman == null)
             {
                 return HttpNotFound();
@@ -100,9 +102,10 @@ namespace WarehouseApp.Controllers
         {
             if (ModelState.IsValid)
             {
+                salesman.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 salesman.UpdatedDate = DateTime.Now;
-                db.Entry(salesman).State = System.Data.Entity.EntityState.Modified;
-                db.SaveChanges();
+                _salesmanService.Edit(salesman, AuthenticatedUser.GetUserFromIdentity().UserId);
+
                 return RedirectToAction("Index");
             }
             return View("../Shop/Salesman/Edit", salesman);
@@ -116,14 +119,14 @@ namespace WarehouseApp.Controllers
                 Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 return Json(new { Result = "Error" });
             }
-            Salesman salesman = db.Salesman.Find(id);
+            Salesman salesman = _salesmanService.GetSalesmanById(id.Value);
             if (salesman == null)
             {
                 Response.StatusCode = (int)HttpStatusCode.NotFound;
                 return Json(new { Result = "Error" });
             }
-            db.Salesman.Remove(salesman);
-             db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+            _salesmanService.DeleteSalesman(salesman);
+          
             return Json(new { Result = "OK" });
         }
 
@@ -131,7 +134,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _salesmanService.Dispose();
             }
             base.Dispose(disposing);
         }

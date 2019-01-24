@@ -10,19 +10,20 @@ using PagedList;
 
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
-
+using EBSM.Entities;
+using EBSM.Services;
 namespace WarehouseApp.Controllers
 {
     [Authorize]
     public class SupplierController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private SupplierService _supplierService = new SupplierService();
 
         // GET: /MUnit/
         [Roles("Global_SupAdmin,Configuration")]
         public ActionResult Index(SupplierSearchViewModel model)
         {
-            var suppliers = db.Suppliers.Where(x => (model.SupplierName == null || x.SupplierName.StartsWith(model.SupplierName))).OrderBy(x => x.SupplierName).ToList();
+            var suppliers = _supplierService.GetAllSuppliers(model.SupplierName).ToList();
             model.Suppliers = suppliers.ToPagedList(model.Page, model.PageSize);
             return View("../Shop/Supplier/index", model);
         }
@@ -45,11 +46,10 @@ namespace WarehouseApp.Controllers
             {
                 supplier.Balance = supplier.Balance??0;
                 supplier.Status = 1;
-                 supplier.CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                 supplier.CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 supplier.CreatedDate = DateTime.Now;
-                db.Suppliers.Add(supplier);
-
-                 db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _supplierService.Save(supplier, AuthenticatedUser.GetUserFromIdentity().UserId);
+               
                 return RedirectToAction("index");
             }
 
@@ -64,7 +64,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Supplier supplier = db.Suppliers.Find(id);
+            Supplier supplier =_supplierService.GetSupplierById(id.Value);
             if (supplier == null)
             {
                 return HttpNotFound();
@@ -79,7 +79,7 @@ namespace WarehouseApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                Supplier oldSupplier = db.Suppliers.Find(supplier.SupplierId);
+                Supplier oldSupplier = _supplierService.GetSupplierById(supplier.SupplierId);
                 oldSupplier.SupplierName = supplier.SupplierName;
                 oldSupplier.SupplierType = supplier.SupplierType;
                 oldSupplier.SupplierAddress = supplier.SupplierAddress;
@@ -88,10 +88,10 @@ namespace WarehouseApp.Controllers
                 oldSupplier.Email = supplier.Email;
                 oldSupplier.Position = supplier.Position;
                 oldSupplier.Status = supplier.Status;
-                oldSupplier.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                oldSupplier.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 supplier.UpdatedDate = DateTime.Now;
-                db.Entry(oldSupplier).State = System.Data.Entity.EntityState.Modified;
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                _supplierService.Edit(oldSupplier, AuthenticatedUser.GetUserFromIdentity().UserId);
+               
                 return RedirectToAction("index");
             }
             return View("../Shop/Supplier/Edit", supplier);
@@ -99,14 +99,13 @@ namespace WarehouseApp.Controllers
 
         public void UpdateSupplierBalance(int? supplierId, double? remaining,int? currentUserId)
         {
-            Supplier supplier = db.Suppliers.FirstOrDefault(x => x.SupplierId == supplierId);
+            Supplier supplier = _supplierService.GetSupplierById(supplierId.Value);
             if (supplier != null)
             {
                 supplier.Balance = (supplier.Balance ?? 0) + remaining;
                 supplier.UpdatedBy = currentUserId;
                 supplier.UpdatedDate = DateTime.Now;
-                db.Entry(supplier).State = System.Data.Entity.EntityState.Modified;
-                db.SaveChanges(currentUserId.ToString());
+                _supplierService.Edit(supplier, currentUserId);
             }
         }
         [HttpPost]
@@ -119,10 +118,10 @@ namespace WarehouseApp.Controllers
                 supplier.SupplierType = supplier.SupplierType??3;
                 supplier.Status = supplier.Status??1;
                 supplier.Balance = supplier.Balance ?? 0;
-                supplier.CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                supplier.CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 supplier.CreatedDate = DateTime.Now;
-                db.Suppliers.Add(supplier);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                supplier.SupplierId= _supplierService.Save(supplier, AuthenticatedUser.GetUserFromIdentity().UserId);
+             
                 inserted = true;
             }
             var data = new { inserted = inserted, supplier = supplier };
@@ -132,7 +131,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _supplierService.Dispose();
             }
             base.Dispose(disposing);
         }

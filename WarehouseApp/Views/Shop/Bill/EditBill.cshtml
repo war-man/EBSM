@@ -1,5 +1,5 @@
 ﻿@using WarehouseApp.Controllers
-@using WarehouseApp.Models
+@using EBSM.Entities;
 @model WarehouseApp.Models.ViewModels.BillInvoicesViewModel
 
 @{
@@ -7,118 +7,123 @@
 }
 
 <div class="panel panel-default">
-    <div class="panel-heading">Edit Bill (@Model.Bill.BillNo)
+    <div class="panel-heading">
+        Edit Bill (@Model.Bill.BillNo)
         @Html.ActionLink(" Back", null, null, null, new { href = Request.UrlReferrer, @class = "btn btn-default fa fa-arrow-circle-left  pull-right" })
     </div>
     <div class="panel-body">
-        @using (Html.BeginForm("EditBill", "Bill", null, FormMethod.Post, new {@id = "editBillForm"}))
+        @using (Html.BeginForm("EditBill", "Bill", null, FormMethod.Post, new { @id = "editBillForm" }))
         {
             @Html.AntiForgeryToken()
             <div class="row">
-               
-             
-               @Html.ValidationSummary(true)
-              @Html.HiddenFor(model => model.Bill.BillId)
+
+
+                @Html.ValidationSummary(true)
+                @Html.HiddenFor(model => model.Bill.BillId)
                 <h4 class="text-center">@Model.Bill.Customer.FullName</h4>
-                
-            @if (Model.InvoiceCheckboxes.Count > 0)
-            {
-                <div class="panel panel-warning">
-                    <div class="panel-heading">
-                        Due Challans
-                    </div>
-                    <div class="panel-body">
-                        <table id="dueInvoiceTable" class="table  table-condensed table-striped">
-                            <tr>
-                                <th class="selecTdWidth">
-                                    @*<input type="checkbox" id="checkall" />*@
-                                </th>
-                                <th class="col-md-2">
-                                    @Html.DisplayName("Date")
-                                </th>
-                                <th>
-                                    @Html.DisplayName("Challan No")
-                                </th>
-                                   
-                                <th>
-                                    @Html.DisplayName("Total Payable")
 
-                                </th>
-                                <th>
-                                    @Html.DisplayName("Paid")
-
-                                </th>
-                                <th>
-                                    @Html.DisplayName("Due")
-
-                                </th>
-
-                                        
-                            </tr>
-                            @{ int j = 0; }
-                            @foreach (var item in Model.InvoiceCheckboxes)
-                            {
-                                var grandTotal = (item.Invoice.TotalPrice - BankAccountController.DiscountCalculator(item.Invoice.DiscountAmount, item.Invoice.DiscountType, item.Invoice.TotalPrice).DiscountValue) + item.Invoice.TotalVat;
-                                var totalDue = grandTotal - item.Invoice.PaidAmount;
-
+                @if (Model.InvoiceCheckboxes.Count > 0)
+                {
+                    <div class="panel panel-warning">
+                        <div class="panel-heading">
+                            Due Challans
+                        </div>
+                        <div class="panel-body">
+                            <table id="dueInvoiceTable" class="table  table-condensed table-striped">
                                 <tr>
+                                    <th class="selecTdWidth">
+                                        @*<input type="checkbox" id="checkall" />*@
+                                    </th>
+                                    <th class="col-md-2">
+                                        @Html.DisplayName("Date")
+                                    </th>
+                                    <th>
+                                        @Html.DisplayName("Challan No")
+                                    </th>
 
-                                    <td class="selecTdWidth">
-                                               
-                                        @*@Html.Hidden("InvoiceId", item.InvoiceId, new {@class = "InvoiceId"})*@
-                                        @Html.Hidden("DueAmount", totalDue, new {@class = "DueAmount"})
-                                                
-                                        @Html.HiddenFor(model => model.InvoiceCheckboxes[j].InvoiceId, new {@Value = item.InvoiceId})
-                                        @Html.CheckBoxFor(model => model.InvoiceCheckboxes[j].IsChecked, new {@class = "checkthis"})
-                                    </td>
-                                    <td class="col-md-2">
-                                        @item.Invoice.InvoiceDate.ToString("dd-MM-yyyy")
-                                    </td>
-                                    <td>
-                                        <a href='@Url.Action("InvoiceDetails", "Invoice", new {id = @item.InvoiceId})'>@item.Invoice.InvoiceNumber</a>
-                                    </td>
-                                        
-                                    <td>
-                                        @String.Format("{0:n}", grandTotal)
-                                    </td>
-                                    <td>
-                                        @String.Format("{0:n}", item.Invoice.PaidAmount)
-                                    </td>
-                                    <td>
-                                           
-                                        @String.Format("{0:n}", totalDue)
-                                    </td>
+                                    <th>
+                                        @Html.DisplayName("Total Payable")
+
+                                    </th>
+                                    <th>
+                                        @Html.DisplayName("Paid")
+
+                                    </th>
+                                    <th>
+                                        @Html.DisplayName("Due")
+
+                                    </th>
+
 
                                 </tr>
-                                j++;
-                            }
-                            <tr>
-                                <td colspan="2">
-                                    <div class="col-md-12 paddingReduce input-group " style="padding-left: 5px">
-                                        @Html.TextBoxFor(model => model.BillDate, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new {@class = "form-control input-sm rfwDatepicker", @Value = string.Format("{0:dd-MM-yyyy}", Model.BillDate)})
-                                        <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+                                @{ int j = 0; }
+                                @foreach (var item in Model.InvoiceCheckboxes)
+                                {
+                                    var grandTotal = (item.Invoice.TotalPrice - BankAccountController.DiscountCalculator(item.Invoice.DiscountAmount, item.Invoice.DiscountType, item.Invoice.TotalPrice).DiscountValue) + item.Invoice.TotalVat;
+                                    var totalDue = grandTotal - item.Invoice.PaidAmount;
 
-                                    </div>
-                                </td>
-                                <td colspan="2">@Html.TextBoxFor(model => model.Bill.BillAmount, new {@id = "SelectedInvoiceAmount", @class = "form-control input-sm", @readonly = true})</td ><td colspan="2"><input type="submit" value="Save" class="btn btn-info" />
+                                    <tr>
 
-                                                                                                                                                                                                   &nbsp;&nbsp;@Html.ActionLink("Cancel", "Index", "Bill", null, new {@class = "btn btn-default"})</td>
-                            </tr>
-                        </table>
-                            
+                                        <td class="selecTdWidth">
+
+                                            @*@Html.Hidden("InvoiceId", item.InvoiceId, new {@class = "InvoiceId"})*@
+                                            @Html.Hidden("DueAmount", totalDue, new { @class = "DueAmount" })
+
+                                            @Html.HiddenFor(model => model.InvoiceCheckboxes[j].InvoiceId, new { @Value = item.InvoiceId })
+                                            @Html.CheckBoxFor(model => model.InvoiceCheckboxes[j].IsChecked, new { @class = "checkthis" })
+                                        </td>
+                                        <td class="col-md-2">
+                                            @item.Invoice.InvoiceDate.ToString("dd-MM-yyyy")
+                                        </td>
+                                        <td>
+                                            <a href='@Url.Action("InvoiceDetails", "Invoice", new {id = @item.InvoiceId})'>@item.Invoice.InvoiceNumber</a>
+                                        </td>
+
+                                        <td>
+                                            @String.Format("{0:n}", grandTotal)
+                                        </td>
+                                        <td>
+                                            @String.Format("{0:n}", item.Invoice.PaidAmount)
+                                        </td>
+                                        <td>
+
+                                            @String.Format("{0:n}", totalDue)
+                                        </td>
+
+                                    </tr>
+                                    j++;
+                                }
+                                <tr>
+                                    <td colspan="2">
+                                        <div class="col-md-12 paddingReduce input-group " style="padding-left: 5px">
+                                            @Html.TextBoxFor(model => model.BillDate, string.Format("{0:dd-MM-yyyy}", DateTime.Now), new { @class = "form-control input-sm rfwDatepicker", @Value = string.Format("{0:dd-MM-yyyy}", Model.BillDate) })
+                                            <span class="input-group-addon rfwDatepickerIcon"><i class="glyphicon glyphicon-calendar"></i></span>
+
+                                        </div>
+                                    </td>
+                                    <td colspan="2">@Html.TextBoxFor(model => model.Bill.BillAmount, new { @id = "SelectedInvoiceAmount", @class = "form-control input-sm", @readonly = true })</td>
+                                    <td colspan="2">
+                                        <input type="submit" value="Save" class="btn btn-info" />
+
+                                        &nbsp;&nbsp;@Html.ActionLink("Cancel", "Index", "Bill", null, new { @class = "btn btn-default" })
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </div>
                     </div>
-                </div>
 
-            }
-            else
-            {
-           
+                }
+                else
+                {
+
                     <h4 align="center">No Available due Chalan</h4>
-           
-            }
-       
-    </div> }
-</div></div>
+
+                }
+
+            </div>  }
+    </div>
+</div>
 
 @section Scripts {
     @Scripts.Render("~/bundles/ShopScript")
@@ -185,7 +190,7 @@
         //        $('.count').text(commaSeparateNumber(Math.round(this.someValue)));
         //    }
         //});
-   
+
         function commaSeparateNumber(val) {
             while (/(\d+)(\d{3})/.test(val.toString())) {
                 val = val.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,");
@@ -201,6 +206,6 @@
             $("#PayAmount").val(totalDue);
         }
 
-       
+
     </script>
 }

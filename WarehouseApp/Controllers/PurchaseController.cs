@@ -13,13 +13,16 @@ using System.Text;
 using System.Web.Security;
 using WarehouseApp.Models;
 using WarehouseApp.Models.ViewModels;
-
+using EBSM.Entities;
+using EBSM.Services;
 namespace WarehouseApp.Controllers
 {
     [Authorize]
     public class PurchaseController : Controller
     {
-        private WmsDbContext db = new WmsDbContext();
+        private PurchaseService _purchaseService = new PurchaseService();
+        private SupplierService _supplierService = new SupplierService();
+        private WarehouseZoneService _warehouseZoneService = new WarehouseZoneService();
 
         // GET: /Purchase/
         [Roles("Global_SupAdmin,Purchase_Create,Purchase_Price,StockIn")]
@@ -29,14 +32,11 @@ namespace WarehouseApp.Controllers
             ViewBag.DueTransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text", "Cash");
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode("Cash"), "Id", "Name");
            
-            var fromDate = Convert.ToDateTime(model.PurchaseDateFrom);
-            var toDate=Convert.ToDateTime(model.PurchaseDateTo);
-            var purchases = db.Purchases.Where(x => (model.PurchaseNo == null || x.PurchaseNumber.StartsWith(model.PurchaseNo))&&(model.TransactionMode == null || x.TransactionMode.Equals(model.TransactionMode)) 
-                &&(model.PurchaseDateFrom == null || x.PurchaseDate>=fromDate) &&(model.PurchaseDateTo == null || x.PurchaseDate<=toDate)
-                 && (model.SupplierId == null || x.SupplierId == model.SupplierId)).Include(o => o.Supplier).OrderByDescending(o => o.PurchaseDate).ThenByDescending(o => o.CreatedDate);
+  
+            var purchases =_purchaseService.GetAllPurchases(model.PurchaseNo, model.PurchaseDateFrom, model.PurchaseDateTo, model.SupplierId, model.TransactionMode);
             model.Purchases = purchases.ToPagedList(model.Page, model.PageSize);
 
-            ViewBag.SupplierId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 1).OrderBy(x => x.SupplierName), "SupplierId", "SupplierName");
+            ViewBag.SupplierId = new SelectList(_supplierService.GetAllDistributor(), "SupplierId", "SupplierName");
             return View("../Shop/Purchase/Index", model);
         }
 
@@ -51,7 +51,7 @@ namespace WarehouseApp.Controllers
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode("Cash"), "Id", "Name");
             ViewBag.PcTransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text");
             ViewBag.PcTransactionModeId = new SelectList(Enumerable.Empty<SelectListItem>());
-            ViewBag.SupplierId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 1).OrderBy(x => x.SupplierName), "SupplierId", "SupplierName");
+            ViewBag.SupplierId = new SelectList(_supplierService.GetAllDistributor(), "SupplierId", "SupplierName");
             //ViewBag.ZoneId = new SelectList(db.WarehouseZones.OrderBy(x => x.ZoneName), "ZoneId", "ZoneName",1);
             return View("../Shop/Purchase/NewPurchase");
     
@@ -65,7 +65,7 @@ namespace WarehouseApp.Controllers
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode("Cash"), "Id", "Name");
             ViewBag.PcTransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text");
             ViewBag.PcTransactionModeId = new SelectList(Enumerable.Empty<SelectListItem>());
-            ViewBag.SupplierId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 1).OrderBy(x => x.SupplierName), "SupplierId", "SupplierName");
+            ViewBag.SupplierId = new SelectList(_supplierService.GetAllDistributor(), "SupplierId", "SupplierName");
             //ViewBag.ZoneId = new SelectList(db.WarehouseZones.OrderBy(x => x.ZoneName), "ZoneId", "ZoneName",1);
             return View("../Shop/Purchase/NewStockIn");
         }
@@ -79,15 +79,11 @@ namespace WarehouseApp.Controllers
             {
                 string fmt = "0000000.##";
                 int lastPurchaseId = 0;
-                var purchases = db.Purchases.ToList();
-                if (purchases.Count > 0)
-                {
-                    lastPurchaseId = purchases.OrderByDescending(x => x.PurchaseId).FirstOrDefault().PurchaseId;
-                }
+   
                 Purchase purchase = new Purchase()
                 {
                     PurchaseDate = Convert.ToDateTime(data.PurchaseDate),
-                    PurchaseNumber = "P" + TransactionController.BillingMonthString(data.PurchaseDate) + (lastPurchaseId + 1).ToString(fmt),
+                    PurchaseNumber = "P" + TransactionController.BillingMonthString(data.PurchaseDate) + (_purchaseService.GetCount() + 1).ToString(fmt),
                     TotalQuantity = data.PurchaseProducts.Sum(x => x.Quantity),
                     PurchaseDiscount = data.PurchaseDiscount ?? 0, 
                     TotalPrice = Math.Round(Convert.ToDouble(data.PurchaseProducts.Sum(x => x.TotalPrice)), 2)-data.PurchaseDiscount, 
@@ -97,12 +93,11 @@ namespace WarehouseApp.Controllers
                     TransactionMode = data.TransactionMode,
                     TransactionModeId = data.TransactionModeId,
                     Status = 1,
-                    CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),
+                    CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId,
                     CreatedDate = DateTime.Now
                 };
-                db.Purchases.Add(purchase);
+                _purchaseService.Save(purchase, AuthenticatedUser.GetUserFromIdentity().UserId);
                
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
                 PurchaseCost purchaseCost = new PurchaseCost();
                 if (data.PurchaseCost > 0)
                 {
@@ -113,11 +108,10 @@ namespace WarehouseApp.Controllers
                     purchaseCost.TransactionModeId = BankAccountController.AllAccountByMode("Cash").FirstOrDefault().Id;
        
                     purchaseCost.Status = 1;
-                    purchaseCost.CreatedBy =Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                    purchaseCost.CreatedBy =AuthenticatedUser.GetUserFromIdentity().UserId;
                     purchaseCost.CreatedDate = DateTime.Now;
+                    _purchaseService.SavePurchaseCost(purchaseCost, AuthenticatedUser.GetUserFromIdentity().UserId);
                
-                db.PurchaseCosts.Add(purchaseCost);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
                 }
                 foreach (var item in data.PurchaseProducts)
                 {
@@ -132,10 +126,8 @@ namespace WarehouseApp.Controllers
                         ZoneId = item.ZoneId,
                         Status = 1
                     };
-                    db.PurchaseProducts.Add(purchaseProduct);
-                    db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
-
-                    
+                    _purchaseService.SavePurchaseProduct(purchaseProduct);
+                   
                  //====update stock==============================================
                     StockController updateStock = new StockController();
                     if (string.IsNullOrEmpty(item.Barcode))
@@ -170,7 +162,7 @@ namespace WarehouseApp.Controllers
             ViewBag.TransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text", "Cash");
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode("Cash"), "Id", "Name");
 
-            ViewBag.SupplierId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 1).OrderBy(x => x.SupplierName), "SupplierId", "SupplierName",data.SupplierId);
+            ViewBag.SupplierId = new SelectList(_supplierService.GetAllDistributor(), "SupplierId", "SupplierName",data.SupplierId);
 
             return View("../Shop/Purchase/NewPurchase");
         }
@@ -184,7 +176,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Purchase purchase = db.Purchases.Find(id);
+            Purchase purchase =_purchaseService.GetPurchaseById(id.Value);
             if (purchase == null)
             {
                 return HttpNotFound();
@@ -200,7 +192,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Purchase purchase = db.Purchases.Find(id);
+            Purchase purchase = _purchaseService.GetPurchaseById(id.Value);
             if (purchase == null || purchase.PurchasePayments.Count > 0)
             {
                 return HttpNotFound();
@@ -249,9 +241,9 @@ namespace WarehouseApp.Controllers
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode(purchaseEditModel.TransactionMode), "Id", "Name", purchaseEditModel.TransactionModeId);
             ViewBag.PcTransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text", purchaseEditModel.PcTransactionMode);
             ViewBag.PcTransactionModeId = new SelectList(BankAccountController.AllAccountByMode(purchaseEditModel.TransactionMode), "Id", "Name",purchaseEditModel.PcTransactionModeId);
-            ViewBag.SupplierId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 1).OrderBy(x => x.SupplierName), "SupplierId", "SupplierName", purchaseEditModel.SupplierId);
+            ViewBag.SupplierId = new SelectList(_supplierService.GetAllDistributor(), "SupplierId", "SupplierName", purchaseEditModel.SupplierId);
             //ViewBag.ZoneId = new SelectList(db.WarehouseZones.OrderBy(x => x.ZoneName), "ZoneId", "ZoneName",1);
-            ViewBag.ZoneId = db.WarehouseZones.OrderBy(x => x.ZoneName);
+            ViewBag.ZoneId = _warehouseZoneService.GetAllWarehouseZone();
            
            return View("../Shop/Purchase/EditPurchase", purchaseEditModel);
             //return View("../Shop/Purchase/EditStockIn", purchaseEditModel);
@@ -263,7 +255,7 @@ namespace WarehouseApp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Purchase purchase = db.Purchases.Find(id);
+            Purchase purchase = _purchaseService.GetPurchaseById(id.Value);
             if (purchase == null || purchase.PurchasePayments.Count > 0)
             {
                 return HttpNotFound();
@@ -313,9 +305,9 @@ namespace WarehouseApp.Controllers
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode(purchaseEditModel.TransactionMode), "Id", "Name", purchaseEditModel.TransactionModeId);
             ViewBag.PcTransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text", purchaseEditModel.PcTransactionMode);
             ViewBag.PcTransactionModeId = new SelectList(BankAccountController.AllAccountByMode(purchaseEditModel.TransactionMode), "Id", "Name", purchaseEditModel.PcTransactionModeId);
-            ViewBag.SupplierId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 1).OrderBy(x => x.SupplierName), "SupplierId", "SupplierName", purchaseEditModel.SupplierId);
+            ViewBag.SupplierId = new SelectList(_supplierService.GetAllDistributor(), "SupplierId", "SupplierName", purchaseEditModel.SupplierId);
             //ViewBag.ZoneId = new SelectList(db.WarehouseZones.OrderBy(x => x.ZoneName), "ZoneId", "ZoneName",1);
-            ViewBag.ZoneId = db.WarehouseZones.OrderBy(x => x.ZoneName);
+            ViewBag.ZoneId = _warehouseZoneService.GetAllWarehouseZone();
 
             //return View("../Shop/Purchase/EditPurchase", purchaseEditModel);
             return View("../Shop/Purchase/EditStockIn", purchaseEditModel);
@@ -327,7 +319,7 @@ namespace WarehouseApp.Controllers
             //string result = "Error";
             if (ModelState.IsValid)
             {
-                Purchase purchase = db.Purchases.Find(data.PurchaseId);
+                Purchase purchase = _purchaseService.GetPurchaseById(data.PurchaseId.Value);
 
                 if (purchase == null)
                 {
@@ -345,18 +337,16 @@ namespace WarehouseApp.Controllers
                 purchase.TransactionMode = data.TransactionMode;
                 purchase.TransactionModeId = data.TransactionModeId;
                 purchase.Status = 1;
-                purchase.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                purchase.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 purchase.UpdatedDate = DateTime.Now;
-
-                db.Entry(purchase).State = System.Data.Entity.EntityState.Modified;
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
-
+                _purchaseService.Edit(purchase, AuthenticatedUser.GetUserFromIdentity().UserId);
+               
                 PurchaseCost purchaseCost = new PurchaseCost();
                  
                 double? oldPaidPurchaseCost = 0;
                 if (data.PurchaseCost != null && data.PurchaseCost>0)
                 {
-                    purchaseCost = db.PurchaseCosts.FirstOrDefault(x=>x.PurchaseId==data.PurchaseId);
+                    purchaseCost =_purchaseService.GetCostByPurchaseId(data.PurchaseId.Value);
                     if (purchaseCost != null)
                     {
                         oldPaidPurchaseCost = purchaseCost.PaidAmount;
@@ -368,11 +358,10 @@ namespace WarehouseApp.Controllers
                         purchaseCost.TransactionMode = "Cash";
                         purchaseCost.TransactionModeId = BankAccountController.AllAccountByMode("Cash").FirstOrDefault().Id;
                         purchaseCost.Status = 1;
-                        purchaseCost.UpdatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                        purchaseCost.UpdatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                         purchaseCost.UpdatedDate = DateTime.Now;
-                        db.Entry(purchaseCost).State = System.Data.Entity.EntityState.Modified;
-                        
-                        db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                        _purchaseService.SavePurchaseCost(purchaseCost, AuthenticatedUser.GetUserFromIdentity().UserId);
+                       
                     }
                     else
                     {
@@ -385,17 +374,19 @@ namespace WarehouseApp.Controllers
                             purchaseCost.TransactionMode = "Cash";
                             purchaseCost.TransactionModeId = BankAccountController.AllAccountByMode("Cash").FirstOrDefault().Id;
                             purchaseCost.Status = 1;
-                            purchaseCost.CreatedBy =Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                            purchaseCost.CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                             purchaseCost.CreatedDate = DateTime.Now;
                
-                            db.PurchaseCosts.Add(purchaseCost);
-                            db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                          
+                        _purchaseService.EditPurchaseCost(purchaseCost, AuthenticatedUser.GetUserFromIdentity().UserId);
+
+                  
                 
                     }
                 }
                 StockController updateStock = new StockController();
                 //====remove previous purchase products=======================
-                var purchaseProducts = db.PurchaseProducts.Where(x => x.PurchaseId == purchase.PurchaseId).ToList();
+                var purchaseProducts =_purchaseService.GetAllProductByPurchaseId(purchase.PurchaseId).ToList();
                 if (purchaseProducts.Count > 0)
                 {
                     foreach (var removeItem in purchaseProducts)
@@ -411,9 +402,10 @@ namespace WarehouseApp.Controllers
                             updateStock.RemoveFromStock(Convert.ToInt32(removeItem.ProductId), removeItem.Quantity, Convert.ToInt32(removeItem.ZoneId), Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey), removeItem.Barcode);
                         
                         }
-                        db.PurchaseProducts.Remove(removeItem);
+                        _purchaseService.DeletePurchaseProduct(removeItem);
+                     
                     }
-                    db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                  
                 }
                 //====Add new purchase products=======================
                 foreach (var item in data.PurchaseProducts)
@@ -429,8 +421,8 @@ namespace WarehouseApp.Controllers
                         ZoneId = item.ZoneId,
                         Status = 1
                     };
-                    db.PurchaseProducts.Add(purchaseProduct);
-                    db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                    _purchaseService.SavePurchaseProduct(purchaseProduct);
+                   
 
                     //if (!string.IsNullOrEmpty(item.ExpiryDate.ToString())) { 
                     ////====update product Expiry Date==============================================
@@ -476,7 +468,7 @@ namespace WarehouseApp.Controllers
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode("Cash"), "Id", "Name");
             //ViewBag.PcTransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text");
             //ViewBag.PcTransactionModeId = new SelectList(Enumerable.Empty<SelectListItem>());
-            ViewBag.SupplierId = new SelectList(db.Suppliers.Where(x => x.Status != 0 && x.SupplierType != 1).OrderBy(x => x.SupplierName), "SupplierId", "SupplierName", data.SupplierId);
+            ViewBag.SupplierId = new SelectList(_supplierService.GetAllDistributor(), "SupplierId", "SupplierName", data.SupplierId);
             return View("../Shop/Purchase/EditPurchase");
             
         }
@@ -490,7 +482,7 @@ namespace WarehouseApp.Controllers
         }
              ViewBag.DueTransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text", "Cash");
              ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode("Cash"), "Id", "Name");
-        ViewBag.Purchase = db.Purchases.Find(id);
+        ViewBag.Purchase =_purchaseService.GetPurchaseById(id.Value);
         return View("../Shop/Purchase/PurchaseDuePayment");
         }
         
@@ -506,18 +498,17 @@ namespace WarehouseApp.Controllers
                 PurchasePayment purchasePayment = new PurchasePayment();
                 if (duePayment.PaymentFor == "1")
                 {
-                    Purchase purchase = db.Purchases.Find(duePayment.PurchaseId);
+                    Purchase purchase = _purchaseService.GetPurchaseById(duePayment.PurchaseId);
                     purchase.PaidAmount += duePayment.PaidAmount;
-                    db.Entry(purchase).State = System.Data.Entity.EntityState.Modified;
-                    db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+                    _purchaseService.Edit(purchase, AuthenticatedUser.GetUserFromIdentity().UserId);
+                    
                 }
                 if (duePayment.PaymentFor == "2")
                 {
-                    PurchaseCost pc = db.PurchaseCosts.FirstOrDefault(x=>x.PurchaseId==duePayment.PurchaseId);
+                    PurchaseCost pc =_purchaseService.GetCostByPurchaseId(duePayment.PurchaseId);
                     pc.PaidAmount += duePayment.PaidAmount;
-                    db.Entry(pc).State = System.Data.Entity.EntityState.Modified;
-                    db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
-
+                    _purchaseService.EditPurchaseCost(pc, AuthenticatedUser.GetUserFromIdentity().UserId);
+                   
                     purchasePayment.PurchaseCostId = pc.PurchaseCostId;
                 }
                 
@@ -526,12 +517,11 @@ namespace WarehouseApp.Controllers
                 purchasePayment.PaymentDate = Convert.ToDateTime(duePayment.DuePaymentDate);
                 purchasePayment.TransactionMode = duePayment.DueTransactionMode;
                 purchasePayment.TransactionModeId = duePayment.TransactionModeId;
-                purchasePayment.CreatedBy = Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey);
+                purchasePayment.CreatedBy = AuthenticatedUser.GetUserFromIdentity().UserId;
                 purchasePayment.CreatedDate = DateTime.Now;
-               
-                db.PurchasePayments.Add(purchasePayment);
-                db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
 
+                _purchaseService.EditPurchasePayment(purchasePayment, AuthenticatedUser.GetUserFromIdentity().UserId);
+               
                 TransactionController transaction = new TransactionController();
                 transaction.WithdrawFromAccount(duePayment.DueTransactionMode, Convert.ToInt32(duePayment.TransactionModeId), Convert.ToDouble(duePayment.PaidAmount), Convert.ToDateTime(duePayment.DuePaymentDate), "PurchasePayments", "PurchasePaymentId", purchasePayment.PurchasePaymentId, Convert.ToInt32(Membership.GetUser(User.Identity.Name, true).ProviderUserKey),"Purchase Due Payment");
                 return RedirectToAction("Index","Purchase");
@@ -539,7 +529,7 @@ namespace WarehouseApp.Controllers
 
             ViewBag.DueTransactionMode = new SelectList(BankAccountController.TransactionModes(), "Value", "Text", "Cash");
             ViewBag.TransactionModeId = new SelectList(BankAccountController.AllAccountByMode("Cash"), "Id", "Name");
-            ViewBag.Purchase = db.Purchases.Find(duePayment.PurchaseId);
+            ViewBag.Purchase =_purchaseService.GetPurchaseById(duePayment.PurchaseId);
             return View("../Shop/Purchase/PurchaseDuePayment", duePayment);
         }
 
@@ -553,23 +543,19 @@ namespace WarehouseApp.Controllers
                 Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 return Json(new { Result = "Error" });
             }
-            Purchase purchase = db.Purchases.Find(id);
+            Purchase purchase = _purchaseService.GetPurchaseById(id.Value);
             if (purchase == null)
             {
                 Response.StatusCode = (int)HttpStatusCode.NotFound;
                 return Json(new { Result = "Error" });
             }
-            var purchaseProducts = db.PurchaseProducts.Where(x => x.PurchaseId == id).ToList();
+            var purchaseProducts =_purchaseService.GetAllProductByPurchaseId(id.Value).ToList();
             if (purchaseProducts.Count > 0)
             {
-                foreach (var item in purchaseProducts)
-                {
-                    db.PurchaseProducts.Remove(item);
-                }
+                _purchaseService.DeletePurchaseProductList(purchaseProducts);
             }
-
-            db.Purchases.Remove(purchase);
-            db.SaveChanges(Membership.GetUser(User.Identity.Name, true).ProviderUserKey.ToString());
+            _purchaseService.DeletePurchase(purchase);
+           
             return Json(new { Result = "OK" });
         }
 
@@ -580,7 +566,8 @@ namespace WarehouseApp.Controllers
                 Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 return Json(new { Result = "Error" });
             }
-            var purchase = db.Purchases.Where(x => x.PurchaseId == id).Select(x => new { x.PurchaseId,x.PurchaseDate,x.Supplier.SupplierName,x.PaidAmount,x.TotalPrice,x.TotalQuantity,x.TransactionMode,x.TransactionModeId,x.PurchaseNumber }).FirstOrDefault();
+            var x = _purchaseService.GetPurchaseById(id.Value);
+            var purchase =  new { x.PurchaseId,x.PurchaseDate,x.Supplier.SupplierName,x.PaidAmount,x.TotalPrice,x.TotalQuantity,x.TransactionMode,x.TransactionModeId,x.PurchaseNumber };
             if (purchase==null)
             {
                 Response.StatusCode = (int)HttpStatusCode.NotFound;
@@ -597,7 +584,8 @@ namespace WarehouseApp.Controllers
                 Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 return Json(new { Result = "Error" });
             }
-            var purchaseCost = db.PurchaseCosts.Where(x => x.PurchaseId == id).Select(x => new { x.PurchaseId, PurchaseDate = x.Purchase.PurchaseDate, SupplierName = x.Purchase.Supplier.SupplierName, x.PaidAmount, TotalPrice = x.Amount, TotalQuantity = x.Purchase.TotalQuantity, x.TransactionMode, x.TransactionModeId, PurchaseNumber=x.Purchase.PurchaseNumber }).FirstOrDefault();
+
+            var purchaseCost =_purchaseService.GetAllCostByPurchaseId(id.Value).Select(x => new { x.PurchaseId, PurchaseDate = x.Purchase.PurchaseDate, SupplierName = x.Purchase.Supplier.SupplierName, x.PaidAmount, TotalPrice = x.Amount, TotalQuantity = x.Purchase.TotalQuantity, x.TransactionMode, x.TransactionModeId, PurchaseNumber=x.Purchase.PurchaseNumber }).FirstOrDefault();
             if (purchaseCost == null)
             {
                 Response.StatusCode = (int)HttpStatusCode.NotFound;
@@ -613,7 +601,7 @@ namespace WarehouseApp.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _purchaseService.Dispose();
             }
             base.Dispose(disposing);
         }
