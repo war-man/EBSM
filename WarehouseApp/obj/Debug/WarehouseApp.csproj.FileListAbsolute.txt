@@ -122,8 +122,6 @@ D:\Projects\Welburg_warehouse\WarehouseApp\WarehouseApp\obj\Debug\WarehouseApp.c
 D:\Projects\Welburg_warehouse\WarehouseApp\WarehouseApp\obj\Debug\WarehouseApp.dll
 D:\Projects\Welburg_warehouse\WarehouseApp\WarehouseApp\obj\Debug\WarehouseApp.pdb
 D:\Projects\Welburg_warehouse\WarehouseApp\WarehouseApp\obj\Debug\WarehouseApp.csprojResolveAssemblyReference.cache
-D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.csprojAssemblyReference.cache
-D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.csproj.CoreCompileInputs.cache
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\bin\WarehouseApp.dll.config
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\bin\WarehouseApp.dll
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\bin\WarehouseApp.pdb
@@ -197,7 +195,8 @@ D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\bin\Microsoft.Owin.Security.Goog
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\bin\Microsoft.Owin.Security.Twitter.xml
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\bin\Microsoft.Owin.Security.MicrosoftAccount.xml
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\bin\EBSM.Repo.pdb
+D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\bin\EBSM.Repo.dll.config
+D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.csprojAssemblyReference.cache
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.csproj.CopyComplete
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.dll
 D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\obj\Debug\WarehouseApp.pdb
-D:\Projects\Welburg_warehouse\EBSM\WarehouseApp\bin\EBSM.Repo.dll.config

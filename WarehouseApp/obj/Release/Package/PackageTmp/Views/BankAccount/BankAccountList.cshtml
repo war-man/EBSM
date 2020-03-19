@@ -1,4 +1,5 @@
-﻿@model IEnumerable<WarehouseApp.Models.BankAccount>
+﻿@using EBSM.Entities;
+@model IEnumerable<EBSM.Entities.BankAccount>
 @{
     ViewBag.Title = "Bank Account List";
 }
@@ -22,45 +23,45 @@
                     <th>@Html.DisplayNameFor(model => model.Branch)</th>
                     <th>@Html.DisplayNameFor(model => model.Balance)</th>
                     <th>@Html.DisplayNameFor(model => model.Status)</th>
-                    
+
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var item in Model)
-{
-    <tr class="@(@item.Status==0 ? "text-muted" : " ")">
-        <td>@Html.DisplayFor(modelItem => item.AccountName)</td>
-        <td>@Html.DisplayFor(modelItem => item.AccountNo)</td>
-        <td>@Html.DisplayFor(modelItem => item.BankName)</td>
-        <td>@Html.DisplayFor(modelItem => item.Branch)</td>
-        <td>@Html.DisplayFor(modelItem => item.Balance)</td>
-        <td>
-            @{
-    if (item.Status != 0)
-    {
-        @Html.DisplayName("Enabled")
+                {
+                    <tr class="@(@item.Status==0 ? "text-muted" : " ")">
+                        <td>@Html.DisplayFor(modelItem => item.AccountName)</td>
+                        <td>@Html.DisplayFor(modelItem => item.AccountNo)</td>
+                        <td>@Html.DisplayFor(modelItem => item.BankName)</td>
+                        <td>@Html.DisplayFor(modelItem => item.Branch)</td>
+                        <td>@Html.DisplayFor(modelItem => item.Balance)</td>
+                        <td>
+                            @{
+                                if (item.Status != 0)
+                                {
+                                    @Html.DisplayName("Enabled")
 
-    }
-    else
-    {
-        @Html.DisplayName("Disabled")
-    }
-            }
+                                }
+                                else
+                                {
+                                    @Html.DisplayName("Disabled")
+                                }
+                            }
 
-        </td>
+                        </td>
 
-        <td>
-            @Html.ActionLink(" ", "EditBankAccount", "BankAccount", new { id = item.BankId }, new { @class = "btn btn-xs btn-primary fa fa-pencil" })
+                        <td>
+                            @Html.ActionLink(" ", "EditBankAccount", "BankAccount", new { id = item.BankId }, new { @class = "btn btn-xs btn-primary fa fa-pencil" })
 
 
-        </td>
-    </tr>
-}
+                        </td>
+                    </tr>
+                }
             </tbody>
 
         </table>
-       
+
     </div>
 
 </div>

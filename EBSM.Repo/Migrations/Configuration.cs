@@ -17,6 +17,10 @@ namespace EBSM.Repo.Migrations
 
         protected override void Seed(EBSM.Repo.WmsDbContext context)
         {
+			//***********************************
+			//Change in database __MigrationHistory => ContextKey => EBSM.Repo.Migrations.Configuration
+			//***********************************
+			
             //  This method will be called after migrating to the latest version.
 
             //  You can use the DbSet<T>.AddOrUpdate() helper extension method 
