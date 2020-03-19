@@ -152,7 +152,7 @@ namespace WarehouseApp.Controllers
                     else
                     {
 
-                        FormsAuthentication.SetAuthCookie(user.UserId + "|" + user.UserName.ToLower(), model.RememberMe);
+                        FormsAuthentication.SetAuthCookie(user.UserId + "|" + user.UserName.ToLower() + "|" + user.FullName + "|~/Content/Images/user.png", model.RememberMe);
                         Session["sessionid"] = System.Web.HttpContext.Current.Session.SessionID;
                         _userService.SaveUserLoginRecord(model.UserName, System.Web.HttpContext.Current.Session.SessionID,true);
 

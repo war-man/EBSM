@@ -3,7 +3,7 @@
 @model WarehouseApp.Models.ViewModels.ZoneSearchViewModel
 @using PagedList.Mvc
 @using WarehouseApp.Controllers
-@using WarehouseApp.Models
+@using EBSM.Entities;
 
 
 @{
@@ -16,8 +16,8 @@
             <div class="x_title">
                 <i class="fa fa-list"></i> Warehouse Zones
                 <ul class="nav navbar-right panel_toolbox">
-                    
-                    
+
+
 
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><i class="fa fa-wrench"></i></a>
@@ -88,7 +88,7 @@
                                     //    }
                                     //}
                                     //zoneItems = string.IsNullOrEmpty(zoneItems) ? "" : "("+zoneItems.Trim(',', ' ')+")";
-                                    
+
                                     <tr class="@(@item.Status==0 ? "text-muted" : " ")">
                                         <td class="col-md-2 zoneName">
                                             @Html.DisplayFor(modelItem => item.ZoneName)
@@ -99,19 +99,19 @@
 
 
                                         @*<td class="col-md-1">
-                            @{
-                    if (item.Status != 0)
-                    {
-                        @Html.DisplayName("Active")
-                    }
-                    else
-                    {
-                        @Html.DisplayName("Inactive")
+                                                    @{
+                                            if (item.Status != 0)
+                                            {
+                                                @Html.DisplayName("Active")
+                                            }
+                                            else
+                                            {
+                                                @Html.DisplayName("Inactive")
 
-                    }
-                            }
+                                            }
+                                                    }
 
-                        </td>*@
+                                                </td>*@
 
                                         <td class="col-md-1">
                                             @Html.ActionLink(" Edit", "Edit", "WarehouseZone", new { id = item.ZoneId }, new { @class = "btn btn-xs btn-primary fa fa-pencil", @title = "Edit" })
@@ -137,12 +137,12 @@
     </div>
 </div>
 
-        @section Scripts {
-       
-@Scripts.Render("~/bundles/jqueryval")
+@section Scripts {
+
+    @Scripts.Render("~/bundles/jqueryval")
 
 
-            <script>
+    <script>
                 $(document).ready(function() {
                     $('#pageSizelist').change(function() {
                         $('#zoneSearchForm').submit();
@@ -152,7 +152,7 @@
                         $('#createZoneForm').submit();
 
                     });
-                   
+
                 });
                 function removeThis(obj, paramData) {
                     //console.log(obj, paramData);
@@ -160,8 +160,8 @@
                     deleteRow(obj, url, paramData);
                 }
 
-            </script>
-        }
+    </script>
+}
 @*//=======================================================================================//
     //Author : Mahid Choudhury
     //Creation Date : September 2017

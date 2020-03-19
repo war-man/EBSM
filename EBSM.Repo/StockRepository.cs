@@ -73,7 +73,8 @@ namespace EBSM.Repo
         }
         public double GetTotalRemainingStock()
         {
-            return (double)db.Stocks.Sum(x => x.TotalQuantity);
+            double stockQty = db.Stocks.Sum(x => x.TotalQuantity) ?? 0;
+            return stockQty;
         }
         public IEnumerable<Stock> LimitedStockProducts()
         {

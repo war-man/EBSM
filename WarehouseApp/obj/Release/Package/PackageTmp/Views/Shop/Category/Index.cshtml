@@ -2,7 +2,7 @@
 @using System.Web.Razor.Parser.SyntaxTree
 @model WarehouseApp.Models.ViewModels.CategorySearchViewModel
 @using PagedList.Mvc
-@using WarehouseApp.Models
+@using EBSM.Entities;
 
 
 @{
@@ -17,7 +17,7 @@
             <div class="x_title">
                 <i class="fa fa-list"></i> Category List
                 <ul class="nav navbar-right panel_toolbox">
-                    
+
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" title="Settings" aria-expanded="false"><i class="fa fa-wrench"></i></a>
                         <ul class="dropdown-menu" role="menu">
@@ -67,8 +67,8 @@
                                     @Html.DisplayNameFor(model => model.Categories.First().CategoryName)
                                 </th>
                                 @*<th>
-                        @Html.DisplayNameFor(model => model.CategoryParentId)
-                    </th>*@
+                                        @Html.DisplayNameFor(model => model.CategoryParentId)
+                                    </th>*@
 
                                 <th class="col-md-1">
                                     @Html.DisplayNameFor(model => model.Categories.First().Status)
@@ -85,30 +85,30 @@
                                         @Html.DisplayFor(modelItem => item.CategoryName)
                                     </td>
                                     @*<td>
-                                @{
-                        if (item.CategoryParentId > 0)
-                        {
-                            @Html.DisplayFor(modelItem => item.CategoryParent.CategoryName)
-                        }
-                        else
-                        {
-                            @Html.DisplayText(" ")
-                        }
-                                }
-                            </td>*@
+                                                @{
+                                        if (item.CategoryParentId > 0)
+                                        {
+                                            @Html.DisplayFor(modelItem => item.CategoryParent.CategoryName)
+                                        }
+                                        else
+                                        {
+                                            @Html.DisplayText(" ")
+                                        }
+                                                }
+                                            </td>*@
 
 
                                     <td class="col-md-1">
                                         @{
-                                if (item.Status != 0)
-                                {
-                                    @Html.DisplayName("Active")
-                                }
-                                else
-                                {
-                                    @Html.DisplayName("Inactive")
+                                            if (item.Status != 0)
+                                            {
+                                                @Html.DisplayName("Active")
+                                            }
+                                            else
+                                            {
+                                                @Html.DisplayName("Inactive")
 
-                                }
+                                            }
                                         }
 
                                     </td>
@@ -132,13 +132,13 @@
                 </div>
             </div>
         </div>
-            </div>
-            </div>
-            @section Scripts {
+    </div>
+</div>
+@section Scripts {
 
-                @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/jqueryval")
 
-                <script>
+    <script>
                     $(document).ready(function () {
                         $('#pageSizelist').change(function () {
                             $('#categorySearchForm').submit();
@@ -156,9 +156,9 @@
                         deleteRow(obj, url, paramData);
                     }
 
-                </script>
-            }
-            @*//=======================================================================================//
-                //Author : Mahid Choudhury
-                //Creation Date : January 2017
-                //=======================================================================================//*@
+    </script>
+}
+@*//=======================================================================================//
+    //Author : Mahid Choudhury
+    //Creation Date : January 2017
+    //=======================================================================================//*@

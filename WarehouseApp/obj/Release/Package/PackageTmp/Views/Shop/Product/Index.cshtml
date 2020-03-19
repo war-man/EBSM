@@ -1,6 +1,7 @@
 ﻿@using PagedList.Mvc
 @using WarehouseApp.Controllers
-@using WarehouseApp.Models
+@using EBSM.Entities
+@using EBSM.Services
 
 @model WarehouseApp.Models.ViewModels.ProductSearchViewModel
 @section Styles
@@ -19,7 +20,7 @@
     ViewBag.Title = "Product List";
     //var fromDate = DateTime.Now;
     //var toDate = DateTime.Now; 
-    var cx = new WmsDbContext();
+    bool MedicineAttributeSetExist=ViewBag.MedicineAttributeSetExist;
 }
 <div class="row">
     <div class="col-md-12 col-sm-12 col-xs-12">
@@ -85,7 +86,7 @@
                                 @Html.DropDownList("CatId", null, "Categories..", new { @class = "form-control input-sm", @placeholder = "Category" })
 
                             </div>
-                            if (cx.ProductAttributeSets.Any(x => x.AttributeSetName.ToLower() == "medicine"))
+                            if (MedicineAttributeSetExist)
                             {
                                 <div class="col-lg-2 paddingReduce">
                                     @Html.DropDownList("GroupNameId", null, "All Group..", new { @class = "form-control input-sm", @placeholder = "Group" })

@@ -83,12 +83,12 @@ namespace EBSM.Repo
         public DbSet<OrderProduct> OrderProducts { get; set; }
         public DbSet<InvoiceOrder> InvoiceOrders { get; set; }
 
-        //public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
-        //public DbSet<PurchaseOrderProduct> PurchaseOrderProducts { get; set; }
-        //public DbSet<PurchaseOrderRelation> PurchaseOrderRelation { get; set; }
-        //public DbSet<ProjectEstimation> ProjectEstimations { get; set; }
-        //public DbSet<EstimationProductRelation> EstimationProductRelation { get; set; }
-        
+        public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
+        public DbSet<PurchaseOrderProduct> PurchaseOrderProducts { get; set; }
+        public DbSet<PurchaseOrderRelation> PurchaseOrderRelation { get; set; }
+        public DbSet<ProjectEstimation> ProjectEstimations { get; set; }
+        public DbSet<EstimationProductRelation> EstimationProductRelation { get; set; }
+
 
 
 
